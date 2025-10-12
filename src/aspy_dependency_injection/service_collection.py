@@ -4,7 +4,7 @@ from typing import TypeVar, get_type_hints
 TService = TypeVar("TService", bound=object)
 
 
-class ServiceCollection:
+class ServiceCollection:  # extends  : IList<ServiceDescriptor>
     services: list[type]
 
     def __init__(self) -> None:
@@ -58,6 +58,9 @@ class ServiceCollection:
             return service()
 
         return service(**arguments)
+
+    def create_scope(self) -> ServiceCollection:
+        return self
 
     @classmethod
     async def uninitialize(cls) -> None:
