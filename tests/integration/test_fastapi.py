@@ -25,11 +25,13 @@ def app() -> FastAPI:
     ) -> None:
         assert isinstance(service_with_no_dependencies, ServiceWithNoDependencies)
 
-    # @router.get("/optional-service-with-no-dependencies")
-    # async def optional_service_with_no_dependencies_endpoint(  # pyright: ignore[reportUnusedFunction]
-    #     service_with_no_dependencies: Annotated[ServiceWithNoDependencies | None, Inject()],
-    # ) -> None:
-    #     assert isinstance(service_with_no_dependencies, ServiceWithNoDependencies)
+    @router.get("/optional-service-with-no-dependencies")
+    async def optional_service_with_no_dependencies_endpoint(  # pyright: ignore[reportUnusedFunction]
+        service_with_no_dependencies: Annotated[
+            ServiceWithNoDependencies | None, Inject()
+        ],
+    ) -> None:
+        assert isinstance(service_with_no_dependencies, ServiceWithNoDependencies)
 
     app.include_router(router)
     services = ServiceCollection()
@@ -46,7 +48,6 @@ def test_client(app: FastAPI) -> Generator[TestClient]:
 
 class TestFastApi:
     def test_inject_service(self, test_client: TestClient) -> None:
-        response = test_client.get("/service-with-no-dependencies")
         response = test_client.get("/service-with-no-dependencies")
 
         assert response.status_code == HTTPStatus.OK

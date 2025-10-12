@@ -5,7 +5,7 @@ from contextvars import ContextVar
 from inspect import Parameter
 from typing import TYPE_CHECKING, Any
 
-from fastapi.routing import APIRoute, APIWebSocketRoute
+from fastapi.routing import APIRoute
 from starlette.requests import Request
 from starlette.websockets import WebSocket
 
@@ -76,9 +76,8 @@ def are_annotated_parameters_with_aspy_dependencies(
 
 def _inject_routes(routes: list[BaseRoute], services: ServiceCollection) -> None:
     for route in routes:
-        print(route.name)
         if not (
-            isinstance(route, (APIRoute, APIWebSocketRoute))
+            isinstance(route, APIRoute)
             and route.dependant.call is not None
             and not are_annotated_parameters_with_aspy_dependencies(
                 route.dependant.call
@@ -86,39 +85,7 @@ def _inject_routes(routes: list[BaseRoute], services: ServiceCollection) -> None
         ):
             continue
 
-        # When using the asgi middleware, the request context variable is set there.
-        # and we can get the scoped container from the request.
-        if isinstance(route, APIRoute):
-            route.dependant.call = inject_from_container(route.dependant.call, services)
-            # route.dependant.call = inject_from_container(
-            #     services, get_request_container
-            # )(route.dependant.call)
-            continue
-
-        # # This is now either a websocket route or an APIRoute but the asgi middleware is not used.
-        # # In this case we need to use the custom route middleware to extract the current request/websocket.
-        # add_custom_middleware = isinstance(route, APIWebSocketRoute)
-        # is_http_connection_in_signature = (
-        #     route.dependant.http_connection_param_name is not None
-        # )
-
-        # # Setting http_connection_param_name forces FastAPI to pass the current HTTPConnection
-        # # to the route handler regardless of whether it was in the signature.
-        # # It is then extracted in the inject_from_container middleware to set the relevant context variable.
-        # if not route.dependant.http_connection_param_name:
-        #     route.dependant.http_connection_param_name = "_fastapi_http_connection"
-
-        # route.dependant.call = _inject_fastapi_route(
-        #     container=services,
-        #     target=route.dependant.call,
-        #     http_connection_param_name=route.dependant.http_connection_param_name,
-        #     # If the HTTPConnection was not in the signature, it needs to be removed from the arguments
-        #     # when calling the route handler.
-        #     remove_http_connection_from_arguments=not is_http_connection_in_signature,
-        #     add_custom_middleware=add_custom_middleware,
-        # )
-
-    print("foo")
+        route.dependant.call = inject_from_container(route.dependant.call, services)
 
 
 def inject_from_container(
