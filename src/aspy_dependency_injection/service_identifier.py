@@ -1,7 +1,4 @@
-from aspy_dependency_injection._equatable import Equatable
-
-
-class ServiceIdentifier(Equatable["ServiceIdentifier"]):
+class ServiceIdentifier:
     """Internal registered service during resolution."""
 
     service_type: type
@@ -13,8 +10,11 @@ class ServiceIdentifier(Equatable["ServiceIdentifier"]):
     def from_service_type(service_type: type) -> ServiceIdentifier:
         return ServiceIdentifier(service_type)
 
-    def equals(self, other: ServiceIdentifier | None) -> bool:
-        if other is None:
-            return False
+    def __eq__(self, value: object) -> bool:
+        if not isinstance(value, ServiceIdentifier):
+            return NotImplemented
 
-        return self.service_type == other.service_type
+        return self.service_type == value.service_type
+
+    def __hash__(self) -> int:
+        return hash(self.service_type)
