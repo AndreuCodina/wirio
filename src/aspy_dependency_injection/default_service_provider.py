@@ -16,8 +16,7 @@ if TYPE_CHECKING:
     from aspy_dependency_injection.service_collection import ServiceCollection
 
 
-@final
-@dataclass
+@dataclass(frozen=True)
 class _ServiceAccessor:
     realized_service: Callable[[ServiceProviderEngineScope], object | None]
 
@@ -32,7 +31,9 @@ class DefaultServiceProvider(ServiceProvider):
     def __init__(self, services: ServiceCollection) -> None:
         self._services = services
         self._service_accessors = ConcurrentDictionary()
-        self._root = ServiceProviderEngineScope(self)
+        self._root = ServiceProviderEngineScope(
+            service_provider=self, is_root_scope=True
+        )
 
     def get_service(self, service_type: type) -> object | None:
         return self.get_service_from_service_identifier(
@@ -45,7 +46,7 @@ class DefaultServiceProvider(ServiceProvider):
         # async with DefaultServiceScope(service_provider=self) as service_scope:
         #     print("TODO")  # noqa: ERA001
         # yield service_scope
-        return ServiceProviderEngineScope(service_provider=self)
+        return ServiceProviderEngineScope(service_provider=self, is_root_scope=False)
 
     def get_service_from_service_identifier(
         self, service_identifier: ServiceIdentifier

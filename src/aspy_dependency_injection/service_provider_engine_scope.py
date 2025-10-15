@@ -1,6 +1,9 @@
 from typing import TYPE_CHECKING, Final, Self
 
 from aspy_dependency_injection.abstractions.service_scope import ServiceScope
+from aspy_dependency_injection.abstractions.service_scope_factory import (
+    ServiceScopeFactory,
+)
 from aspy_dependency_injection.service_identifier import ServiceIdentifier
 
 if TYPE_CHECKING:
@@ -14,13 +17,19 @@ if TYPE_CHECKING:
     )
 
 
-class ServiceProviderEngineScope(ServiceScope):
+class ServiceProviderEngineScope(ServiceScope, ServiceScopeFactory):
     """Container resolving services with scope."""
 
     _root_provider: Final[DefaultServiceProvider]
+    _is_root_scope: Final[bool]
 
-    def __init__(self, service_provider: DefaultServiceProvider) -> None:
+    def __init__(
+        self,
+        service_provider: DefaultServiceProvider,
+        is_root_scope: bool,  # noqa: FBT001
+    ) -> None:
         self._root_provider = service_provider
+        self._is_root_scope = is_root_scope
 
     @property
     def service_provider(self) -> ServiceProvider:
@@ -39,7 +48,7 @@ class ServiceProviderEngineScope(ServiceScope):
         pass
 
     def create_scope(self) -> ServiceScope:
-        return ServiceProviderEngineScope(self._root_provider)
+        return self._root_provider.create_scope()
 
     def get_service(self, service_type: type) -> object | None:
         return self._root_provider.get_service_from_service_identifier(
