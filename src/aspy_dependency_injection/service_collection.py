@@ -1,11 +1,11 @@
 from typing import TypeVar
 
-from aspy_dependency_injection.service_descriptor import ServiceDescriptor
-from aspy_dependency_injection.service_lifetime import ServiceLifetime
-from aspy_dependency_injection.service_provider import (
+from aspy_dependency_injection.default_service_provider import (
     DefaultServiceProvider,
     ServiceProvider,
 )
+from aspy_dependency_injection.service_descriptor import ServiceDescriptor
+from aspy_dependency_injection.service_lifetime import ServiceLifetime
 
 TService = TypeVar("TService", bound=object)
 

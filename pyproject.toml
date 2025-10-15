@@ -3,7 +3,6 @@ name = "aspy-dependency-injection"
 version = "0.1.0"
 requires-python = ">=3.14"
 dependencies = [
-    "eval-type-backport>=0.2.2",
     "fastapi[standard-no-fastapi-cloud-cli]>=0.118.0",
     "pydantic>=2.12.0",
 ]

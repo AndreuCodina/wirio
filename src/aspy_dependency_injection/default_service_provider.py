@@ -1,24 +1,19 @@
 import inspect
-from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Final, Self, final, get_type_hints
+from typing import TYPE_CHECKING, final, get_type_hints
 
 from aspy_dependency_injection._concurrent_dictionary import ConcurrentDictionary
+from aspy_dependency_injection.abstractions.service_provider import ServiceProvider
 from aspy_dependency_injection.service_identifier import ServiceIdentifier
+from aspy_dependency_injection.service_provider_engine_scope import (
+    ServiceProviderEngineScope,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-    from types import TracebackType
 
+    from aspy_dependency_injection.abstractions.service_scope import ServiceScope
     from aspy_dependency_injection.service_collection import ServiceCollection
-
-
-class ServiceProvider(ABC):
-    @abstractmethod
-    def get_service(self, service_type: type) -> object | None: ...
-
-    @abstractmethod
-    def create_scope(self) -> ServiceScope: ...
 
 
 @final
@@ -97,65 +92,3 @@ class DefaultServiceProvider(ServiceProvider):
             return service_type()
 
         return service_type(**arguments)
-
-
-class ServiceScope:
-    """Defines a disposable service scope.
-
-    The __aexit__ method ends the scope lifetime. Once called, any scoped
-    services that have been resolved from ServiceProvider will be disposed.
-    """
-
-    @property
-    @abstractmethod
-    def service_provider(self) -> ServiceProvider:
-        """Gets the ServiceProvider used to resolve dependencies from the scope."""
-        ...
-
-    @abstractmethod
-    def get_service(self, service_type: type) -> object | None: ...
-
-    @abstractmethod
-    def __aenter__(self) -> Self: ...
-
-    @abstractmethod
-    def __aexit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: TracebackType | None,
-        /,
-    ) -> bool | None: ...
-
-
-class ServiceProviderEngineScope(ServiceScope):
-    """Container resolving services with scope."""
-
-    _root_provider: Final[DefaultServiceProvider]
-
-    def __init__(self, service_provider: DefaultServiceProvider) -> None:
-        self._root_provider = service_provider
-
-    @property
-    def service_provider(self) -> ServiceProvider:
-        return self._root_provider
-
-    def __aenter__(self) -> Self:
-        return self
-
-    def __aexit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: TracebackType | None,
-        /,
-    ) -> bool | None:
-        pass
-
-    def create_scope(self) -> ServiceScope:
-        return ServiceProviderEngineScope(self._root_provider)
-
-    def get_service(self, service_type: type) -> object | None:
-        return self._root_provider.get_service_from_service_identifier(
-            ServiceIdentifier.from_service_type(service_type)
-        )
