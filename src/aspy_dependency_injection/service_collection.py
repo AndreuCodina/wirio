@@ -18,7 +18,11 @@ class ServiceCollection:
         self.descriptors = []
 
     def add_transient(self, service_type: type) -> None:
-        self._add(service_type, ServiceLifetime.TRANSIENT)
+        self._add_from_implentation_type(
+            service_type=service_type,
+            implementation_type=service_type,
+            lifetime=ServiceLifetime.TRANSIENT,
+        )
 
     def add_singleton(self, service: type) -> None:
         pass
@@ -34,6 +38,12 @@ class ServiceCollection:
     async def uninitialize(cls) -> None:
         pass
 
-    def _add(self, service: type, lifetime: ServiceLifetime) -> None:
-        descriptor = ServiceDescriptor(service, lifetime)
+    def _add_from_implentation_type(
+        self, service_type: type, implementation_type: type, lifetime: ServiceLifetime
+    ) -> None:
+        descriptor = ServiceDescriptor.from_implementation_type(
+            service_type=service_type,
+            implementation_type=implementation_type,
+            lifetime=lifetime,
+        )
         self.descriptors.append(descriptor)

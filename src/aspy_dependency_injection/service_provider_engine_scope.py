@@ -43,7 +43,6 @@ class ServiceProviderEngineScope(ServiceScope, ServiceScopeFactory):
         exc_type: type[BaseException] | None,
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
-        /,
     ) -> bool | None:
         pass
 

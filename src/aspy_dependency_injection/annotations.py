@@ -1,18 +1,12 @@
-import contextlib
-import importlib
+from fastapi import Depends
 
-from aspy_dependency_injection.types import InjectableType
+from aspy_dependency_injection.injectable_type import InjectableType
 
 
 def Inject() -> InjectableType:  # noqa: N802
-    res = InjectableType()
+    """Inject Depends for FastAPI integration."""
 
-    # Fastapi needs all dependencies to be wrapped with Depends.
-    with contextlib.suppress(ModuleNotFoundError):
+    def _dependency() -> InjectableType:
+        return InjectableType()
 
-        def _inner() -> InjectableType:
-            return res
-
-        return importlib.import_module("fastapi").Depends(_inner)
-
-    return res
+    return Depends(_dependency, use_cache=False)

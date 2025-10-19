@@ -9,7 +9,7 @@ from fastapi.routing import APIRoute
 from starlette.requests import Request
 from starlette.websockets import WebSocket
 
-from aspy_dependency_injection.types import InjectableType
+from aspy_dependency_injection.injectable_type import InjectableType
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, Callable, Sequence

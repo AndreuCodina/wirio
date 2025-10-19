@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING, final, get_type_hints
 from aspy_dependency_injection._concurrent_dictionary import ConcurrentDictionary
 from aspy_dependency_injection.abstractions.service_provider import ServiceProvider
 from aspy_dependency_injection.service_identifier import ServiceIdentifier
+from aspy_dependency_injection.service_lookup.call_site_chain import CallSiteChain
+from aspy_dependency_injection.service_lookup.call_site_factory import CallSiteFactory
 from aspy_dependency_injection.service_provider_engine_scope import (
     ServiceProviderEngineScope,
 )
@@ -35,6 +37,7 @@ class DefaultServiceProvider(ServiceProvider):
             service_provider=self, is_root_scope=True
         )
         self._service_accessors = ConcurrentDictionary()
+        self._call_site_factory = CallSiteFactory(services)
 
     def get_service(self, service_type: type) -> object | None:
         return self.get_service_from_service_identifier(
@@ -63,6 +66,10 @@ class DefaultServiceProvider(ServiceProvider):
     def _create_service_accessor(
         self, service_identifier: ServiceIdentifier
     ) -> _ServiceAccessor:
+        call_site = self._call_site_factory.get_call_site(
+            service_identifier, CallSiteChain()
+        )
+
         service: object | None = None
 
         for descriptor in self._services.descriptors:

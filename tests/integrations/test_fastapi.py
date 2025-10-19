@@ -6,7 +6,7 @@ from fastapi import APIRouter, FastAPI
 from fastapi.testclient import TestClient
 
 from aspy_dependency_injection.annotations import Inject
-from aspy_dependency_injection.integration.fastapi import (
+from aspy_dependency_injection.integrations.fastapi import (
     FastApiDependencyInjection,
 )
 from aspy_dependency_injection.service_collection import ServiceCollection
