@@ -46,12 +46,11 @@ class DefaultServiceProvider(ServiceProvider):
             service_provider_engine_scope=self._root,
         )
 
-    # # @asynccontextmanager
+    # @asynccontextmanager
     def create_scope(self) -> ServiceScope:  # AsyncGenerator[ServiceScope]:
         """Create a new ServiceScope that can be used to resolve scoped services."""
         # async with DefaultServiceScope(service_provider=self) as service_scope:
-        #     print("TODO")  # noqa: ERA001
-        # yield service_scope
+        #     yield service_scope
         return ServiceProviderEngineScope(service_provider=self, is_root_scope=False)
 
     def get_service_from_service_identifier(

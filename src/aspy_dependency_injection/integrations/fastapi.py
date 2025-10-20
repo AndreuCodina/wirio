@@ -53,15 +53,13 @@ class _AspyAsgiMiddleware:
 
         token = current_request.set(request)
         try:
-            # async with request.app.state.aspy_services.create_scope() as service_scope:
-            #     request.state.service_scope = service_scope  # noqa: ERA001
-            #     await self.app(scope, receive, send)  # noqa: ERA001
             service_provider: DefaultServiceProvider = (
                 request.app.state.aspy_service_provider
             )
-            service_scope = service_provider.create_scope()
-            request.state.aspy_service_scope = service_scope
-            await self.app(scope, receive, send)
+
+            async with service_provider.create_scope() as service_scope:
+                request.state.aspy_service_scope = service_scope
+                await self.app(scope, receive, send)
         finally:
             current_request.reset(token)
 
