@@ -34,10 +34,6 @@ class ServiceCollection:
         """Create a DefaultServiceProvider containing services from the provided ServiceCollection."""
         return DefaultServiceProvider(self)
 
-    @classmethod
-    async def uninitialize(cls) -> None:
-        pass
-
     def _add_from_implentation_type(
         self, service_type: type, implementation_type: type, lifetime: ServiceLifetime
     ) -> None:

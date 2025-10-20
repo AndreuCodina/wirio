@@ -2,11 +2,11 @@ from threading import RLock
 from typing import TYPE_CHECKING, final
 
 from aspy_dependency_injection._concurrent_dictionary import ConcurrentDictionary
-from aspy_dependency_injection.service_descriptor import ServiceDescriptor
 from aspy_dependency_injection.service_identifier import ServiceIdentifier
 
 if TYPE_CHECKING:
     from aspy_dependency_injection.service_collection import ServiceCollection
+    from aspy_dependency_injection.service_descriptor import ServiceDescriptor
     from aspy_dependency_injection.service_lookup.call_site_chain import CallSiteChain
     from aspy_dependency_injection.service_lookup.service_call_site import (
         ServiceCallSite,

@@ -1,6 +1,6 @@
 import inspect
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, final, get_type_hints
+from typing import TYPE_CHECKING, Self, final, get_type_hints
 
 from aspy_dependency_injection._concurrent_dictionary import ConcurrentDictionary
 from aspy_dependency_injection.abstractions.service_provider import ServiceProvider
@@ -13,6 +13,7 @@ from aspy_dependency_injection.service_provider_engine_scope import (
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from types import TracebackType
 
     from aspy_dependency_injection.abstractions.service_scope import ServiceScope
     from aspy_dependency_injection.service_collection import ServiceCollection
@@ -104,3 +105,14 @@ class DefaultServiceProvider(ServiceProvider):
             return service_type()
 
         return service_type(**arguments)
+
+    async def __aenter__(self) -> Self:
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> bool | None:
+        await self._root.__aexit__(exc_type, exc_val, exc_tb)

@@ -9,6 +9,7 @@ from fastapi.routing import APIRoute
 from starlette.requests import Request
 from starlette.websockets import WebSocket
 
+from aspy_dependency_injection.default_service_provider import DefaultServiceProvider
 from aspy_dependency_injection.injectable_type import InjectableType
 
 if TYPE_CHECKING:
@@ -24,7 +25,7 @@ if TYPE_CHECKING:
 current_request: ContextVar[Request | WebSocket] = ContextVar("aspy_starlette_request")
 
 
-def _update_lifespan(app: FastAPI, services: ServiceCollection) -> None:
+def _update_lifespan(app: FastAPI, service_provider: DefaultServiceProvider) -> None:
     old_lifespan = app.router.lifespan_context
 
     @asynccontextmanager
@@ -32,7 +33,7 @@ def _update_lifespan(app: FastAPI, services: ServiceCollection) -> None:
         async with old_lifespan(app) as state:
             yield state
 
-        await services.uninitialize()
+        await service_provider.__aexit__(None, None, None)
 
     app.router.lifespan_context = new_lifespan
 
@@ -55,8 +56,9 @@ class _AspyAsgiMiddleware:
             # async with request.app.state.aspy_services.create_scope() as service_scope:
             #     request.state.service_scope = service_scope  # noqa: ERA001
             #     await self.app(scope, receive, send)  # noqa: ERA001
-            services: ServiceCollection = request.app.state.aspy_services
-            service_provider = services.build_service_provider()
+            service_provider: DefaultServiceProvider = (
+                request.app.state.aspy_service_provider
+            )
             service_scope = service_provider.create_scope()
             request.state.aspy_service_scope = service_scope
             await self.app(scope, receive, send)
@@ -147,13 +149,10 @@ def get_injectable_dependency(metadata: Sequence[Any]) -> InjectableType | None:
     return None
 
 
-def setup(app: FastAPI, services: ServiceCollection) -> None:
-    app.state.aspy_services = services
-    app.add_middleware(_AspyAsgiMiddleware)
-    _update_lifespan(app, services)
-    _inject_routes(app.routes)
-
-
 class FastApiDependencyInjection:
     def setup(self, app: FastAPI, services: ServiceCollection) -> None:
-        setup(app, services)
+        service_provider = services.build_service_provider()
+        app.state.aspy_service_provider = service_provider
+        app.add_middleware(_AspyAsgiMiddleware)
+        _update_lifespan(app, service_provider)
+        _inject_routes(app.routes)
