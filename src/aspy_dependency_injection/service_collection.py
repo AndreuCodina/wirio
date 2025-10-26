@@ -1,12 +1,8 @@
-from typing import TypeVar
-
 from aspy_dependency_injection.default_service_provider import (
     DefaultServiceProvider,
 )
 from aspy_dependency_injection.service_descriptor import ServiceDescriptor
 from aspy_dependency_injection.service_lifetime import ServiceLifetime
-
-TService = TypeVar("TService")
 
 
 class ServiceCollection:

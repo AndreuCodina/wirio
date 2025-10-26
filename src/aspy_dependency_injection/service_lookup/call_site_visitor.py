@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING
 
 from aspy_dependency_injection.service_lookup.constructor_call_site import (
     ConstructorCallSite,
@@ -9,9 +9,6 @@ if TYPE_CHECKING:
     from aspy_dependency_injection.service_lookup.service_call_site import (
         ServiceCallSite,
     )
-
-TArgument = TypeVar("TArgument")
-TResult = TypeVar("TResult")
 
 
 class CallSiteVisitor[TArgument, TResult](ABC):

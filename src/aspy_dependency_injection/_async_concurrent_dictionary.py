@@ -1,14 +1,11 @@
 import asyncio
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
-TKey = TypeVar("TKey")
-TValue = TypeVar("TValue")
 
-
-class AsyncConcurrentDictionary(dict[TKey, TValue]):
+class AsyncConcurrentDictionary[TKey, TValue](dict[TKey, TValue]):
     """Represents a thread-safe collection of key/value pairs that can be accessed by multiple threads concurrently."""
 
     _dict: dict[TKey, TValue]
