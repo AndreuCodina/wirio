@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, ClassVar, final
+from typing import TYPE_CHECKING, ClassVar, final, override
 
 from aspy_dependency_injection.service_lookup.call_site_runtime_resolver import (
     CallSiteRuntimeResolver,
@@ -22,6 +22,7 @@ if TYPE_CHECKING:
 class RuntimeServiceProviderEngine(ServiceProviderEngine):
     INSTANCE: ClassVar[RuntimeServiceProviderEngine]
 
+    @override
     def realize_service(
         self, call_site: ServiceCallSite
     ) -> Callable[[ServiceProviderEngineScope], object | None]:

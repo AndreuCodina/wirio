@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Final, Self, final
+from typing import TYPE_CHECKING, Final, Self, final, override
 
 from aspy_dependency_injection.abstractions.service_scope import ServiceScope
 from aspy_dependency_injection.abstractions.service_scope_factory import (
@@ -33,6 +33,7 @@ class ServiceProviderEngineScope(ServiceScope, ServiceScopeFactory):
         self._is_root_scope = is_root_scope
 
     @property
+    @override
     def service_provider(self) -> ServiceProvider:
         return self._root_provider
 
@@ -47,9 +48,11 @@ class ServiceProviderEngineScope(ServiceScope, ServiceScopeFactory):
     ) -> bool | None:
         pass
 
+    @override
     def create_scope(self) -> ServiceScope:
         return self._root_provider.create_scope()
 
+    @override
     async def get_service(self, service_type: type) -> object | None:
         return await self._root_provider.get_service_from_service_identifier(
             service_identifier=ServiceIdentifier.from_service_type(service_type),

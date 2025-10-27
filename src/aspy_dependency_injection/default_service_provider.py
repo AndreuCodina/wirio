@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Self, final
+from typing import TYPE_CHECKING, Self, final, override
 
 from aspy_dependency_injection._async_concurrent_dictionary import (
     AsyncConcurrentDictionary,
@@ -53,6 +53,7 @@ class DefaultServiceProvider(ServiceProvider):
         self._service_accessors = AsyncConcurrentDictionary()
         self._call_site_factory = CallSiteFactory(services)
 
+    @override
     async def get_service(self, service_type: type) -> object | None:
         return await self.get_service_from_service_identifier(
             service_identifier=ServiceIdentifier.from_service_type(service_type),
