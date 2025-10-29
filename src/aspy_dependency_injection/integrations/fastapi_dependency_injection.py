@@ -147,6 +147,7 @@ class _AspyAsgiMiddleware:
             request = WebSocket(scope, receive, send)
 
         token = current_request.set(request)
+
         try:
             is_async_endpoint = False
 
