@@ -24,12 +24,12 @@ class ServiceIdentifier(Hashable):
     ) -> ServiceIdentifier:
         return cls(service_descriptor.service_type)
 
+    @override
+    def __hash__(self) -> int:
+        return hash(self.service_type)
+
     def __eq__(self, value: object) -> bool:
         if not isinstance(value, ServiceIdentifier):
             return NotImplemented
 
         return self.service_type == value.service_type
-
-    @override
-    def __hash__(self) -> int:
-        return hash(self.service_type)

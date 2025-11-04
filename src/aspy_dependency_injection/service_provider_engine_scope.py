@@ -38,6 +38,17 @@ class ServiceProviderEngineScope(ServiceScope, ServiceScopeFactory):
         return self._root_provider
 
     @override
+    def create_scope(self) -> ServiceScope:
+        return self._root_provider.create_scope()
+
+    @override
+    async def get_service(self, service_type: type) -> object | None:
+        return await self._root_provider.get_service_from_service_identifier(
+            service_identifier=ServiceIdentifier.from_service_type(service_type),
+            service_provider_engine_scope=self,
+        )
+
+    @override
     async def __aenter__(self) -> Self:
         return self
 
@@ -49,14 +60,3 @@ class ServiceProviderEngineScope(ServiceScope, ServiceScopeFactory):
         exc_tb: TracebackType | None,
     ) -> bool | None:
         pass
-
-    @override
-    def create_scope(self) -> ServiceScope:
-        return self._root_provider.create_scope()
-
-    @override
-    async def get_service(self, service_type: type) -> object | None:
-        return await self._root_provider.get_service_from_service_identifier(
-            service_identifier=ServiceIdentifier.from_service_type(service_type),
-            service_provider_engine_scope=self,
-        )
