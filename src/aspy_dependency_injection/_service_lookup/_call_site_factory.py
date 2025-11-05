@@ -171,6 +171,7 @@ class CallSiteFactory:
         return parameter_call_sites
 
 
+@final
 class ServiceDescriptorCacheItem:
     _item: ServiceDescriptor | None
     _items: list[ServiceDescriptor] | None

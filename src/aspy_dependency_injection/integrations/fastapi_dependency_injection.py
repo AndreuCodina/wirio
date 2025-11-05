@@ -3,7 +3,7 @@ import inspect
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
 from inspect import Parameter
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, final
 
 from fastapi.routing import APIRoute
 from starlette.requests import Request
@@ -28,6 +28,7 @@ if TYPE_CHECKING:
 current_request: ContextVar[Request | WebSocket] = ContextVar("aspy_starlette_request")
 
 
+@final
 class FastApiDependencyInjection:
     def setup(self, app: FastAPI, services: ServiceCollection) -> None:
         service_provider = services.build_service_provider()

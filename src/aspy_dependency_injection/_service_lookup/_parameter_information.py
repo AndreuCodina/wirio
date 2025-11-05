@@ -1,7 +1,8 @@
 from inspect import Parameter
-from typing import Final
+from typing import Final, final
 
 
+@final
 class ParameterInformation:
     _parameter_type: Final[type]
 
