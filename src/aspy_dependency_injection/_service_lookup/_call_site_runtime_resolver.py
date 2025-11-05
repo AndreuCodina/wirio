@@ -1,13 +1,13 @@
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, ClassVar, final, override
 
-from aspy_dependency_injection.service_lookup.call_site_visitor import CallSiteVisitor
+from aspy_dependency_injection._service_lookup._call_site_visitor import CallSiteVisitor
 
 if TYPE_CHECKING:
-    from aspy_dependency_injection.service_lookup.constructor_call_site import (
+    from aspy_dependency_injection._service_lookup._constructor_call_site import (
         ConstructorCallSite,
     )
-    from aspy_dependency_injection.service_lookup.service_call_site import (
+    from aspy_dependency_injection._service_lookup._service_call_site import (
         ServiceCallSite,
     )
     from aspy_dependency_injection.service_provider_engine_scope import (
@@ -16,24 +16,24 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class _RuntimeResolverContext:
+class RuntimeResolverContext:
     scope: ServiceProviderEngineScope
 
 
 @final
-class CallSiteRuntimeResolver(CallSiteVisitor[_RuntimeResolverContext, object | None]):
+class CallSiteRuntimeResolver(CallSiteVisitor[RuntimeResolverContext, object | None]):
     INSTANCE: ClassVar[CallSiteRuntimeResolver]
 
     def resolve(
         self, call_site: ServiceCallSite, scope: ServiceProviderEngineScope
     ) -> object | None:
-        return self._visit_call_site(call_site, _RuntimeResolverContext(scope=scope))
+        return self._visit_call_site(call_site, RuntimeResolverContext(scope=scope))
 
     @override
     def _visit_constructor(
         self,
         constructor_call_site: ConstructorCallSite,
-        argument: _RuntimeResolverContext,
+        argument: RuntimeResolverContext,
     ) -> object:
         parameter_values: list[object | None] = [
             self._visit_call_site(parameter_call_site, argument)

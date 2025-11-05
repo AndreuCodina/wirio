@@ -1,16 +1,16 @@
 from typing import TYPE_CHECKING, ClassVar, final, override
 
-from aspy_dependency_injection.service_lookup.call_site_runtime_resolver import (
+from aspy_dependency_injection._service_lookup._call_site_runtime_resolver import (
     CallSiteRuntimeResolver,
 )
-from aspy_dependency_injection.service_lookup.service_provider_engine import (
+from aspy_dependency_injection._service_lookup._service_provider_engine import (
     ServiceProviderEngine,
 )
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from aspy_dependency_injection.service_lookup.service_call_site import (
+    from aspy_dependency_injection._service_lookup._service_call_site import (
         ServiceCallSite,
     )
     from aspy_dependency_injection.service_provider_engine_scope import (

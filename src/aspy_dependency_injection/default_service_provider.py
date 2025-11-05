@@ -4,13 +4,13 @@ from typing import TYPE_CHECKING, Final, Self, final, override
 from aspy_dependency_injection._async_concurrent_dictionary import (
     AsyncConcurrentDictionary,
 )
-from aspy_dependency_injection.abstractions.service_provider import ServiceProvider
-from aspy_dependency_injection.service_identifier import ServiceIdentifier
-from aspy_dependency_injection.service_lookup.call_site_chain import CallSiteChain
-from aspy_dependency_injection.service_lookup.call_site_factory import CallSiteFactory
-from aspy_dependency_injection.service_lookup.runtime_service_provider_engine import (
+from aspy_dependency_injection._service_lookup._call_site_chain import CallSiteChain
+from aspy_dependency_injection._service_lookup._call_site_factory import CallSiteFactory
+from aspy_dependency_injection._service_lookup._runtime_service_provider_engine import (
     RuntimeServiceProviderEngine,
 )
+from aspy_dependency_injection.abstractions.service_provider import ServiceProvider
+from aspy_dependency_injection.service_identifier import ServiceIdentifier
 from aspy_dependency_injection.service_provider_engine_scope import (
     ServiceProviderEngineScope,
 )
@@ -19,14 +19,14 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from types import TracebackType
 
-    from aspy_dependency_injection.abstractions.service_scope import ServiceScope
-    from aspy_dependency_injection.service_collection import ServiceCollection
-    from aspy_dependency_injection.service_lookup.service_call_site import (
+    from aspy_dependency_injection._service_lookup._service_call_site import (
         ServiceCallSite,
     )
-    from aspy_dependency_injection.service_lookup.service_provider_engine import (
+    from aspy_dependency_injection._service_lookup._service_provider_engine import (
         ServiceProviderEngine,
     )
+    from aspy_dependency_injection.abstractions.service_scope import ServiceScope
+    from aspy_dependency_injection.service_collection import ServiceCollection
 
 
 @dataclass(frozen=True)

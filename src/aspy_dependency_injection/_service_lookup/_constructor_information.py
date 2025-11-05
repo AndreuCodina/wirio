@@ -1,7 +1,7 @@
 import inspect
 from typing import Final, final
 
-from aspy_dependency_injection.service_lookup.parameter_information import (
+from aspy_dependency_injection._service_lookup._parameter_information import (
     ParameterInformation,
 )
 

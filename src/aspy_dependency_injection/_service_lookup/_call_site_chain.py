@@ -1,9 +1,10 @@
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Final, final
 
 if TYPE_CHECKING:
     from aspy_dependency_injection.service_identifier import ServiceIdentifier
 
 
+@final
 class CallSiteChain:
     _call_site_chain: Final[dict[ServiceIdentifier, _ChainItemInfo]]
 

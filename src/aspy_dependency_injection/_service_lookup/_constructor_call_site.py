@@ -1,9 +1,9 @@
 from typing import TYPE_CHECKING, Final, final, override
 
-from aspy_dependency_injection.service_lookup.service_call_site import ServiceCallSite
+from aspy_dependency_injection._service_lookup._service_call_site import ServiceCallSite
 
 if TYPE_CHECKING:
-    from aspy_dependency_injection.service_lookup.constructor_information import (
+    from aspy_dependency_injection._service_lookup._constructor_information import (
         ConstructorInformation,
     )
 

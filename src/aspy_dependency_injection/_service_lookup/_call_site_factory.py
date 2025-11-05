@@ -4,24 +4,24 @@ from typing import TYPE_CHECKING, ClassVar, Final, final
 from aspy_dependency_injection._async_concurrent_dictionary import (
     AsyncConcurrentDictionary,
 )
-from aspy_dependency_injection.service_identifier import ServiceIdentifier
-from aspy_dependency_injection.service_lookup.constructor_call_site import (
+from aspy_dependency_injection._service_lookup._constructor_call_site import (
     ConstructorCallSite,
 )
-from aspy_dependency_injection.service_lookup.constructor_information import (
+from aspy_dependency_injection._service_lookup._constructor_information import (
     ConstructorInformation,
 )
+from aspy_dependency_injection.service_identifier import ServiceIdentifier
 
 if TYPE_CHECKING:
-    from aspy_dependency_injection.service_collection import ServiceCollection
-    from aspy_dependency_injection.service_descriptor import ServiceDescriptor
-    from aspy_dependency_injection.service_lookup.call_site_chain import CallSiteChain
-    from aspy_dependency_injection.service_lookup.parameter_information import (
+    from aspy_dependency_injection._service_lookup._call_site_chain import CallSiteChain
+    from aspy_dependency_injection._service_lookup._parameter_information import (
         ParameterInformation,
     )
-    from aspy_dependency_injection.service_lookup.service_call_site import (
+    from aspy_dependency_injection._service_lookup._service_call_site import (
         ServiceCallSite,
     )
+    from aspy_dependency_injection.service_collection import ServiceCollection
+    from aspy_dependency_injection.service_descriptor import ServiceDescriptor
 
 
 @final
