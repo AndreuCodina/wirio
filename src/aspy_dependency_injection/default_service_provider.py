@@ -30,7 +30,7 @@ if TYPE_CHECKING:
 
 
 @dataclass(frozen=True)
-class _ServiceAccessor:
+class ServiceAccessor:
     call_site: ServiceCallSite | None
     realized_service: Callable[[ServiceProviderEngineScope], object | None]
 
@@ -43,7 +43,7 @@ class DefaultServiceProvider(ServiceProvider):
     _root: Final[ServiceProviderEngineScope]
     _engine: Final[ServiceProviderEngine]
     _service_accessors: Final[
-        AsyncConcurrentDictionary[ServiceIdentifier, _ServiceAccessor]
+        AsyncConcurrentDictionary[ServiceIdentifier, ServiceAccessor]
     ]
 
     def __init__(self, services: ServiceCollection) -> None:
@@ -81,18 +81,18 @@ class DefaultServiceProvider(ServiceProvider):
 
     async def _create_service_accessor(
         self, service_identifier: ServiceIdentifier
-    ) -> _ServiceAccessor:
+    ) -> ServiceAccessor:
         call_site = await self._call_site_factory.get_call_site(
             service_identifier, CallSiteChain()
         )
 
         if call_site is not None:
             realized_service = self._engine.realize_service(call_site)
-            return _ServiceAccessor(
+            return ServiceAccessor(
                 call_site=call_site, realized_service=realized_service
             )
 
-        return _ServiceAccessor(call_site=call_site, realized_service=lambda _: None)
+        return ServiceAccessor(call_site=call_site, realized_service=lambda _: None)
 
     def _get_engine(self) -> ServiceProviderEngine:
         return RuntimeServiceProviderEngine.INSTANCE

@@ -29,7 +29,7 @@ class CallSiteFactory:
     _DEFAULT_SLOT: ClassVar[int] = 0
 
     _call_site_locks: Final[AsyncConcurrentDictionary[ServiceIdentifier, asyncio.Lock]]
-    _descriptor_lookup: Final[dict[ServiceIdentifier, _ServiceDescriptorCacheItem]]
+    _descriptor_lookup: Final[dict[ServiceIdentifier, ServiceDescriptorCacheItem]]
     _descriptors: Final[list[ServiceDescriptor]]
 
     def __init__(self, services: ServiceCollection) -> None:
@@ -76,7 +76,7 @@ class CallSiteFactory:
         for descriptor in self._descriptors:
             cache_key = ServiceIdentifier.from_descriptor(descriptor)
             cache_item = self._descriptor_lookup.get(
-                cache_key, _ServiceDescriptorCacheItem()
+                cache_key, ServiceDescriptorCacheItem()
             )
             self._descriptor_lookup[cache_key] = cache_item.add(descriptor)
 
@@ -171,7 +171,7 @@ class CallSiteFactory:
         return parameter_call_sites
 
 
-class _ServiceDescriptorCacheItem:
+class ServiceDescriptorCacheItem:
     _item: ServiceDescriptor | None
     _items: list[ServiceDescriptor] | None
 
@@ -187,8 +187,8 @@ class _ServiceDescriptorCacheItem:
         assert self._item is not None
         return self._item
 
-    def add(self, descriptor: ServiceDescriptor) -> _ServiceDescriptorCacheItem:
-        new_cache_item = _ServiceDescriptorCacheItem()
+    def add(self, descriptor: ServiceDescriptor) -> ServiceDescriptorCacheItem:
+        new_cache_item = ServiceDescriptorCacheItem()
 
         if self._item is None:
             new_cache_item._item = descriptor

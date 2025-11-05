@@ -10,10 +10,14 @@ from aspy_dependency_injection.service_lifetime import ServiceLifetime
 class ServiceCollection:
     """Collection of service descriptors provided during configuration."""
 
-    descriptors: Final[list[ServiceDescriptor]]
+    _descriptors: Final[list[ServiceDescriptor]]
 
     def __init__(self) -> None:
-        self.descriptors = []
+        self._descriptors = []
+
+    @property
+    def descriptors(self) -> list[ServiceDescriptor]:
+        return self._descriptors
 
     def add_transient(self, service_type: type) -> None:
         self._add_from_implentation_type(
@@ -40,4 +44,4 @@ class ServiceCollection:
             implementation_type=implementation_type,
             lifetime=lifetime,
         )
-        self.descriptors.append(descriptor)
+        self._descriptors.append(descriptor)

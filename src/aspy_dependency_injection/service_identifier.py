@@ -9,10 +9,14 @@ if TYPE_CHECKING:
 class ServiceIdentifier(Hashable):
     """Internal registered service during resolution."""
 
-    service_type: Final[type]
+    _service_type: Final[type]
 
     def __init__(self, service_type: type) -> None:
-        self.service_type = service_type
+        self._service_type = service_type
+
+    @property
+    def service_type(self) -> type:
+        return self._service_type
 
     @classmethod
     def from_service_type(cls, service_type: type) -> ServiceIdentifier:
@@ -26,10 +30,10 @@ class ServiceIdentifier(Hashable):
 
     @override
     def __hash__(self) -> int:
-        return hash(self.service_type)
+        return hash(self._service_type)
 
     def __eq__(self, value: object) -> bool:
         if not isinstance(value, ServiceIdentifier):
             return NotImplemented
 
-        return self.service_type == value.service_type
+        return self._service_type == value._service_type

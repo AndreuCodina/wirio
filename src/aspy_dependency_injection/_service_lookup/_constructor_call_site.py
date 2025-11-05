@@ -11,9 +11,8 @@ if TYPE_CHECKING:
 @final
 class ConstructorCallSite(ServiceCallSite):
     _service_type: Final[type]
-
-    constructor_information: Final[ConstructorInformation]
-    parameter_call_sites: Final[list[ServiceCallSite]]
+    _constructor_information: Final[ConstructorInformation]
+    _parameter_call_sites: Final[list[ServiceCallSite]]
 
     def __init__(
         self,
@@ -22,10 +21,18 @@ class ConstructorCallSite(ServiceCallSite):
         parameter_call_sites: list[ServiceCallSite],
     ) -> None:
         self._service_type = service_type
-        self.constructor_information = constructor_information
-        self.parameter_call_sites = parameter_call_sites
+        self._constructor_information = constructor_information
+        self._parameter_call_sites = parameter_call_sites
 
     @property
     @override
     def service_type(self) -> type:
         return self._service_type
+
+    @property
+    def constructor_information(self) -> ConstructorInformation:
+        return self._constructor_information
+
+    @property
+    def parameter_call_sites(self) -> list[ServiceCallSite]:
+        return self._parameter_call_sites
