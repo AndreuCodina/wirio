@@ -21,6 +21,10 @@ class ServiceDescriptor:
         return self._service_type
 
     @property
+    def lifetime(self) -> ServiceLifetime:
+        return self._lifetime
+
+    @property
     def implementation_type(self) -> type | None:
         return self._implementation_type
 

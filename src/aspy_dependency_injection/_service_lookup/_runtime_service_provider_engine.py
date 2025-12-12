@@ -8,7 +8,7 @@ from aspy_dependency_injection._service_lookup._service_provider_engine import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Awaitable, Callable
 
     from aspy_dependency_injection._service_lookup._service_call_site import (
         ServiceCallSite,
@@ -25,8 +25,13 @@ class RuntimeServiceProviderEngine(ServiceProviderEngine):
     @override
     def realize_service(
         self, call_site: ServiceCallSite
-    ) -> Callable[[ServiceProviderEngineScope], object | None]:
-        return lambda scope: CallSiteRuntimeResolver.INSTANCE.resolve(call_site, scope)
+    ) -> Callable[[ServiceProviderEngineScope], Awaitable[object | None]]:
+        def _create_realize_service(
+            scope: ServiceProviderEngineScope,
+        ) -> Awaitable[object | None]:
+            return CallSiteRuntimeResolver.INSTANCE.resolve(call_site, scope)
+
+        return _create_realize_service
 
 
 RuntimeServiceProviderEngine.INSTANCE = RuntimeServiceProviderEngine()

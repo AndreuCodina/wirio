@@ -1,7 +1,9 @@
 from typing import TYPE_CHECKING, Final, final
 
 if TYPE_CHECKING:
-    from aspy_dependency_injection.service_identifier import ServiceIdentifier
+    from aspy_dependency_injection._service_lookup._service_identifier import (
+        ServiceIdentifier,
+    )
 
 
 @final

@@ -10,7 +10,10 @@ from aspy_dependency_injection._service_lookup._constructor_call_site import (
 from aspy_dependency_injection._service_lookup._constructor_information import (
     ConstructorInformation,
 )
-from aspy_dependency_injection.service_identifier import ServiceIdentifier
+from aspy_dependency_injection._service_lookup._result_cache import ResultCache
+from aspy_dependency_injection._service_lookup._service_identifier import (
+    ServiceIdentifier,
+)
 
 if TYPE_CHECKING:
     from aspy_dependency_injection._service_lookup._call_site_chain import CallSiteChain
@@ -121,14 +124,17 @@ class CallSiteFactory:
         service_descriptor: ServiceDescriptor,
         service_identifier: ServiceIdentifier,
         call_site_chain: CallSiteChain,
-        slot: int,  # noqa: ARG002
+        slot: int,
     ) -> ServiceCallSite:
+        cache = ResultCache(service_descriptor.lifetime, service_identifier, slot)
+
         if service_descriptor.has_implementation_type():
             assert service_descriptor.implementation_type is not None
             return await self._create_constructor_call_site(
-                service_identifier,
-                service_descriptor.implementation_type,
-                call_site_chain,
+                cache=cache,
+                service_identifier=service_identifier,
+                implementation_type=service_descriptor.implementation_type,
+                call_site_chain=call_site_chain,
             )
 
         error_message = "Invalid service descriptor"
@@ -136,6 +142,7 @@ class CallSiteFactory:
 
     async def _create_constructor_call_site(
         self,
+        cache: ResultCache,
         service_identifier: ServiceIdentifier,
         implementation_type: type,
         call_site_chain: CallSiteChain,
@@ -147,6 +154,7 @@ class CallSiteFactory:
             parameters, call_site_chain
         )
         return ConstructorCallSite(
+            cache=cache,
             service_type=service_identifier.service_type,
             constructor_information=constructor_information,
             parameter_call_sites=parameter_call_sites,

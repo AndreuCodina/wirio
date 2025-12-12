@@ -1,28 +1,37 @@
 from typing import TYPE_CHECKING, Final, final, override
 
+from aspy_dependency_injection._service_lookup._result_cache import ResultCache
 from aspy_dependency_injection._service_lookup._service_call_site import ServiceCallSite
 
 if TYPE_CHECKING:
     from aspy_dependency_injection._service_lookup._constructor_information import (
         ConstructorInformation,
     )
+    from aspy_dependency_injection._service_lookup._result_cache import ResultCache
 
 
 @final
 class ConstructorCallSite(ServiceCallSite):
+    _cache: Final[ResultCache]
     _service_type: Final[type]
     _constructor_information: Final[ConstructorInformation]
     _parameter_call_sites: Final[list[ServiceCallSite]]
 
     def __init__(
         self,
+        cache: ResultCache,
         service_type: type,
         constructor_information: ConstructorInformation,
         parameter_call_sites: list[ServiceCallSite],
     ) -> None:
+        self._cache = cache
         self._service_type = service_type
         self._constructor_information = constructor_information
         self._parameter_call_sites = parameter_call_sites
+
+    @property
+    def cache(self) -> ResultCache:
+        return self._cache
 
     @property
     @override
