@@ -3,6 +3,7 @@ import pytest
 from aspy_dependency_injection.service_collection import ServiceCollection
 from tests.utils.services import (
     DisposeViewer,
+    SelfCircularDependencyService,
     ServiceWithAsyncContextManagerAndDependencies,
     ServiceWithAsyncContextManagerAndNoDependencies,
     ServiceWithDependencies,
@@ -101,3 +102,18 @@ class TestServiceCollection:
 
         assert resolved_service.is_disposed
         assert resolved_service.service_with_async_context_manager_and_no_dependencies.is_disposed
+
+    async def test_fail_when_resolve_circular_dependency(self) -> None:
+        services = ServiceCollection()
+        services.add_transient(SelfCircularDependencyService)
+
+        async with (
+            services.build_service_provider() as service_provider,
+            service_provider.create_scope() as service_scope,
+        ):
+            with pytest.raises(RuntimeError) as error:
+                await service_scope.service_provider.get_service(
+                    SelfCircularDependencyService
+                )
+                foo = str(error)
+                assert foo != ""

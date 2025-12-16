@@ -5,7 +5,7 @@ if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
 
-class AsyncConcurrentDictionary[TKey, TValue](dict[TKey, TValue]):
+class AsyncConcurrentDictionary[TKey, TValue]:
     """Thread-safe collection of key/value pairs that can be accessed by multiple threads concurrently."""
 
     _dict: Final[dict[TKey, TValue]]
@@ -14,25 +14,6 @@ class AsyncConcurrentDictionary[TKey, TValue](dict[TKey, TValue]):
     def __init__(self) -> None:
         self._dict = {}
         self._lock = asyncio.Lock()
-
-    def __getitem__(self, key: TKey, /) -> TValue:
-        return self._dict[key]
-
-    # def get(self, key: TKey, default: TValue | None = None) -> TValue | None:
-    #     with self._lock:
-    #         return self._dict.get(key, default)  # noqa: ERA001
-
-    # def set(self, key: TKey, value: TValue) -> None:
-    #     with self._lock:
-    #         self._dict[key] = value  # noqa: ERA001
-
-    # def try_remove(self, key: TKey) -> TValue | None:
-    #     with self._lock:
-    #         return self._dict.pop(key, None)  # noqa: ERA001
-
-    # def contains_key(self, key: TKey) -> bool:
-    #     with self._lock:
-    #         return key in self._dict  # noqa: ERA001
 
     async def get_or_add(
         self, key: TKey, value_factory: Callable[[TKey], Awaitable[TValue]]
@@ -45,20 +26,12 @@ class AsyncConcurrentDictionary[TKey, TValue](dict[TKey, TValue]):
 
         return self._dict[key]
 
-    # def get_or_add(self, key: TKey, value_factory: Callable[[TKey], TValue]) -> TValue:
-    #     with self._lock:
-    #         if key not in self._dict:
-    #             self._dict[key] = value_factory(key)  # noqa: ERA001
-    #         return self._dict[key]  # noqa: ERA001
+    def get(self, key: TKey) -> TValue | None:
+        return self._dict.get(key)
 
-    # def keys(self):
-    #     with self._lock:
-    #         return list(self._dict.keys())  # noqa: ERA001
+    def __getitem__(self, key: TKey, /) -> TValue:
+        return self._dict[key]
 
-    # def values(self):
-    #     with self._lock:
-    #         return list(self._dict.values())  # noqa: ERA001
-
-    # def items(self):
-    #     with self._lock:
-    #         return list(self._dict.items())  # noqa: ERA001
+    async def upsert(self, key: TKey, value: TValue) -> None:
+        async with self._lock:
+            self._dict[key] = value

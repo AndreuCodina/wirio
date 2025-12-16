@@ -43,9 +43,7 @@ class ServiceProviderEngineScope(ServiceScope, ServiceScopeFactory):
     _disposables: list[object] | None
 
     def __init__(
-        self,
-        service_provider: DefaultServiceProvider,
-        is_root_scope: bool,  # noqa: FBT001
+        self, service_provider: DefaultServiceProvider, is_root_scope: bool
     ) -> None:
         self._root_provider = service_provider
         self._is_root_scope = is_root_scope

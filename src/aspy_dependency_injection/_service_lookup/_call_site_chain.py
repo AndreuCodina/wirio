@@ -13,6 +13,23 @@ class CallSiteChain:
     def __init__(self) -> None:
         self._call_site_chain = {}
 
+    def add(
+        self,
+        service_identifier: ServiceIdentifier,
+        implementation_type: type | None = None,
+    ) -> None:
+        self._call_site_chain[service_identifier] = _ChainItemInformation(
+            order=len(self._call_site_chain), implementation_type=implementation_type
+        )
+
+    def remove(self, service_identifier: ServiceIdentifier) -> None:
+        del self._call_site_chain[service_identifier]
+
+    def check_circular_dependency(self, service_identifier: ServiceIdentifier) -> None:
+        if service_identifier in self._call_site_chain:
+            error_message = f"A circular dependency was detected for the service of type '{service_identifier.service_type}'"
+            raise RuntimeError(error_message)
+
 
 @final
 class _ChainItemInformation:

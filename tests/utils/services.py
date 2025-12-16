@@ -105,3 +105,8 @@ class ServiceWithSyncContextManagerAndNoDependencies(
     ) -> bool | None:
         self._exit_context()
         return None
+
+
+class SelfCircularDependencyService:
+    def __init__(self, service: SelfCircularDependencyService) -> None:
+        self.service = service

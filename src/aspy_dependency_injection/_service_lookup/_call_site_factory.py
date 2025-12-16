@@ -11,17 +11,18 @@ from aspy_dependency_injection._service_lookup._constructor_information import (
     ConstructorInformation,
 )
 from aspy_dependency_injection._service_lookup._result_cache import ResultCache
+from aspy_dependency_injection._service_lookup._service_call_site import (
+    ServiceCallSite,
+)
 from aspy_dependency_injection._service_lookup._service_identifier import (
     ServiceIdentifier,
 )
+from aspy_dependency_injection._service_lookup.service_cache_key import ServiceCacheKey
 
 if TYPE_CHECKING:
     from aspy_dependency_injection._service_lookup._call_site_chain import CallSiteChain
     from aspy_dependency_injection._service_lookup._parameter_information import (
         ParameterInformation,
-    )
-    from aspy_dependency_injection._service_lookup._service_call_site import (
-        ServiceCallSite,
     )
     from aspy_dependency_injection.service_collection import ServiceCollection
     from aspy_dependency_injection.service_descriptor import ServiceDescriptor
@@ -31,24 +32,34 @@ if TYPE_CHECKING:
 class CallSiteFactory:
     _DEFAULT_SLOT: ClassVar[int] = 0
 
-    _call_site_locks: Final[AsyncConcurrentDictionary[ServiceIdentifier, asyncio.Lock]]
-    _descriptor_lookup: Final[dict[ServiceIdentifier, ServiceDescriptorCacheItem]]
     _descriptors: Final[list[ServiceDescriptor]]
+    _descriptor_lookup: Final[dict[ServiceIdentifier, ServiceDescriptorCacheItem]]
+    _call_site_cache: Final[AsyncConcurrentDictionary[ServiceCacheKey, ServiceCallSite]]
+    _call_site_locks: Final[AsyncConcurrentDictionary[ServiceIdentifier, asyncio.Lock]]
 
     def __init__(self, services: ServiceCollection) -> None:
+        self._descriptors = services.descriptors.copy()
+        self._descriptor_lookup = {}
+        self._call_site_cache = AsyncConcurrentDictionary[
+            ServiceCacheKey, ServiceCallSite
+        ]()
         self._call_site_locks = AsyncConcurrentDictionary[
             ServiceIdentifier, asyncio.Lock
         ]()
-        self._descriptor_lookup = {}
-        self._descriptors = services.descriptors.copy()
         self._populate()
 
     async def get_call_site(
         self, service_identifier: ServiceIdentifier, call_site_chain: CallSiteChain
     ) -> ServiceCallSite | None:
-        return await self._create_call_site(
-            service_identifier=service_identifier, call_site_chain=call_site_chain
-        )
+        service_cache_key = ServiceCacheKey(service_identifier, self._DEFAULT_SLOT)
+        service_call_site = self._call_site_cache.get(service_cache_key)
+
+        if service_call_site is None:
+            return await self._create_call_site(
+                service_identifier=service_identifier, call_site_chain=call_site_chain
+            )
+
+        return service_call_site
 
     async def _create_call_site(
         self, service_identifier: ServiceIdentifier, call_site_chain: CallSiteChain
@@ -70,7 +81,11 @@ class CallSiteFactory:
             service_identifier, _create_new_lock
         )
 
+        if call_site_lock.locked():
+            call_site_chain.check_circular_dependency(service_identifier)
+
         async with call_site_lock:
+            # call_site_chain.check_circular_dependency(service_identifier)
             return await self._try_create_exact_from_service_identifier(
                 service_identifier, call_site_chain
             )
@@ -126,19 +141,28 @@ class CallSiteFactory:
         call_site_chain: CallSiteChain,
         slot: int,
     ) -> ServiceCallSite:
+        call_site_key = ServiceCacheKey(service_identifier, slot)
+        service_call_site = self._call_site_cache.get(call_site_key)
+
+        if service_call_site is not None:
+            return service_call_site
+
         cache = ResultCache(service_descriptor.lifetime, service_identifier, slot)
 
         if service_descriptor.has_implementation_type():
             assert service_descriptor.implementation_type is not None
-            return await self._create_constructor_call_site(
+            service_call_site = await self._create_constructor_call_site(
                 cache=cache,
                 service_identifier=service_identifier,
                 implementation_type=service_descriptor.implementation_type,
                 call_site_chain=call_site_chain,
             )
+        else:
+            error_message = "Invalid service descriptor"
+            raise RuntimeError(error_message)
 
-        error_message = "Invalid service descriptor"
-        raise RuntimeError(error_message)
+        await self._call_site_cache.upsert(key=call_site_key, value=service_call_site)
+        return service_call_site
 
     async def _create_constructor_call_site(
         self,
@@ -147,18 +171,22 @@ class CallSiteFactory:
         implementation_type: type,
         call_site_chain: CallSiteChain,
     ) -> ServiceCallSite:
-        parameter_call_sites: list[ServiceCallSite] | None = None
-        constructor_information = ConstructorInformation(implementation_type)
-        parameters = constructor_information.get_parameters()
-        parameter_call_sites = await self._create_argument_call_sites(
-            parameters, call_site_chain
-        )
-        return ConstructorCallSite(
-            cache=cache,
-            service_type=service_identifier.service_type,
-            constructor_information=constructor_information,
-            parameter_call_sites=parameter_call_sites,
-        )
+        try:
+            call_site_chain.add(service_identifier, implementation_type)
+            parameter_call_sites: list[ServiceCallSite] | None = None
+            constructor_information = ConstructorInformation(implementation_type)
+            parameters = constructor_information.get_parameters()
+            parameter_call_sites = await self._create_argument_call_sites(
+                parameters, call_site_chain
+            )
+            return ConstructorCallSite(
+                cache=cache,
+                service_type=service_identifier.service_type,
+                constructor_information=constructor_information,
+                parameter_call_sites=parameter_call_sites,
+            )
+        finally:
+            call_site_chain.remove(service_identifier)
 
     async def _create_argument_call_sites(
         self, parameters: list[ParameterInformation], call_site_chain: CallSiteChain

@@ -16,7 +16,7 @@ dev = [
     "pytest-cov>=7.0.0",
     "pytest-mock>=3.15.1",
     "ruff>=0.14.9",
-    "ty>=0.0.1a34",
+    "ty>=0.0.1a35",
 ]
 
 [build-system]
@@ -42,6 +42,7 @@ ignore = [
     "ICN",    # flake8-import-conventions
     "S101",   # assert
     "TRY003", # raise-vanilla-args
+    "FBT",    # flake8-boolean-trap
 ]
 
 
