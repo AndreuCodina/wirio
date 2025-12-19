@@ -10,6 +10,9 @@ from aspy_dependency_injection._service_lookup._supports_context_manager import 
 )
 
 if TYPE_CHECKING:
+    from aspy_dependency_injection._service_lookup._async_factory_call_site import (
+        AsyncFactoryCallSite,
+    )
     from aspy_dependency_injection._service_lookup._constructor_call_site import (
         ConstructorCallSite,
     )
@@ -74,6 +77,14 @@ class CallSiteRuntimeResolver(CallSiteVisitor[RuntimeResolverContext, object | N
         argument: RuntimeResolverContext,
     ) -> object | None:
         return sync_factory_call_site.implementation_factory(argument.scope)
+
+    @override
+    async def _visit_async_factory(
+        self,
+        async_factory_call_site: AsyncFactoryCallSite,
+        argument: RuntimeResolverContext,
+    ) -> object | None:
+        return await async_factory_call_site.implementation_factory(argument.scope)
 
 
 CallSiteRuntimeResolver.INSTANCE = CallSiteRuntimeResolver()

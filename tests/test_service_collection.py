@@ -40,16 +40,39 @@ class TestServiceCollection:
 
             assert isinstance(resolved_service, ServiceWithNoDependencies)
 
-    async def test_resolve_transient_service_with_sync_implementation_factory_and_no_dependencies(
+    @pytest.mark.parametrize(
+        argnames=("is_async_implementation_factory"),
+        argvalues=[
+            (True),
+            (False),
+        ],
+        ids=[
+            "async_implementation_factory",
+            "sync_implementation_factory",
+        ],
+    )
+    async def test_resolve_transient_service_with_implementation_factory_and_no_dependencies(
         self,
+        is_async_implementation_factory: bool,
     ) -> None:
+        async def async_implementation_factory(
+            _: ServiceProvider,
+        ) -> ServiceWithNoDependencies:
+            return ServiceWithNoDependencies()
+
         def sync_implementation_factory(
             _: ServiceProvider,
         ) -> ServiceWithNoDependencies:
             return ServiceWithNoDependencies()
 
         services = ServiceCollection()
-        services.add_transient(ServiceWithNoDependencies, sync_implementation_factory)
+
+        implementation_factory = (
+            async_implementation_factory
+            if is_async_implementation_factory
+            else sync_implementation_factory
+        )
+        services.add_transient(ServiceWithNoDependencies, implementation_factory)
 
         async with (
             services.build_service_provider() as service_provider,

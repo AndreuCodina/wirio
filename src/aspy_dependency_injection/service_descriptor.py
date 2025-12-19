@@ -39,6 +39,12 @@ class ServiceDescriptor:
     def sync_implementation_factory(self) -> Callable[[ServiceProvider], object] | None:
         return self._sync_implementation_factory
 
+    @property
+    def async_implementation_factory(
+        self,
+    ) -> Callable[[ServiceProvider], Awaitable[object]] | None:
+        return self._async_implementation_factory
+
     @classmethod
     def from_implementation_type(
         cls, service_type: type, implementation_type: type, lifetime: ServiceLifetime
