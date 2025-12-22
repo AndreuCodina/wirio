@@ -19,11 +19,11 @@ if TYPE_CHECKING:
     from starlette.routing import BaseRoute
     from starlette.types import ASGIApp, Receive, Scope, Send
 
+    from aspy_dependency_injection.service_collection import ServiceCollection
     from aspy_dependency_injection.service_provider import (
         ServiceProvider,
         ServiceScope,
     )
-    from aspy_dependency_injection.service_collection import ServiceCollection
 
 current_request: ContextVar[Request | WebSocket] = ContextVar("aspy_starlette_request")
 

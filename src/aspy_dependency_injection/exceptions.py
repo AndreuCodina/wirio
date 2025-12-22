@@ -1,4 +1,6 @@
-from aspy_dependency_injection.abstractions.base_service_provider import BaseServiceProvider
+from aspy_dependency_injection.abstractions.base_service_provider import (
+    BaseServiceProvider,
+)
 
 
 class ObjectDisposedError(Exception):
