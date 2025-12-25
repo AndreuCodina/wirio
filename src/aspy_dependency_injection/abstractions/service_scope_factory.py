@@ -7,5 +7,4 @@ if TYPE_CHECKING:
 
 class ServiceScopeFactory(ABC):
     @abstractmethod
-    def create_scope(self) -> ServiceScope:
-        pass
+    def create_scope(self) -> ServiceScope: ...

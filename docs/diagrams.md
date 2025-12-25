@@ -21,7 +21,7 @@ sequenceDiagram
     ServiceProvider->>ServiceProviderEngineScope: Create non-root service scope
     activate ServiceProviderEngineScope
 
-    Note left of ServiceProviderEngineScope: get_service()
+    Note left of ServiceProviderEngineScope: get_required_service()
     ServiceProviderEngineScope->>ServiceProvider: Get service using the non-root service scope
     activate ServiceProvider
 

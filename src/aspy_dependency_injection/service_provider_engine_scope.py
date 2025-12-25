@@ -131,14 +131,14 @@ class ServiceProviderEngineScope(
             self._is_disposed = True
 
         if self._is_root_scope and not self._root_provider.is_disposed:
-            # If this ServiceProviderEngineScope instance is a root scope, disposing this instance will need to dispose the RootProvider too.
-            # Otherwise the RootProvider will never get disposed and will leak.
-            # Note, if the RootProvider gets disposed first, it will automatically dispose all attached ServiceProviderEngineScope objects.
+            # If this ServiceProviderEngineScope instance is a root scope, disposing this instance will need to dispose the root_provider too.
+            # Otherwise the root_provider will never get disposed and will leak.
+            # Note, if the root_provider gets disposed first, it will automatically dispose all attached ServiceProviderEngineScope objects.
             await self._root_provider.__aexit__(None, None, None)
 
         # _resolved_services is never cleared for singletons because there might be a compilation running in background
         # trying to get a cached singleton service. If it doesn't find it
-        # it will try to create a new one which will result in an ObjectDisposedException.
+        # it will try to create a new one which will result in an ObjectDisposedError.
         return self._disposables
 
     @override
