@@ -1,6 +1,7 @@
 [![CI](https://img.shields.io/github/actions/workflow/status/AndreuCodina/aspy-dependency-injection/main.yaml?branch=main&logo=github&label=CI)](https://github.com/AndreuCodina/aspy-dependency-injection/actions/workflows/main.yaml)
 [![Coverage status](https://coveralls.io/repos/github/AndreuCodina/aspy-dependency-injection/badge.svg?branch=main)](https://coveralls.io/github/AndreuCodina/aspy-dependency-injection?branch=main)
 ![PyPI - Version](https://img.shields.io/pypi/v/aspy-dependency-injection?color=blue&label=pypi)
+[![license](https://img.shields.io/github/license/AndreuCodina/aspy-dependency-injection.svg)](https://github.com/AndreuCodina/aspy-dependency-injection/blob/main/LICENSE)
 
 ## ASPy Dependency Injection
 - **Lightweight DI container** inspired by ASP.NET Core.
@@ -62,7 +63,7 @@ async def create_user(user_service: Annotated[UserService, Inject()]) -> None:
 services = ServiceCollection()
 services.add_transient(EmailService)
 services.add_transient(UserService)
-FastApiDependencyInjection().setup(app, services)
+FastApiDependencyInjection.setup(app, services)
 ```
 
 ## Factories

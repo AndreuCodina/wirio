@@ -43,7 +43,7 @@ def app() -> FastAPI:
     app.include_router(router)
     services = ServiceCollection()
     services.add_transient(ServiceWithNoDependencies)
-    FastApiDependencyInjection().setup(app, services)
+    FastApiDependencyInjection.setup(app, services)
     return app
 
 

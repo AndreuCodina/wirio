@@ -30,14 +30,16 @@ current_request: ContextVar[Request | WebSocket] = ContextVar("aspy_starlette_re
 
 @final
 class FastApiDependencyInjection:
-    def setup(self, app: FastAPI, services: ServiceCollection) -> None:
+    @classmethod
+    def setup(cls, app: FastAPI, services: ServiceCollection) -> None:
         service_provider = services.build_service_provider()
         app.state.aspy_service_provider = service_provider
         app.add_middleware(_AspyAsgiMiddleware)
-        self._update_lifespan(app, service_provider)
-        self._inject_routes(app.routes)
+        cls._update_lifespan(app, service_provider)
+        cls._inject_routes(app.routes)
 
-    def _update_lifespan(self, app: FastAPI, service_provider: ServiceProvider) -> None:
+    @classmethod
+    def _update_lifespan(cls, app: FastAPI, service_provider: ServiceProvider) -> None:
         old_lifespan = app.router.lifespan_context
 
         @asynccontextmanager
@@ -49,9 +51,9 @@ class FastApiDependencyInjection:
 
         app.router.lifespan_context = new_lifespan
 
+    @classmethod
     def _are_annotated_parameters_with_aspy_dependencies(
-        self,
-        target: Callable[..., Any],
+        cls, target: Callable[..., Any]
     ) -> bool:
         for parameter in inspect.signature(target).parameters.values():
             if parameter.annotation is not None and isinstance(
@@ -61,26 +63,28 @@ class FastApiDependencyInjection:
 
         return False
 
-    def _inject_routes(self, routes: list[BaseRoute]) -> None:
+    @classmethod
+    def _inject_routes(cls, routes: list[BaseRoute]) -> None:
         for route in routes:
             if not (
                 isinstance(route, APIRoute)
                 and route.dependant.call is not None
                 and inspect.iscoroutinefunction(route.dependant.call)
-                and not self._are_annotated_parameters_with_aspy_dependencies(
+                and not cls._are_annotated_parameters_with_aspy_dependencies(
                     route.dependant.call
                 )
             ):
                 continue
 
-            route.dependant.call = self._inject_from_container(route.dependant.call)
+            route.dependant.call = cls._inject_from_container(route.dependant.call)
 
-    def _inject_from_container(self, target: Callable[..., Any]) -> Callable[..., Any]:
+    @classmethod
+    def _inject_from_container(cls, target: Callable[..., Any]) -> Callable[..., Any]:
         @functools.wraps(target)
         async def _inject_async_target(*args: Any, **kwargs: Any) -> Any:  # noqa: ANN401
-            parameters_to_inject = self._get_parameters_to_inject(target)
+            parameters_to_inject = cls._get_parameters_to_inject(target)
             parameters_to_inject_resolved: dict[str, Any] = {
-                injected_parameter_name: await self._get_request_container().service_provider.get_service_object(
+                injected_parameter_name: await cls._get_request_container().service_provider.get_service_object(
                     injected_parameter_class
                 )
                 for injected_parameter_name, injected_parameter_class in parameters_to_inject.items()
@@ -89,7 +93,8 @@ class FastApiDependencyInjection:
 
         return _inject_async_target
 
-    def _get_request_container(self) -> ServiceScope:
+    @classmethod
+    def _get_request_container(cls) -> ServiceScope:
         """When inside a request, returns the scoped container instance handling the current request.
 
         This is what you almost always want.It has all the information the app container has in addition
@@ -97,17 +102,15 @@ class FastApiDependencyInjection:
         """
         return current_request.get().state.aspy_service_scope
 
-    def _get_parameters_to_inject(
-        self,
-        target: Callable[..., Any],
-    ) -> dict[str, type]:
+    @classmethod
+    def _get_parameters_to_inject(cls, target: Callable[..., Any]) -> dict[str, type]:
         result: dict[str, type] = {}
 
         for parameter_name, parameter in inspect.signature(target).parameters.items():
             if parameter.annotation is Parameter.empty:
                 continue
 
-            injectable_dependency = self._get_injectable_dependency(
+            injectable_dependency = cls._get_injectable_dependency(
                 parameter.annotation.__metadata__
             )
 
@@ -119,7 +122,8 @@ class FastApiDependencyInjection:
 
         return result
 
-    def _get_injectable_dependency(self, metadata: Sequence[Any]) -> Injectable | None:
+    @classmethod
+    def _get_injectable_dependency(cls, metadata: Sequence[Any]) -> Injectable | None:
         for metadata_item in metadata:
             if hasattr(metadata_item, "dependency"):
                 dependency = metadata_item.dependency()  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType, reportAttributeAccessIssue]
@@ -130,6 +134,7 @@ class FastApiDependencyInjection:
         return None
 
 
+@final
 class _AspyAsgiMiddleware:
     def __init__(self, app: ASGIApp) -> None:
         self.app = app
