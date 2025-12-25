@@ -25,16 +25,17 @@ class EmailService:
 	pass
 
 class UserService:
-	def __init__(self, email_service: EmailService) -> None:
-		self.email_service = email_service
+    def __init__(self, email_service: EmailService) -> None:
+        self.email_service = email_service
     
 services = ServiceCollection()
 services.add_transient(EmailService)
 services.add_transient(UserService)
 
 async def main() -> None:
-	async with services.build_service_provider() as service_provider:
-		user_service = await service_provider.get_required_service(UserService)
+    async with services.build_service_provider() as service_provider:
+        user_service = await service_provider.get_required_service(UserService)
+
 
 if __name__ == "__main__":
     asyncio.run(main())
@@ -49,14 +50,14 @@ class EmailService:
 	pass
 
 class UserService:
-	def __init__(self, email_service: EmailService) -> None:
-		self.email_service = email_service
+    def __init__(self, email_service: EmailService) -> None:
+        self.email_service = email_service
 
 app = FastAPI()
 
 @app.post("/users")
 async def create_user(user_service: Annotated[UserService, Inject()]) -> None:
-	pass
+    pass
 
 services = ServiceCollection()
 services.add_transient(EmailService)
