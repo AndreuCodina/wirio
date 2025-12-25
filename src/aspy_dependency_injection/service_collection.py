@@ -1,4 +1,4 @@
-import asyncio
+import inspect
 from typing import TYPE_CHECKING, Final, overload
 
 from aspy_dependency_injection.service_descriptor import ServiceDescriptor
@@ -57,7 +57,7 @@ class ServiceCollection:
                 implementation_type=service_type,
                 lifetime=ServiceLifetime.TRANSIENT,
             )
-        elif asyncio.iscoroutinefunction(implementation_factory):
+        elif inspect.iscoroutinefunction(implementation_factory):
             self._add_from_async_implementation_factory(
                 service_type=service_type,
                 implementation_factory=implementation_factory,
@@ -100,7 +100,7 @@ class ServiceCollection:
                 implementation_type=service_type,
                 lifetime=ServiceLifetime.SINGLETON,
             )
-        elif asyncio.iscoroutinefunction(implementation_factory):
+        elif inspect.iscoroutinefunction(implementation_factory):
             self._add_from_async_implementation_factory(
                 service_type=service_type,
                 implementation_factory=implementation_factory,
@@ -143,7 +143,7 @@ class ServiceCollection:
                 implementation_type=service_type,
                 lifetime=ServiceLifetime.SCOPED,
             )
-        elif asyncio.iscoroutinefunction(implementation_factory):
+        elif inspect.iscoroutinefunction(implementation_factory):
             self._add_from_async_implementation_factory(
                 service_type=service_type,
                 implementation_factory=implementation_factory,
