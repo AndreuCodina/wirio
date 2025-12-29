@@ -4,6 +4,7 @@ if TYPE_CHECKING:
     from aspy_dependency_injection._service_lookup._service_identifier import (
         ServiceIdentifier,
     )
+    from tests._service_lookup.test_typed_type import TypedType
 
 
 @final
@@ -16,7 +17,7 @@ class CallSiteChain:
     def add(
         self,
         service_identifier: ServiceIdentifier,
-        implementation_type: type | None = None,
+        implementation_type: TypedType | None = None,
     ) -> None:
         self._call_site_chain[service_identifier] = _ChainItemInformation(
             order=len(self._call_site_chain), implementation_type=implementation_type
@@ -34,8 +35,8 @@ class CallSiteChain:
 @final
 class _ChainItemInformation:
     _order: Final[int]
-    _implementation_type: Final[type | None]
+    _implementation_type: Final[TypedType | None]
 
-    def __init__(self, order: int, implementation_type: type | None) -> None:
+    def __init__(self, order: int, implementation_type: TypedType | None) -> None:
         self._order = order
         self._implementation_type = implementation_type

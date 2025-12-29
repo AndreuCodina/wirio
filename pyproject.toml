@@ -20,6 +20,7 @@ dependencies = ["fastapi[standard-no-fastapi-cloud-cli]>=0.118.0"]
 Homepage = "https://github.com/AndreuCodina/aspy-dependency-injection"
 Repository = "https://github.com/AndreuCodina/aspy-dependency-injection"
 Documentation = "https://github.com/AndreuCodina/aspy-dependency-injection"
+Changelog = "https://github.com/AndreuCodina/aspy-dependency-injection/releases"
 
 [dependency-groups]
 dev = [
@@ -30,7 +31,7 @@ dev = [
     "pytest-cov>=7.0.0",
     "pytest-mock>=3.15.1",
     "ruff>=0.14.10",
-    "ty>=0.0.7",
+    "ty>=0.0.8",
 ]
 
 [build-system]

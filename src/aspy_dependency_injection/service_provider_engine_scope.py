@@ -22,6 +22,7 @@ from aspy_dependency_injection.exceptions import ObjectDisposedError
 if TYPE_CHECKING:
     from types import TracebackType
 
+    from aspy_dependency_injection._service_lookup._typed_type import TypedType
     from aspy_dependency_injection._service_lookup.service_cache_key import (
         ServiceCacheKey,
     )
@@ -83,7 +84,7 @@ class ServiceProviderEngineScope(
         return self._root_provider.create_scope()
 
     @override
-    async def get_service_object(self, service_type: type) -> object | None:
+    async def get_service_object(self, service_type: TypedType) -> object | None:
         if self._is_disposed:
             raise ObjectDisposedError
 

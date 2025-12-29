@@ -10,6 +10,7 @@ from starlette.requests import Request
 from starlette.routing import Match
 from starlette.websockets import WebSocket
 
+from aspy_dependency_injection._service_lookup._typed_type import TypedType
 from aspy_dependency_injection.injectable import Injectable
 
 if TYPE_CHECKING:
@@ -85,7 +86,7 @@ class FastApiDependencyInjection:
             parameters_to_inject = cls._get_parameters_to_inject(target)
             parameters_to_inject_resolved: dict[str, Any] = {
                 injected_parameter_name: await cls._get_request_container().service_provider.get_service_object(
-                    injected_parameter_class
+                    TypedType(injected_parameter_class)
                 )
                 for injected_parameter_name, injected_parameter_class in parameters_to_inject.items()
             }

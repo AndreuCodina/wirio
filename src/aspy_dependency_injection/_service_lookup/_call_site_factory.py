@@ -30,6 +30,7 @@ if TYPE_CHECKING:
     from aspy_dependency_injection._service_lookup._parameter_information import (
         ParameterInformation,
     )
+    from aspy_dependency_injection._service_lookup._typed_type import TypedType
     from aspy_dependency_injection.service_collection import ServiceCollection
     from aspy_dependency_injection.service_descriptor import ServiceDescriptor
 
@@ -137,7 +138,9 @@ class CallSiteFactory:
             service_descriptor, service_identifier, call_site_chain, slot
         )
 
-    def _should_create_exact(self, descriptor_type: type, service_type: type) -> bool:
+    def _should_create_exact(
+        self, descriptor_type: TypedType, service_type: TypedType
+    ) -> bool:
         return descriptor_type == service_type
 
     async def _create_exact(
@@ -188,7 +191,7 @@ class CallSiteFactory:
         self,
         cache: ResultCache,
         service_identifier: ServiceIdentifier,
-        implementation_type: type,
+        implementation_type: TypedType,
         call_site_chain: CallSiteChain,
     ) -> ServiceCallSite:
         try:

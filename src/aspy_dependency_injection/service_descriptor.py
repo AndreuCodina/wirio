@@ -1,5 +1,7 @@
 from typing import TYPE_CHECKING, Final, Self
 
+from aspy_dependency_injection._service_lookup._typed_type import TypedType
+
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
@@ -12,23 +14,23 @@ if TYPE_CHECKING:
 class ServiceDescriptor:
     """Service registration."""
 
-    _service_type: Final[type]
+    _service_type: Final[TypedType]
     _lifetime: Final[ServiceLifetime]
-    _implementation_type: type | None
+    _implementation_type: TypedType | None
     _sync_implementation_factory: Callable[[BaseServiceProvider], object] | None
     _async_implementation_factory: (
         Callable[[BaseServiceProvider], Awaitable[object]] | None
     )
 
     def __init__(self, service_type: type, lifetime: ServiceLifetime) -> None:
-        self._service_type = service_type
+        self._service_type = TypedType(service_type)
         self._lifetime = lifetime
         self._implementation_type = None
         self._sync_implementation_factory = None
         self._async_implementation_factory = None
 
     @property
-    def service_type(self) -> type:
+    def service_type(self) -> TypedType:
         return self._service_type
 
     @property
@@ -36,7 +38,7 @@ class ServiceDescriptor:
         return self._lifetime
 
     @property
-    def implementation_type(self) -> type | None:
+    def implementation_type(self) -> TypedType | None:
         return self._implementation_type
 
     @property
@@ -56,7 +58,7 @@ class ServiceDescriptor:
         cls, service_type: type, implementation_type: type, lifetime: ServiceLifetime
     ) -> Self:
         self = cls(service_type=service_type, lifetime=lifetime)
-        self._implementation_type = implementation_type
+        self._implementation_type = TypedType(implementation_type)
         return self
 
     @classmethod

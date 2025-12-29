@@ -33,6 +33,7 @@ if TYPE_CHECKING:
     from aspy_dependency_injection._service_lookup._service_provider_engine import (
         ServiceProviderEngine,
     )
+    from aspy_dependency_injection._service_lookup._typed_type import TypedType
     from aspy_dependency_injection.abstractions.service_scope import ServiceScope
     from aspy_dependency_injection.service_collection import ServiceCollection
 
@@ -76,7 +77,7 @@ class ServiceProvider(
         return self._is_disposed
 
     @override
-    async def get_service_object(self, service_type: type) -> object | None:
+    async def get_service_object(self, service_type: TypedType) -> object | None:
         return await self.get_service_from_service_identifier(
             service_identifier=ServiceIdentifier.from_service_type(service_type),
             service_provider_engine_scope=self._root,

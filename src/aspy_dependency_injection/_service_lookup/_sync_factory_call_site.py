@@ -7,6 +7,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from aspy_dependency_injection._service_lookup._result_cache import ResultCache
+    from aspy_dependency_injection._service_lookup._typed_type import TypedType
     from aspy_dependency_injection.abstractions.base_service_provider import (
         BaseServiceProvider,
     )
@@ -14,13 +15,13 @@ if TYPE_CHECKING:
 
 @final
 class SyncFactoryCallSite(ServiceCallSite):
-    _service_type: Final[type]
+    _service_type: Final[TypedType]
     _implementation_factory: Final[Callable[[BaseServiceProvider], object]]
 
     def __init__(
         self,
         cache: ResultCache,
-        service_type: type,
+        service_type: TypedType,
         implementation_factory: Callable[[BaseServiceProvider], object],
     ) -> None:
         super().__init__(cache)
@@ -29,7 +30,7 @@ class SyncFactoryCallSite(ServiceCallSite):
 
     @property
     @override
-    def service_type(self) -> type:
+    def service_type(self) -> TypedType:
         return self._service_type
 
     @property

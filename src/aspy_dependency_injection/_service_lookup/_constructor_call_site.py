@@ -9,18 +9,19 @@ if TYPE_CHECKING:
         ConstructorInformation,
     )
     from aspy_dependency_injection._service_lookup._result_cache import ResultCache
+    from aspy_dependency_injection._service_lookup._typed_type import TypedType
 
 
 @final
 class ConstructorCallSite(ServiceCallSite):
-    _service_type: Final[type]
+    _service_type: Final[TypedType]
     _constructor_information: Final[ConstructorInformation]
     _parameter_call_sites: Final[list[ServiceCallSite]]
 
     def __init__(
         self,
         cache: ResultCache,
-        service_type: type,
+        service_type: TypedType,
         constructor_information: ConstructorInformation,
         parameter_call_sites: list[ServiceCallSite],
     ) -> None:
@@ -31,7 +32,7 @@ class ConstructorCallSite(ServiceCallSite):
 
     @property
     @override
-    def service_type(self) -> type:
+    def service_type(self) -> TypedType:
         return self._service_type
 
     @property

@@ -20,14 +20,6 @@ if TYPE_CHECKING:
     )
 
 
-class Father:
-    pass
-
-
-class Child(Father):
-    pass
-
-
 class TestServiceCollection:
     @pytest.mark.parametrize(
         argnames=("service_lifetime"),
@@ -199,7 +191,7 @@ class TestServiceCollection:
         assert resolved_service.service_with_async_context_manager_and_no_dependencies.is_disposed
 
     async def test_fail_when_resolve_circular_dependency(self) -> None:
-        expected_error_message = "A circular dependency was detected for the service of type '<class 'tests.utils.services.SelfCircularDependencyService'>'"
+        expected_error_message = "A circular dependency was detected for the service of type 'tests.utils.services.SelfCircularDependencyService'"
         services = ServiceCollection()
         services.add_transient(SelfCircularDependencyService)
 
