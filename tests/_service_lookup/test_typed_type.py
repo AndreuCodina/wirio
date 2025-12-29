@@ -53,9 +53,10 @@ class TestTypedType:
             (int | str, "typing.Union[builtins.int, builtins.str]"),
             (
                 CustomClassWithGenerics2[
-                    int | CustomClassWithGeneric1[int | str], CustomClass
+                    int | CustomClassWithGeneric1[int | str],
+                    CustomClassWithGeneric1[CustomClassWithGeneric1[str]],
                 ],
-                "tests._service_lookup.test_typed_type.CustomClassWithGenerics2[typing.Union[builtins.int, tests._service_lookup.test_typed_type.CustomClassWithGeneric1[typing.Union[builtins.int, builtins.str]]], tests._service_lookup.test_typed_type.CustomClass]",
+                "tests._service_lookup.test_typed_type.CustomClassWithGenerics2[typing.Union[builtins.int, tests._service_lookup.test_typed_type.CustomClassWithGeneric1[typing.Union[builtins.int, builtins.str]]], tests._service_lookup.test_typed_type.CustomClassWithGeneric1[tests._service_lookup.test_typed_type.CustomClassWithGeneric1[builtins.str]]]",
             ),
         ],
     )

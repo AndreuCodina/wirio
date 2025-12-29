@@ -54,7 +54,7 @@ class TypedType(Hashable):
     def create_representation(self, origin: type, args: tuple[type, ...]) -> str:
         args_representation = ""
 
-        if len(self._args) > 0:
+        if len(args) > 0:
             for arg in args:
                 arg_origin = get_origin(arg)
                 arg_args = get_args(arg)
