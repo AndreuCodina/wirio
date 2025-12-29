@@ -3,18 +3,18 @@
 
 [![CI](https://img.shields.io/github/actions/workflow/status/AndreuCodina/aspy-dependency-injection/main.yaml?branch=main&logo=github&label=CI)](https://github.com/AndreuCodina/aspy-dependency-injection/actions/workflows/main.yaml)
 [![Coverage status](https://coveralls.io/repos/github/AndreuCodina/aspy-dependency-injection/badge.svg?branch=main)](https://coveralls.io/github/AndreuCodina/aspy-dependency-injection?branch=main)
-![PyPI - Version](https://img.shields.io/pypi/v/aspy-dependency-injection?color=blue&label=pypi)
+[![PyPI](https://img.shields.io/pypi/v/aspy-dependency-injection?color=blue&label=pypi)](https://pypi.org/project/aspy-dependency-injection/)
 [![license](https://img.shields.io/github/license/AndreuCodina/aspy-dependency-injection.svg)](https://github.com/AndreuCodina/aspy-dependency-injection/blob/main/LICENSE)
 </div>
 
 ## Features
-- **Lightweight DI container** inspired by ASP.NET Core.
+- **Use it everywhere:** Use dependency injection in web servers, background tasks, console applications, Jupyter notebooks, tests, etc.
 - **Lifetimes**: `Singleton` (same instance per application), `Scoped` (same instance per HTTP request scope) and `Transient` (different instance per resolution).
-- **Automatic resolution and disposal**: Automatically resolve constructor parameters and manage async and non-async context managers.
-- **Use it everywhere:** Use dependency injection in web servers, background tasks, console applications, Jupyter notebooks, etc.
-- **FastAPI integration** out of the box.
-- **Centralized configuration**: Register all services in one place.
-
+- **FastAPI integration** out of the box, and pluggable to any web framework.
+- **Automatic resolution and disposal**: Automatically resolve constructor parameters and manage async and non-async context managers. It's not longer your concern to know how to create or dispose services.
+- **Clear design** inspired by one of the most used and battle-tested DI libraries, adding async-native support, important features and good defaults.
+- **Centralized configuration**: Register all services in one place using a clean syntax, and without decorators.
+- **ty** and **Pyright** strict compliant.
 
 ## Installation
 ```bash
@@ -27,7 +27,7 @@ Register services and resolve them asynchronously.
 
 ```python
 class EmailService:
-	pass
+    pass
 
 class UserService:
     def __init__(self, email_service: EmailService) -> None:
@@ -52,7 +52,7 @@ Inject services into async endpoints using `Annotated[..., Inject()]`.
 
 ```python
 class EmailService:
-	pass
+    pass
 
 class UserService:
     def __init__(self, email_service: EmailService) -> None:

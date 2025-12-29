@@ -1,8 +1,25 @@
 [project]
 name = "aspy-dependency-injection"
 version = "0.0.1"
+description = "Dependency injection"
+authors = [
+    { name = "Andreu Codina", email = "30506301+AndreuCodina@users.noreply.github.com" },
+]
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python :: 3.14",
+    "Intended Audience :: Developers",
+]
 requires-python = ">=3.14"
 dependencies = ["fastapi[standard-no-fastapi-cloud-cli]>=0.118.0"]
+
+[project.urls]
+Homepage = "https://github.com/AndreuCodina/aspy-dependency-injection"
+Repository = "https://github.com/AndreuCodina/aspy-dependency-injection"
+Documentation = "https://github.com/AndreuCodina/aspy-dependency-injection"
 
 [dependency-groups]
 dev = [
@@ -25,6 +42,9 @@ required-version = ">=0.9.18,<0.10.0"
 
 [tool.pyright]
 typeCheckingMode = "strict"
+
+[tool.ty.terminal]
+error-on-warning = true
 
 [tool.ruff.lint]
 select = ["ALL"]
