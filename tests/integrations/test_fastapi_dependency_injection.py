@@ -6,9 +6,6 @@ from fastapi import APIRouter, FastAPI
 from fastapi.testclient import TestClient
 
 from aspy_dependency_injection.annotations import Inject
-from aspy_dependency_injection.integrations.fastapi_dependency_injection import (
-    FastApiDependencyInjection,
-)
 from aspy_dependency_injection.service_collection import ServiceCollection
 from tests.utils.services import ServiceWithNoDependencies
 
@@ -43,7 +40,7 @@ def app() -> FastAPI:
     app.include_router(router)
     services = ServiceCollection()
     services.add_transient(ServiceWithNoDependencies)
-    FastApiDependencyInjection.setup(app, services)
+    services.configure_fastapi(app)
     return app
 
 

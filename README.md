@@ -47,7 +47,7 @@ async def create_user(user_service: Annotated[UserService, Inject()]) -> None:
 services = ServiceCollection()
 services.add_transient(EmailService)
 services.add_transient(UserService)
-FastApiDependencyInjection.setup(app, services)
+services.configure_fastapi(app)
 ```
 
 ## Quickstart without FastAPI

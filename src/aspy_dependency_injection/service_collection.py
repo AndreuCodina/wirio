@@ -1,6 +1,9 @@
 import inspect
 from typing import TYPE_CHECKING, Final, overload
 
+from aspy_dependency_injection._integrations._fastapi_dependency_injection import (
+    FastApiDependencyInjection,
+)
 from aspy_dependency_injection.service_descriptor import ServiceDescriptor
 from aspy_dependency_injection.service_lifetime import ServiceLifetime
 from aspy_dependency_injection.service_provider import (
@@ -9,6 +12,8 @@ from aspy_dependency_injection.service_provider import (
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
+
+    from fastapi import FastAPI
 
 
 class ServiceCollection:
@@ -155,6 +160,9 @@ class ServiceCollection:
     def build_service_provider(self) -> ServiceProvider:
         """Create a :class:`ServiceProvider` containing services from the provided :class:`ServiceCollection`."""
         return ServiceProvider(self)
+
+    def configure_fastapi(self, app: FastAPI) -> None:
+        FastApiDependencyInjection.setup(app, self)
 
     def _add_from_implementation_type(
         self, service_type: type, implementation_type: type, lifetime: ServiceLifetime
