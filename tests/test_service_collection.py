@@ -186,6 +186,53 @@ class TestServiceCollection:
         assert resolved_service.is_disposed
         assert resolved_service.service_with_async_context_manager_and_no_dependencies.is_disposed
 
+    @pytest.mark.parametrize(
+        argnames=("service_type", "is_async_implementation_factory"),
+        argvalues=[
+            (ServiceWithAsyncContextManagerAndNoDependencies, True),
+            (ServiceWithAsyncContextManagerAndNoDependencies, False),
+            (ServiceWithSyncContextManagerAndNoDependencies, True),
+            (ServiceWithSyncContextManagerAndNoDependencies, False),
+        ],
+        ids=[
+            "async_context_manager_with_async_factory",
+            "async_context_manager_with_sync_factory",
+            "sync_context_manager_with_async_factory",
+            "sync_context_manager_with_sync_factory",
+        ],
+    )
+    async def test_resolve_and_dispose_transient_service_with_context_manager_from_factory(
+        self,
+        service_type: type[DisposeViewer],
+        is_async_implementation_factory: bool,
+    ) -> None:
+        async def async_implementation_factory(
+            _: BaseServiceProvider,
+        ) -> DisposeViewer:
+            return service_type()
+
+        def sync_implementation_factory(
+            _: BaseServiceProvider,
+        ) -> DisposeViewer:
+            return service_type()
+
+        services = ServiceCollection()
+
+        implementation_factory = (
+            async_implementation_factory
+            if is_async_implementation_factory
+            else sync_implementation_factory
+        )
+        services.add_transient(service_type, implementation_factory)
+
+        async with services.build_service_provider() as service_provider:
+            resolved_service = await service_provider.get_required_service(service_type)
+
+            assert isinstance(resolved_service, service_type)
+            assert not resolved_service.is_disposed
+
+        assert resolved_service.is_disposed
+
     async def test_fail_when_resolve_circular_dependency(self) -> None:
         expected_error_message = "A circular dependency was detected for the service of type 'tests.utils.services.SelfCircularDependencyService'"
         services = ServiceCollection()

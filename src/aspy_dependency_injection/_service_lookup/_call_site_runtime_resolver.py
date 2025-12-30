@@ -186,7 +186,15 @@ class CallSiteRuntimeResolver(CallSiteVisitor[RuntimeResolverContext, object | N
         parameter_services = await self.get_parameter_services(
             sync_factory_call_site.implementation_factory, argument.scope
         )
-        return sync_factory_call_site.implementation_factory(*parameter_services)
+        service = sync_factory_call_site.implementation_factory(*parameter_services)
+
+        if service is not self:
+            if isinstance(service, SupportsAsyncContextManager):
+                await service.__aenter__()
+            elif isinstance(service, SupportsContextManager):
+                service.__enter__()
+
+        return service
 
     @override
     async def _visit_async_factory(
@@ -197,7 +205,15 @@ class CallSiteRuntimeResolver(CallSiteVisitor[RuntimeResolverContext, object | N
         parameter_services = await self.get_parameter_services(
             async_factory_call_site.implementation_factory, argument.scope
         )
-        return await async_factory_call_site.implementation_factory(*parameter_services)
+        service = await async_factory_call_site.implementation_factory(*parameter_services)
+
+        if service is not self:
+            if isinstance(service, SupportsAsyncContextManager):
+                await service.__aenter__()
+            elif isinstance(service, SupportsContextManager):
+                service.__enter__()
+
+        return service
 
     @override
     def _visit_service_provider(
