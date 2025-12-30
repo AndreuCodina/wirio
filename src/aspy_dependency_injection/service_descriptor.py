@@ -5,9 +5,6 @@ from aspy_dependency_injection._service_lookup._typed_type import TypedType
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
-    from aspy_dependency_injection.abstractions.base_service_provider import (
-        BaseServiceProvider,
-    )
     from aspy_dependency_injection.service_lifetime import ServiceLifetime
 
 
@@ -17,10 +14,8 @@ class ServiceDescriptor:
     _service_type: Final[TypedType]
     _lifetime: Final[ServiceLifetime]
     _implementation_type: TypedType | None
-    _sync_implementation_factory: Callable[[BaseServiceProvider], object] | None
-    _async_implementation_factory: (
-        Callable[[BaseServiceProvider], Awaitable[object]] | None
-    )
+    _sync_implementation_factory: Callable[..., object] | None
+    _async_implementation_factory: Callable[..., Awaitable[object]] | None
 
     def __init__(self, service_type: type, lifetime: ServiceLifetime) -> None:
         self._service_type = TypedType(service_type)
@@ -44,13 +39,13 @@ class ServiceDescriptor:
     @property
     def sync_implementation_factory(
         self,
-    ) -> Callable[[BaseServiceProvider], object] | None:
+    ) -> Callable[..., object] | None:
         return self._sync_implementation_factory
 
     @property
     def async_implementation_factory(
         self,
-    ) -> Callable[[BaseServiceProvider], Awaitable[object]] | None:
+    ) -> Callable[..., Awaitable[object]] | None:
         return self._async_implementation_factory
 
     @classmethod
@@ -65,7 +60,7 @@ class ServiceDescriptor:
     def from_sync_implementation_factory(
         cls,
         service_type: type,
-        implementation_factory: Callable[[BaseServiceProvider], object],
+        implementation_factory: Callable[..., object],
         lifetime: ServiceLifetime,
     ) -> Self:
         self = cls(service_type=service_type, lifetime=lifetime)
@@ -76,7 +71,7 @@ class ServiceDescriptor:
     def from_async_implementation_factory(
         cls,
         service_type: type,
-        implementation_factory: Callable[[BaseServiceProvider], Awaitable[object]],
+        implementation_factory: Callable[..., Awaitable[object]],
         lifetime: ServiceLifetime,
     ) -> Self:
         self = cls(service_type=service_type, lifetime=lifetime)

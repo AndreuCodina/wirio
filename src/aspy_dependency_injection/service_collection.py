@@ -10,10 +10,6 @@ from aspy_dependency_injection.service_provider import (
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
-    from aspy_dependency_injection.abstractions.base_service_provider import (
-        BaseServiceProvider,
-    )
-
 
 class ServiceCollection:
     """Collection of service descriptors provided during configuration."""
@@ -34,25 +30,25 @@ class ServiceCollection:
     def add_transient[TService](
         self,
         service_type: type[TService],
-        implementation_factory: Callable[[BaseServiceProvider], Awaitable[TService]],
+        implementation_factory: Callable[..., Awaitable[TService]],
     ) -> None: ...
 
     @overload
     def add_transient[TService](
         self,
         service_type: type[TService],
-        implementation_factory: Callable[[BaseServiceProvider], TService],
+        implementation_factory: Callable[..., TService],
     ) -> None: ...
 
     def add_transient[TService](
         self,
         service_type: type[TService],
-        implementation_factory: Callable[[BaseServiceProvider], Awaitable[TService]]
-        | Callable[[BaseServiceProvider], TService]
+        implementation_factory: Callable[..., Awaitable[TService]]
+        | Callable[..., TService]
         | None = None,
     ) -> None:
         if implementation_factory is None:
-            self._add_from_implentation_type(
+            self._add_from_implementation_type(
                 service_type=service_type,
                 implementation_type=service_type,
                 lifetime=ServiceLifetime.TRANSIENT,
@@ -77,25 +73,25 @@ class ServiceCollection:
     def add_singleton[TService](
         self,
         service_type: type[TService],
-        implementation_factory: Callable[[BaseServiceProvider], Awaitable[TService]],
+        implementation_factory: Callable[..., Awaitable[TService]],
     ) -> None: ...
 
     @overload
     def add_singleton[TService](
         self,
         service_type: type[TService],
-        implementation_factory: Callable[[BaseServiceProvider], TService],
+        implementation_factory: Callable[..., TService],
     ) -> None: ...
 
     def add_singleton[TService](
         self,
         service_type: type[TService],
-        implementation_factory: Callable[[BaseServiceProvider], Awaitable[TService]]
-        | Callable[[BaseServiceProvider], TService]
+        implementation_factory: Callable[..., Awaitable[TService]]
+        | Callable[..., TService]
         | None = None,
     ) -> None:
         if implementation_factory is None:
-            self._add_from_implentation_type(
+            self._add_from_implementation_type(
                 service_type=service_type,
                 implementation_type=service_type,
                 lifetime=ServiceLifetime.SINGLETON,
@@ -120,25 +116,25 @@ class ServiceCollection:
     def add_scoped[TService](
         self,
         service_type: type[TService],
-        implementation_factory: Callable[[BaseServiceProvider], Awaitable[TService]],
+        implementation_factory: Callable[..., Awaitable[TService]],
     ) -> None: ...
 
     @overload
     def add_scoped[TService](
         self,
         service_type: type[TService],
-        implementation_factory: Callable[[BaseServiceProvider], TService],
+        implementation_factory: Callable[..., TService],
     ) -> None: ...
 
     def add_scoped[TService](
         self,
         service_type: type[TService],
-        implementation_factory: Callable[[BaseServiceProvider], Awaitable[TService]]
-        | Callable[[BaseServiceProvider], TService]
+        implementation_factory: Callable[..., Awaitable[TService]]
+        | Callable[..., TService]
         | None = None,
     ) -> None:
         if implementation_factory is None:
-            self._add_from_implentation_type(
+            self._add_from_implementation_type(
                 service_type=service_type,
                 implementation_type=service_type,
                 lifetime=ServiceLifetime.SCOPED,
@@ -160,7 +156,7 @@ class ServiceCollection:
         """Create a :class:`ServiceProvider` containing services from the provided :class:`ServiceCollection`."""
         return ServiceProvider(self)
 
-    def _add_from_implentation_type(
+    def _add_from_implementation_type(
         self, service_type: type, implementation_type: type, lifetime: ServiceLifetime
     ) -> None:
         descriptor = ServiceDescriptor.from_implementation_type(
@@ -173,7 +169,7 @@ class ServiceCollection:
     def _add_from_sync_implementation_factory(
         self,
         service_type: type,
-        implementation_factory: Callable[[BaseServiceProvider], object],
+        implementation_factory: Callable[..., object],
         lifetime: ServiceLifetime,
     ) -> None:
         descriptor = ServiceDescriptor.from_sync_implementation_factory(
@@ -186,7 +182,7 @@ class ServiceCollection:
     def _add_from_async_implementation_factory(
         self,
         service_type: type,
-        implementation_factory: Callable[[BaseServiceProvider], Awaitable[object]],
+        implementation_factory: Callable[..., Awaitable[object]],
         lifetime: ServiceLifetime,
     ) -> None:
         descriptor = ServiceDescriptor.from_async_implementation_factory(

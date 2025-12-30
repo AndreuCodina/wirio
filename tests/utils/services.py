@@ -17,13 +17,13 @@ class ServiceWithDependencies:
 class DisposeViewer:
     def __init__(self) -> None:
         self.is_disposed = False
-        self._is_disposed_initialized = False
+        self.is_disposed_initialized = False
 
     def _enter_context(self) -> None:
-        self._is_disposed_initialized = True
+        self.is_disposed_initialized = True
 
     def _exit_context(self) -> None:
-        if not self._is_disposed_initialized:
+        if not self.is_disposed_initialized:
             error_message = (
                 "__aenter__/__enter__ was not called before __aexit__/__exit__."
             )
@@ -36,9 +36,8 @@ class ServiceWithAsyncContextManagerAndNoDependencies(
     DisposeViewer,
     AbstractAsyncContextManager["ServiceWithAsyncContextManagerAndNoDependencies"],
 ):
-    async def __aenter__(
-        self,
-    ) -> Self:
+    @override
+    async def __aenter__(self) -> Self:
         self._enter_context()
         return self
 
@@ -66,9 +65,8 @@ class ServiceWithAsyncContextManagerAndDependencies(
             service_with_async_context_manager_and_no_dependencies
         )
 
-    async def __aenter__(
-        self,
-    ) -> Self:
+    @override
+    async def __aenter__(self) -> Self:
         self._enter_context()
         return self
 

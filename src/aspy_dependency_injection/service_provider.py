@@ -13,12 +13,17 @@ from aspy_dependency_injection._service_lookup._runtime_service_provider_engine 
 from aspy_dependency_injection._service_lookup._service_identifier import (
     ServiceIdentifier,
 )
+from aspy_dependency_injection._service_lookup._service_provider_call_site import (
+    ServiceProviderCallSite,
+)
+from aspy_dependency_injection._service_lookup._typed_type import TypedType
 from aspy_dependency_injection.abstractions.base_service_provider import (
     BaseServiceProvider,
 )
 from aspy_dependency_injection.abstractions.service_scope import (
     AbstractAsyncContextManager,
 )
+from aspy_dependency_injection.exceptions import ObjectDisposedError
 from aspy_dependency_injection.service_provider_engine_scope import (
     ServiceProviderEngineScope,
 )
@@ -33,7 +38,6 @@ if TYPE_CHECKING:
     from aspy_dependency_injection._service_lookup._service_provider_engine import (
         ServiceProviderEngine,
     )
-    from aspy_dependency_injection._service_lookup._typed_type import TypedType
     from aspy_dependency_injection.abstractions.service_scope import ServiceScope
     from aspy_dependency_injection.service_collection import ServiceCollection
 
@@ -57,6 +61,7 @@ class ServiceProvider(
         AsyncConcurrentDictionary[ServiceIdentifier, _ServiceAccessor]
     ]
     _is_disposed: bool
+    _call_site_factory: Final[CallSiteFactory]
 
     def __init__(self, services: ServiceCollection) -> None:
         self._services = services
@@ -65,8 +70,8 @@ class ServiceProvider(
         )
         self._engine = self._get_engine()
         self._service_accessors = AsyncConcurrentDictionary()
-        self._call_site_factory = CallSiteFactory(services)
         self._is_disposed = False
+        self._call_site_factory = CallSiteFactory(services)
 
     @property
     def root(self) -> ServiceProviderEngineScope:
@@ -78,6 +83,9 @@ class ServiceProvider(
 
     @override
     async def get_service_object(self, service_type: TypedType) -> object | None:
+        if self._is_disposed:
+            raise ObjectDisposedError
+
         return await self.get_service_from_service_identifier(
             service_identifier=ServiceIdentifier.from_service_type(service_type),
             service_provider_engine_scope=self._root,
@@ -85,6 +93,9 @@ class ServiceProvider(
 
     def create_scope(self) -> ServiceScope:
         """Create a new :class:`ServiceScope` that can be used to resolve scoped services."""
+        if self._is_disposed:
+            raise ObjectDisposedError
+
         return ServiceProviderEngineScope(service_provider=self, is_root_scope=False)
 
     async def get_service_from_service_identifier(
@@ -126,6 +137,11 @@ class ServiceProvider(
 
     @override
     async def __aenter__(self) -> Self:
+        # Add built-in services that aren't part of the list of service descriptors
+        await self._call_site_factory.add(
+            ServiceIdentifier.from_service_type(TypedType(BaseServiceProvider)),
+            ServiceProviderCallSite(),
+        )
         return self
 
     @override

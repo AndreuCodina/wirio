@@ -21,17 +21,51 @@
 uv add aspy-dependency-injection
 ```
 
-## Quickstart
+## Quickstart with FastAPI
 
-Register services and resolve them asynchronously.
+Inject services into async endpoints using `Annotated[..., Inject()]`.
 
 ```python
 class EmailService:
     pass
 
+
 class UserService:
     def __init__(self, email_service: EmailService) -> None:
         self.email_service = email_service
+    
+    async def create_user(self) -> None:
+        pass
+
+
+app = FastAPI()
+
+@app.post("/users")
+async def create_user(user_service: Annotated[UserService, Inject()]) -> None:
+    await user_service.create_user()
+
+services = ServiceCollection()
+services.add_transient(EmailService)
+services.add_transient(UserService)
+FastApiDependencyInjection.setup(app, services)
+```
+
+## Quickstart without FastAPI
+
+You convert the service collection into a service provider:
+
+```python
+class EmailService:
+    pass
+
+
+class UserService:
+    def __init__(self, email_service: EmailService) -> None:
+        self.email_service = email_service
+    
+    async def create_user(self) -> None:
+        pass
+
     
 services = ServiceCollection()
 services.add_transient(EmailService)
@@ -40,50 +74,68 @@ services.add_transient(UserService)
 async def main() -> None:
     async with services.build_service_provider() as service_provider:
         user_service = await service_provider.get_required_service(UserService)
+        await user_service.create_user()
 
 
 if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-## FastAPI integration
-
-Inject services into async endpoints using `Annotated[..., Inject()]`.
+If you want a scope per operation (e.g., per HTTP request or message from a queue), you can create a scope from the service provider:
 
 ```python
-class EmailService:
-    pass
-
-class UserService:
-    def __init__(self, email_service: EmailService) -> None:
-        self.email_service = email_service
-
-app = FastAPI()
-
-@app.post("/users")
-async def create_user(user_service: Annotated[UserService, Inject()]) -> None:
-    pass
-
-services = ServiceCollection()
-services.add_transient(EmailService)
-services.add_transient(UserService)
-FastApiDependencyInjection.setup(app, services)
+async with service_provider.create_scope() as service_scope:
+    user_service = await service_scope.get_required_service(UserService)
+    await user_service.create_user()
 ```
+
+## Lifetimes
+
+- `Transient`: A new instance is created every time the service is requested. Examples: Services without state, workflows, repositories, service clients...
+- `Singleton`: The same instance is used every time the service is requested. Examples: Settings (`pydantic-settings`), machine learning models, database connection pools, caches.
+- `Scoped`: A new instance is created for each new scope, but the same instance is returned within the same scope. Examples: Database clients, unit of work.
 
 ## Factories
 
-Register with sync or async factories:
+Sometimes, you need to use a factory function to create a service. For example, you have settings (a connection string, database name, etc.) stored using the package `pydantic-settings` and you want to provide them to a service `DatabaseClient` to access a database.
 
 ```python
-# TBD
+class ApplicationSettings(BaseSettings):
+    database_connection_string: str
+
+
+class DatabaseClient:
+    def __init__(self, connection_string: str) -> None:
+        pass
 ```
 
-Automatic disposal: Services implementing `__exit__`/`__aexit__` are disposed when the provider or scope exits.
-
-Example of a real application using SQLModel:
+In a real `DatabaseClient` implementation, you must use a sync or async context manager, i.e., you instance it with:
 
 ```python
-# TBD
+async with DatabaseClient(database_connection_string) as client:
+    ...
+```
+
+And, if you want to re-use it, you create a factory function with yield:
+
+```python
+async def create_database_client(application_settings: ApplicationSettings) -> AsyncGenerator[DatabaseClient]:
+    async with DatabaseClient(application_settings.database_connection_string) as database_client:
+        yield database_client
+```
+
+With that factory, you have to provide manually a singleton of `ApplicationSettings`, and to know if `DatabaseClient` has to implement an async or sync context manager. Apart from that, if you need a singleton of `DatabaseClient`, good luck managing the disposal of the instance.
+
+Then, why don't just return it? With this package, you just have this:
+
+```python
+def inject_database_client(application_settings: ApplicationSettings) -> DatabaseClient:
+    return DatabaseClient(
+        connection_string=application_settings.database_connection_string
+    )
+
+services.add_singleton(ApplicationSettings)
+services.add_transient(inject_database_client)
 ```
 
 ## Testing

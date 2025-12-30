@@ -68,9 +68,9 @@ class ServiceProviderEngineScope(
     def resolved_services_lock(self) -> asyncio.Lock:
         """Protect the state on the scope.
 
-        In particular, for the root scope, it protects the list of disposable entries only, since resolved_services are cached on CallSites.
+        In particular, for the root scope, it protects the list of disposable entries only, since :attr:`resolved_services` are cached on :class:`CallSites`.
 
-        For other scopes, it protects resolved_services and the list of disposables.
+        For other scopes, it protects :attr:`resolved_services` and the list of disposables.
         """
         return self._resolved_services_lock
 
@@ -127,19 +127,19 @@ class ServiceProviderEngineScope(
                 return None
 
             # We've transitioned to the disposed state, so future calls to
-            # capture_disposable will immediately dispose the object.
+            # :meth:`capture_disposable` will immediately dispose the object.
             # No further changes to disposables are allowed.
             self._is_disposed = True
 
         if self._is_root_scope and not self._root_provider.is_disposed:
-            # If this ServiceProviderEngineScope instance is a root scope, disposing this instance will need to dispose the root_provider too.
-            # Otherwise the root_provider will never get disposed and will leak.
-            # Note, if the root_provider gets disposed first, it will automatically dispose all attached ServiceProviderEngineScope objects.
+            # If this :class:`ServiceProviderEngineScope` instance is a root scope, disposing this instance will need to dispose the :attr:`root_provider` too.
+            # Otherwise the :attr:`root_provider` will never get disposed and will leak.
+            # Note, if the :attr:`root_provider` gets disposed first, it will automatically dispose all attached :class:`ServiceProviderEngineScope` objects.
             await self._root_provider.__aexit__(None, None, None)
 
-        # _resolved_services is never cleared for singletons because there might be a compilation running in background
+        # :attr:`_resolved_services` is never cleared for singletons because there might be a compilation running in background
         # trying to get a cached singleton service. If it doesn't find it
-        # it will try to create a new one which will result in an ObjectDisposedError.
+        # it will try to create a new one which will result in an :class:`ObjectDisposedError`.
         return self._disposables
 
     @override
