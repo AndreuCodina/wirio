@@ -1,4 +1,4 @@
-from contextlib import AbstractAsyncContextManager
+from contextlib import AbstractAsyncContextManager, AbstractContextManager
 from typing import TYPE_CHECKING, Self, override
 
 import pytest
@@ -26,9 +26,9 @@ class TestServiceCollection:
     @pytest.mark.parametrize(
         argnames=("service_lifetime"),
         argvalues=[
-            (ServiceLifetime.SINGLETON),
-            (ServiceLifetime.SCOPED),
-            (ServiceLifetime.TRANSIENT),
+            ServiceLifetime.SINGLETON,
+            ServiceLifetime.SCOPED,
+            ServiceLifetime.TRANSIENT,
         ],
         ids=["singleton", "scoped", "transient"],
     )
@@ -55,9 +55,9 @@ class TestServiceCollection:
     @pytest.mark.parametrize(
         argnames=("service_lifetime"),
         argvalues=[
-            (ServiceLifetime.SINGLETON),
-            (ServiceLifetime.SCOPED),
-            (ServiceLifetime.TRANSIENT),
+            ServiceLifetime.SINGLETON,
+            ServiceLifetime.SCOPED,
+            ServiceLifetime.TRANSIENT,
         ],
         ids=["singleton", "scoped", "transient"],
     )
@@ -89,8 +89,8 @@ class TestServiceCollection:
     @pytest.mark.parametrize(
         argnames=("is_async_implementation_factory"),
         argvalues=[
-            (True),
-            (False),
+            True,
+            False,
         ],
         ids=[
             "async_implementation_factory",
@@ -145,8 +145,8 @@ class TestServiceCollection:
     @pytest.mark.parametrize(
         argnames=("service_type"),
         argvalues=[
-            (ServiceWithAsyncContextManagerAndNoDependencies),
-            (ServiceWithSyncContextManagerAndNoDependencies),
+            ServiceWithAsyncContextManagerAndNoDependencies,
+            ServiceWithSyncContextManagerAndNoDependencies,
         ],
         ids=[
             "async_context_manager",
@@ -263,20 +263,20 @@ class TestServiceCollection:
             assert isinstance(resolved_service_2, Service2)
 
     @pytest.mark.parametrize(
-        argnames=("is_async_implementation_factory"),
+        argnames=("is_async_implementation_factory", "is_async_context_manager"),
         argvalues=[
-            (True),
-            (False),
-        ],
-        ids=[
-            "async_implementation_factory",
-            "sync_implementation_factory",
+            (True, True),
+            (True, False),
+            (False, True),
+            (False, False),
         ],
     )
-    async def test_context_manager_is_called_with_implementation_factory(
-        self, is_async_implementation_factory: bool
+    async def test_context_manager_is_called_with_implementation_factory(  # noqa: C901
+        self, is_async_implementation_factory: bool, is_async_context_manager: bool
     ) -> None:
-        class Service1(DisposeViewer, AbstractAsyncContextManager["Service1"]):
+        class AsyncService1(
+            DisposeViewer, AbstractAsyncContextManager["AsyncService1"]
+        ):
             @override
             async def __aenter__(self) -> Self:
                 self._enter_context()
@@ -292,8 +292,10 @@ class TestServiceCollection:
                 self._exit_context()
                 return None
 
-        class Service2(DisposeViewer, AbstractAsyncContextManager["Service2"]):
-            def __init__(self, service_1: Service1) -> None:
+        class AsyncService2(
+            DisposeViewer, AbstractAsyncContextManager["AsyncService2"]
+        ):
+            def __init__(self, service_1: AsyncService1) -> None:
                 super().__init__()
                 self.service_1 = service_1
 
@@ -312,40 +314,110 @@ class TestServiceCollection:
                 self._exit_context()
                 return None
 
-        async def async_inject_service_2(
-            service_1: Service1,
-        ) -> Service2:
+        async def async_inject_async_service_2(
+            service_1: AsyncService1,
+        ) -> AsyncService2:
             assert isinstance(
                 service_1,
-                Service1,
+                AsyncService1,
             )
             assert service_1.is_disposed_initialized
-            return Service2(service_1)
+            return AsyncService2(service_1)
 
-        def sync_inject_service_2(
-            service_1: Service1,
-        ) -> Service2:
+        def sync_inject_async_service_2(
+            service_1: AsyncService1,
+        ) -> AsyncService2:
             assert isinstance(
                 service_1,
-                Service1,
+                AsyncService1,
             )
             assert service_1.is_disposed_initialized
-            return Service2(service_1)
+            return AsyncService2(service_1)
+
+        class SyncService1(DisposeViewer, AbstractContextManager["SyncService1"]):
+            @override
+            def __enter__(self) -> Self:
+                self._enter_context()
+                return self
+
+            @override
+            def __exit__(
+                self,
+                exc_type: type[BaseException] | None,
+                exc_val: BaseException | None,
+                exc_tb: TracebackType | None,
+            ) -> bool | None:
+                self._exit_context()
+                return None
+
+        class SyncService2(DisposeViewer, AbstractContextManager["SyncService2"]):
+            def __init__(self, service_1: SyncService1) -> None:
+                super().__init__()
+                self.service_1 = service_1
+
+            @override
+            def __enter__(self) -> Self:
+                self._enter_context()
+                return self
+
+            @override
+            def __exit__(
+                self,
+                exc_type: type[BaseException] | None,
+                exc_val: BaseException | None,
+                exc_tb: TracebackType | None,
+            ) -> bool | None:
+                self._exit_context()
+                return None
+
+        async def async_inject_sync_service_2(
+            service_1: SyncService1,
+        ) -> SyncService2:
+            assert isinstance(
+                service_1,
+                SyncService1,
+            )
+            assert service_1.is_disposed_initialized
+            return SyncService2(service_1)
+
+        def sync_inject_sync_service_2(
+            service_1: SyncService1,
+        ) -> SyncService2:
+            assert isinstance(
+                service_1,
+                SyncService1,
+            )
+            assert service_1.is_disposed_initialized
+            return SyncService2(service_1)
 
         services = ServiceCollection()
-        services.add_transient(Service1)
         services.add_transient(
-            Service2,
-            async_inject_service_2
-            if is_async_implementation_factory
-            else sync_inject_service_2,
+            AsyncService1 if is_async_context_manager else SyncService1
         )
 
-        async with services.build_service_provider() as service_provider:
-            resolved_service_2 = await service_provider.get_required_service(Service2)
+        if is_async_implementation_factory:
+            if is_async_context_manager:
+                services.add_transient(AsyncService2, async_inject_async_service_2)
+            else:
+                services.add_transient(SyncService2, async_inject_sync_service_2)
+        elif is_async_context_manager:
+            services.add_transient(AsyncService2, sync_inject_async_service_2)
+        else:
+            services.add_transient(SyncService2, sync_inject_sync_service_2)
 
-            assert isinstance(resolved_service_2, Service2)
-            assert isinstance(resolved_service_2.service_1, Service1)
+        async with services.build_service_provider() as service_provider:
+            resolved_service_2 = await service_provider.get_required_service(
+                AsyncService2 if is_async_context_manager else SyncService2
+            )
+
+            assert isinstance(
+                resolved_service_2,
+                AsyncService2 if is_async_context_manager else SyncService2,
+            )
+            assert isinstance(
+                resolved_service_2.service_1,
+                AsyncService1 if is_async_context_manager else SyncService1,
+            )
             assert resolved_service_2.service_1.is_disposed_initialized
             assert resolved_service_2.is_disposed_initialized
 
