@@ -1,7 +1,8 @@
-from typing import TYPE_CHECKING
-
 import pytest
 
+from aspy_dependency_injection.abstractions.base_service_provider import (
+    BaseServiceProvider,
+)
 from aspy_dependency_injection.service_collection import ServiceCollection
 from aspy_dependency_injection.service_lifetime import ServiceLifetime
 from tests.utils.services import (
@@ -13,11 +14,6 @@ from tests.utils.services import (
     ServiceWithNoDependencies,
     ServiceWithSyncContextManagerAndNoDependencies,
 )
-
-if TYPE_CHECKING:
-    from aspy_dependency_injection.abstractions.base_service_provider import (
-        BaseServiceProvider,
-    )
 
 
 class TestServiceCollection:
@@ -225,3 +221,13 @@ class TestServiceCollection:
             )
 
             assert resolved_service is None
+
+    async def test_get_service_provider(self) -> None:
+        services = ServiceCollection()
+
+        async with services.build_service_provider() as service_provider:
+            resolved_service = await service_provider.get_required_service(
+                BaseServiceProvider
+            )
+
+            assert isinstance(resolved_service, BaseServiceProvider)

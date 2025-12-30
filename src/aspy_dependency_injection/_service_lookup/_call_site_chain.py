@@ -9,6 +9,8 @@ if TYPE_CHECKING:
 
 @final
 class CallSiteChain:
+    """Keep track of the current resolution path to detect errors."""
+
     _call_site_chain: Final[dict[ServiceIdentifier, _ChainItemInformation]]
 
     def __init__(self) -> None:

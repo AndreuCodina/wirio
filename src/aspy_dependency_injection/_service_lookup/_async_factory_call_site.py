@@ -8,21 +8,18 @@ if TYPE_CHECKING:
 
     from aspy_dependency_injection._service_lookup._result_cache import ResultCache
     from aspy_dependency_injection._service_lookup._typed_type import TypedType
-    from aspy_dependency_injection.abstractions.base_service_provider import (
-        BaseServiceProvider,
-    )
 
 
 @final
 class AsyncFactoryCallSite(ServiceCallSite):
     _service_type: Final[TypedType]
-    _implementation_factory: Final[Callable[[BaseServiceProvider], Awaitable[object]]]
+    _implementation_factory: Final[Callable[..., Awaitable[object]]]
 
     def __init__(
         self,
         cache: ResultCache,
         service_type: TypedType,
-        implementation_factory: Callable[[BaseServiceProvider], Awaitable[object]],
+        implementation_factory: Callable[..., Awaitable[object]],
     ) -> None:
         super().__init__(cache)
         self._service_type = service_type
@@ -41,5 +38,5 @@ class AsyncFactoryCallSite(ServiceCallSite):
     @property
     def implementation_factory(
         self,
-    ) -> Callable[[BaseServiceProvider], Awaitable[object]]:
+    ) -> Callable[..., Awaitable[object]]:
         return self._implementation_factory

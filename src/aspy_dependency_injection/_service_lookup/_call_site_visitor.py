@@ -16,6 +16,9 @@ if TYPE_CHECKING:
     from aspy_dependency_injection._service_lookup._service_call_site import (
         ServiceCallSite,
     )
+    from aspy_dependency_injection._service_lookup._service_provider_call_site import (
+        ServiceProviderCallSite,
+    )
     from aspy_dependency_injection._service_lookup._sync_factory_call_site import (
         SyncFactoryCallSite,
     )
@@ -60,7 +63,7 @@ class CallSiteVisitor[TArgument, TResult](ABC):
     ) -> TResult:
         match call_site.kind:
             case CallSiteKind.SYNC_FACTORY:
-                return self._visit_sync_factory(
+                return await self._visit_sync_factory(
                     sync_factory_call_site=cast("SyncFactoryCallSite", call_site),
                     argument=argument,
                 )
@@ -74,6 +77,13 @@ class CallSiteVisitor[TArgument, TResult](ABC):
                     constructor_call_site=cast("ConstructorCallSite", call_site),
                     argument=argument,
                 )
+            case CallSiteKind.SERVICE_PROVIDER:
+                return self._visit_service_provider(
+                    service_provider_call_site=cast(
+                        "ServiceProviderCallSite", call_site
+                    ),
+                    argument=argument,
+                )
 
     @abstractmethod
     async def _visit_constructor(
@@ -81,11 +91,16 @@ class CallSiteVisitor[TArgument, TResult](ABC):
     ) -> TResult: ...
 
     @abstractmethod
-    def _visit_sync_factory(
+    async def _visit_sync_factory(
         self, sync_factory_call_site: SyncFactoryCallSite, argument: TArgument
     ) -> TResult: ...
 
     @abstractmethod
     async def _visit_async_factory(
         self, async_factory_call_site: AsyncFactoryCallSite, argument: TArgument
+    ) -> TResult: ...
+
+    @abstractmethod
+    def _visit_service_provider(
+        self, service_provider_call_site: ServiceProviderCallSite, argument: TArgument
     ) -> TResult: ...

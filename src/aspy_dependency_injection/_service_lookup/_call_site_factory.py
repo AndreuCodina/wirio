@@ -40,7 +40,7 @@ class CallSiteFactory:
     _DEFAULT_SLOT: ClassVar[int] = 0
 
     _descriptors: Final[list[ServiceDescriptor]]
-    _descriptor_lookup: Final[dict[ServiceIdentifier, ServiceDescriptorCacheItem]]
+    _descriptor_lookup: Final[dict[ServiceIdentifier, _ServiceDescriptorCacheItem]]
     _call_site_cache: Final[AsyncConcurrentDictionary[ServiceCacheKey, ServiceCallSite]]
     _call_site_locks: Final[AsyncConcurrentDictionary[ServiceIdentifier, asyncio.Lock]]
 
@@ -67,6 +67,12 @@ class CallSiteFactory:
             )
 
         return service_call_site
+
+    async def add(
+        self, service_identifier: ServiceIdentifier, service_call_site: ServiceCallSite
+    ) -> None:
+        cache_key = ServiceCacheKey(service_identifier, self._DEFAULT_SLOT)
+        await self._call_site_cache.upsert(key=cache_key, value=service_call_site)
 
     async def _create_call_site(
         self, service_identifier: ServiceIdentifier, call_site_chain: CallSiteChain
@@ -101,7 +107,7 @@ class CallSiteFactory:
         for descriptor in self._descriptors:
             cache_key = ServiceIdentifier.from_descriptor(descriptor)
             cache_item = self._descriptor_lookup.get(
-                cache_key, ServiceDescriptorCacheItem()
+                cache_key, _ServiceDescriptorCacheItem()
             )
             self._descriptor_lookup[cache_key] = cache_item.add(descriptor)
 
@@ -156,7 +162,9 @@ class CallSiteFactory:
         if service_call_site is not None:
             return service_call_site
 
-        cache = ResultCache(service_descriptor.lifetime, service_identifier, slot)
+        cache = ResultCache.from_lifetime(
+            service_descriptor.lifetime, service_identifier, slot
+        )
 
         if service_descriptor.sync_implementation_factory is not None:
             assert service_descriptor.sync_implementation_factory is not None
@@ -231,7 +239,7 @@ class CallSiteFactory:
 
 
 @final
-class ServiceDescriptorCacheItem:
+class _ServiceDescriptorCacheItem:
     _item: ServiceDescriptor | None
     _items: list[ServiceDescriptor] | None
 
@@ -247,8 +255,8 @@ class ServiceDescriptorCacheItem:
         assert self._item is not None
         return self._item
 
-    def add(self, descriptor: ServiceDescriptor) -> ServiceDescriptorCacheItem:
-        new_cache_item = ServiceDescriptorCacheItem()
+    def add(self, descriptor: ServiceDescriptor) -> _ServiceDescriptorCacheItem:
+        new_cache_item = _ServiceDescriptorCacheItem()
 
         if self._item is None:
             new_cache_item._item = descriptor

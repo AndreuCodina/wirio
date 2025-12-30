@@ -1,5 +1,8 @@
 from typing import TYPE_CHECKING, Final, final
 
+from aspy_dependency_injection._service_lookup._service_identifier import (
+    ServiceIdentifier,
+)
 from aspy_dependency_injection._service_lookup.call_site_result_cache_location import (
     CallSiteResultCacheLocation,
 )
@@ -7,9 +10,7 @@ from aspy_dependency_injection._service_lookup.service_cache_key import ServiceC
 from aspy_dependency_injection.service_lifetime import ServiceLifetime
 
 if TYPE_CHECKING:
-    from aspy_dependency_injection._service_lookup._service_identifier import (
-        ServiceIdentifier,
-    )
+    from aspy_dependency_injection._service_lookup._typed_type import TypedType
 
 
 @final
@@ -20,20 +21,35 @@ class ResultCache:
     _key: Final[ServiceCacheKey]
 
     def __init__(
-        self,
+        self, location: CallSiteResultCacheLocation, key: ServiceCacheKey
+    ) -> None:
+        self._location = location
+        self._key = key
+
+    @classmethod
+    def from_lifetime(
+        cls,
         lifetime: ServiceLifetime,
         service_identifier: ServiceIdentifier,
         slot: int,
-    ) -> None:
+    ) -> ResultCache:
         match lifetime:
             case ServiceLifetime.SINGLETON:
-                self._location = CallSiteResultCacheLocation.ROOT
+                location = CallSiteResultCacheLocation.ROOT
             case ServiceLifetime.SCOPED:
-                self._location = CallSiteResultCacheLocation.SCOPE
+                location = CallSiteResultCacheLocation.SCOPE
             case ServiceLifetime.TRANSIENT:
-                self._location = CallSiteResultCacheLocation.DISPOSE
+                location = CallSiteResultCacheLocation.DISPOSE
 
-        self._key = ServiceCacheKey(service_identifier, slot)
+        key = ServiceCacheKey(service_identifier, slot)
+        return cls(location, key)
+
+    @classmethod
+    def none(cls, service_type: TypedType) -> ResultCache:
+        cache_key = ServiceCacheKey(
+            service_identifier=ServiceIdentifier.from_service_type(service_type), slot=0
+        )
+        return cls(CallSiteResultCacheLocation.NONE, cache_key)
 
     @property
     def location(self) -> CallSiteResultCacheLocation:
