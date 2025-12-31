@@ -145,5 +145,8 @@ class TestTypedType:
     def test_fail_when_create_from_instance_without_type_information(
         self, type_: type
     ) -> None:
-        with pytest.raises(ValueError):  # noqa: PT011
+        with pytest.raises(
+            ValueError,
+            match="The instance does not retain type hint information because it has no generics",
+        ):
             TypedType.from_instance(type_())

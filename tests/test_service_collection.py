@@ -497,3 +497,22 @@ class TestServiceCollection:
             assert TypedType.from_instance(resolved_service) == TypedType.from_type(
                 ServiceWithGeneric[str]
             )
+
+    def test_fail_when_add_service_with_implementation_factory_but_without_type_hints(
+        self,
+    ) -> None:
+        def implementation_factory(  # noqa: ANN202
+            _: BaseServiceProvider,
+        ):
+            return 0
+
+        expected_error_message = (
+            "Missing return type hints from 'implementation_factory'"
+        )
+        services = ServiceCollection()
+
+        with pytest.raises(ValueError, match=expected_error_message):
+            services.add_transient(implementation_factory)
+
+        with pytest.raises(ValueError, match=expected_error_message):
+            services.add_transient(lambda: 0)
