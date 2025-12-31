@@ -13,7 +13,7 @@ class ParameterInformation:
             error_message = f"The parameter '{parameter.name}' of the class '{type_}' must have a type annotation"
             raise RuntimeError(error_message)
 
-        self._parameter_type = TypedType(parameter.annotation)
+        self._parameter_type = TypedType.from_type(parameter.annotation)
 
     @property
     def parameter_type(self) -> TypedType:

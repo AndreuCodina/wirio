@@ -61,7 +61,7 @@ class TestTypedType:
         ],
     )
     def test_represent_types(self, type_: type, expected_representation: str) -> None:
-        typed_type = TypedType(type_)
+        typed_type = TypedType.from_type(type_)
 
         representation = repr(typed_type)
 
@@ -83,7 +83,7 @@ class TestTypedType:
     def test_retain_type_information_when_create_instances_of_classes_with_generics(
         self, type_: type, expected_representation: str | None
     ) -> None:
-        typed_type = TypedType(type_)
+        typed_type = TypedType.from_type(type_)
         type_instance = typed_type.invoke(parameter_values=[])
 
         orig_class = (
@@ -120,8 +120,8 @@ class TestTypedType:
     def test_equality_and_hash(
         self, type_1: type, type_2: type, is_equal: bool
     ) -> None:
-        typed_type_1 = TypedType(type_1)
-        typed_type_2 = TypedType(type_2)
+        typed_type_1 = TypedType.from_type(type_1)
+        typed_type_2 = TypedType.from_type(type_2)
 
         if is_equal:
             assert typed_type_1 == typed_type_2
@@ -129,3 +129,24 @@ class TestTypedType:
         else:
             assert typed_type_1 != typed_type_2
             assert hash(typed_type_1) != hash(typed_type_2)
+
+    def test_extract_type_hints_from_instance(self) -> None:
+        expected_typed_type = TypedType.from_type(CustomClassWithGenerics2[int, str])
+
+        typed_type = TypedType.from_instance(CustomClassWithGenerics2[int, str]())
+
+        assert typed_type == expected_typed_type
+        assert repr(typed_type) == repr(expected_typed_type)
+
+    @pytest.mark.parametrize(
+        argnames=("type_"),
+        argvalues=[int, CustomClass],
+    )
+    def test_fail_when_create_from_instance_without_type_information(
+        self, type_: type
+    ) -> None:
+        with pytest.raises(
+            ValueError,
+            match="The instance does not retain type hint information because it has no generics",
+        ):
+            TypedType.from_instance(type_())

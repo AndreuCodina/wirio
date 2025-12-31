@@ -14,7 +14,7 @@ class ServiceProviderCallSite(ServiceCallSite):
     _service_type: Final[TypedType]
 
     def __init__(self) -> None:
-        self._service_type = TypedType(BaseServiceProvider)
+        self._service_type = TypedType.from_type(BaseServiceProvider)
         result_cache = ResultCache.none(service_type=self._service_type)
         super().__init__(result_cache)
 

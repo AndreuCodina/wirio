@@ -6,7 +6,7 @@ if TYPE_CHECKING:
 
 
 class AsyncConcurrentDictionary[TKey, TValue]:
-    """Thread-safe collection of key/value pairs that can be accessed by multiple threads concurrently."""
+    """Coroutine-safe collection of key/value pairs that can be accessed by multiple coroutines concurrently."""
 
     _dict: Final[dict[TKey, TValue]]
     _lock: Final[asyncio.Lock]

@@ -3,8 +3,9 @@
 
 [![CI](https://img.shields.io/github/actions/workflow/status/AndreuCodina/aspy-dependency-injection/main.yaml?branch=main&logo=github&label=CI)](https://github.com/AndreuCodina/aspy-dependency-injection/actions/workflows/main.yaml)
 [![Coverage status](https://coveralls.io/repos/github/AndreuCodina/aspy-dependency-injection/badge.svg?branch=main)](https://coveralls.io/github/AndreuCodina/aspy-dependency-injection?branch=main)
-[![PyPI](https://img.shields.io/pypi/v/aspy-dependency-injection?color=blue&label=pypi)](https://pypi.org/project/aspy-dependency-injection/)
-[![license](https://img.shields.io/github/license/AndreuCodina/aspy-dependency-injection.svg)](https://github.com/AndreuCodina/aspy-dependency-injection/blob/main/LICENSE)
+[![PyPI - version](https://img.shields.io/pypi/v/aspy-dependency-injection?color=blue&label=pypi)](https://pypi.org/project/aspy-dependency-injection/)
+[![Python - versions](https://img.shields.io/pypi/pyversions/aspy-dependency-injection.svg)](https://github.com/AndreuCodina/aspy-dependency-injection)
+[![License](https://img.shields.io/github/license/AndreuCodina/aspy-dependency-injection.svg)](https://github.com/AndreuCodina/aspy-dependency-injection/blob/main/LICENSE)
 </div>
 
 ## Features
@@ -124,7 +125,7 @@ async def create_database_client(application_settings: ApplicationSettings) -> A
         yield database_client
 ```
 
-With that factory, you have to provide manually a singleton of `ApplicationSettings`, and to know if `DatabaseClient` has to implement an async or sync context manager. Apart from that, if you need a singleton of `DatabaseClient`, good luck managing the disposal of the instance.
+With that factory, you have to provide manually a singleton of `ApplicationSettings`, and to know if `DatabaseClient` implements a sync or async context manager, or neither. Apart from that, if you need a singleton or scoped instance of `DatabaseClient`, it's very complex to manage the disposal of the instance.
 
 Then, why don't just return it? With this package, you just have this:
 

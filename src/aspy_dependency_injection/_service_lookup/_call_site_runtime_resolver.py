@@ -233,7 +233,7 @@ class CallSiteRuntimeResolver(CallSiteVisitor[RuntimeResolverContext, object | N
 
         for parameter_type in parameter_types:
             parameter_service = await scope.get_service_object(
-                TypedType(parameter_type)
+                TypedType.from_type(parameter_type)
             )
 
             if parameter_service is None:

@@ -40,17 +40,17 @@ class ServiceProviderEngineScope(
     _root_provider: Final[ServiceProvider]
     _is_root_scope: Final[bool]
     _is_disposed: bool
-    _resolved_services: dict[ServiceCacheKey, object | None]
-    _resolved_services_lock: asyncio.Lock
     _disposables: list[object] | None
+    _resolved_services: Final[dict[ServiceCacheKey, object | None]]
+    _resolved_services_lock: Final[asyncio.Lock]
 
     def __init__(self, service_provider: ServiceProvider, is_root_scope: bool) -> None:
         self._root_provider = service_provider
         self._is_root_scope = is_root_scope
         self._is_disposed = False
+        self._disposables = None
         self._resolved_services = {}
         self._resolved_services_lock = asyncio.Lock()
-        self._disposables = None
 
     @property
     def root_provider(self) -> ServiceProvider:
