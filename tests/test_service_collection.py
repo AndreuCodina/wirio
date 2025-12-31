@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Self, override
 
 import pytest
 
+from aspy_dependency_injection._service_lookup._typed_type import TypedType
 from aspy_dependency_injection.abstractions.base_service_provider import (
     BaseServiceProvider,
 )
@@ -14,6 +15,7 @@ from tests.utils.services import (
     ServiceWithAsyncContextManagerAndDependencies,
     ServiceWithAsyncContextManagerAndNoDependencies,
     ServiceWithDependencies,
+    ServiceWithGeneric,
     ServiceWithNoDependencies,
     ServiceWithSyncContextManagerAndNoDependencies,
 )
@@ -444,3 +446,54 @@ class TestServiceCollection:
         async with services.build_service_provider() as service_provider:
             with pytest.raises(RuntimeError):
                 await service_provider.get_required_service(Service2)
+
+    @pytest.mark.parametrize(
+        argnames=("service_lifetime", "is_async_implementation_factory"),
+        argvalues=[
+            (ServiceLifetime.SINGLETON, True),
+            (ServiceLifetime.SINGLETON, False),
+            (ServiceLifetime.SCOPED, True),
+            (ServiceLifetime.SCOPED, False),
+            (ServiceLifetime.TRANSIENT, True),
+            (ServiceLifetime.TRANSIENT, False),
+        ],
+    )
+    async def test_infer_the_type_of_implementation_factory_when_service_type_is_not_provided(
+        self, service_lifetime: ServiceLifetime, is_async_implementation_factory: bool
+    ) -> None:
+        async def async_implementation_factory(
+            _: BaseServiceProvider,
+        ) -> ServiceWithGeneric[str]:
+            return ServiceWithGeneric[str]()
+
+        def sync_implementation_factory(
+            _: BaseServiceProvider,
+        ) -> ServiceWithGeneric[str]:
+            return ServiceWithGeneric[str]()
+
+        expected_type = ServiceWithGeneric[str]
+
+        implementation_factory = (
+            async_implementation_factory
+            if is_async_implementation_factory
+            else sync_implementation_factory
+        )
+
+        services = ServiceCollection()
+
+        match service_lifetime:
+            case ServiceLifetime.SINGLETON:
+                services.add_singleton(implementation_factory)
+            case ServiceLifetime.SCOPED:
+                services.add_scoped(implementation_factory)
+            case ServiceLifetime.TRANSIENT:
+                services.add_transient(implementation_factory)
+
+        async with services.build_service_provider() as service_provider:
+            resolved_service = await service_provider.get_required_service(
+                expected_type
+            )
+
+            assert TypedType.from_instance(resolved_service) == TypedType.from_type(
+                ServiceWithGeneric[str]
+            )

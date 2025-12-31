@@ -20,10 +20,10 @@ class ConstructorInformation:
         return self._type_.invoke(parameter_values)
 
     def get_parameters(self) -> list[ParameterInformation]:
-        init_method = self._type_.origin.__init__
+        init_method = self._type_.to_type().__init__
         init_signature = inspect.signature(init_method)
         return [
-            ParameterInformation(parameter=parameter, type_=self._type_.origin)
+            ParameterInformation(parameter=parameter, type_=self._type_.to_type())
             for name, parameter in init_signature.parameters.items()
             if name not in ["self", "args", "kwargs"]
         ]

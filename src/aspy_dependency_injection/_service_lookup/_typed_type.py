@@ -29,8 +29,21 @@ class TypedType(Hashable):
         self._origin = origin
         self._args = get_args(type_)
 
-    @property
-    def origin(self) -> type:
+    @classmethod
+    def from_type(cls, type_: type) -> TypedType:
+        return cls(type_)
+
+    @classmethod
+    def from_instance(cls, instance: object) -> TypedType:
+        instance_type = getattr(instance, "__orig_class__", None)
+
+        if instance_type is None:
+            error_message = "The instance does not retain type hint information because it hasn't generics"
+            raise ValueError(error_message)
+
+        return cls(instance_type)
+
+    def to_type(self) -> type:
         return self._origin
 
     def invoke(self, parameter_values: list[object]) -> object:

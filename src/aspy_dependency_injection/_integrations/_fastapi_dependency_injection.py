@@ -86,7 +86,7 @@ class FastApiDependencyInjection:
             parameters_to_inject = cls._get_parameters_to_inject(target)
             parameters_to_inject_resolved: dict[str, Any] = {
                 injected_parameter_name: await cls._get_request_container().service_provider.get_service_object(
-                    TypedType(injected_parameter_class)
+                    TypedType.from_type(injected_parameter_class)
                 )
                 for injected_parameter_name, injected_parameter_class in parameters_to_inject.items()
             }

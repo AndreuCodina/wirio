@@ -105,3 +105,7 @@ class ServiceWithSyncContextManagerAndNoDependencies(
 class SelfCircularDependencyService:
     def __init__(self, service: SelfCircularDependencyService) -> None:
         self.service = service
+
+
+class ServiceWithGeneric[T]:
+    pass

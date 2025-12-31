@@ -18,7 +18,7 @@ class ServiceDescriptor:
     _async_implementation_factory: Callable[..., Awaitable[object]] | None
 
     def __init__(self, service_type: type, lifetime: ServiceLifetime) -> None:
-        self._service_type = TypedType(service_type)
+        self._service_type = TypedType.from_type(service_type)
         self._lifetime = lifetime
         self._implementation_type = None
         self._sync_implementation_factory = None
@@ -53,7 +53,7 @@ class ServiceDescriptor:
         cls, service_type: type, implementation_type: type, lifetime: ServiceLifetime
     ) -> Self:
         self = cls(service_type=service_type, lifetime=lifetime)
-        self._implementation_type = TypedType(implementation_type)
+        self._implementation_type = TypedType.from_type(implementation_type)
         return self
 
     @classmethod

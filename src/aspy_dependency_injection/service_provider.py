@@ -139,7 +139,9 @@ class ServiceProvider(
     async def __aenter__(self) -> Self:
         # Add built-in services that aren't part of the list of service descriptors
         await self._call_site_factory.add(
-            ServiceIdentifier.from_service_type(TypedType(BaseServiceProvider)),
+            ServiceIdentifier.from_service_type(
+                TypedType.from_type(BaseServiceProvider)
+            ),
             ServiceProviderCallSite(),
         )
         return self
