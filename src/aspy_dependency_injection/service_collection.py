@@ -61,20 +61,31 @@ class ServiceCollection:
         /,
     ) -> None: ...
 
+    @overload
+    def add_transient[TService](
+        self,
+        service_type: type[TService],
+        implementation_type: type,
+        /,
+    ) -> None: ...
+
     def add_transient[TService](
         self,
         service_type_or_implementation_factory: type[TService]
         | Callable[..., Awaitable[TService]]
         | Callable[..., TService],
-        implementation_factory: Callable[..., Awaitable[TService]]
+        implementation_factory_or_implementation_type: Callable[
+            ..., Awaitable[TService]
+        ]
         | Callable[..., TService]
+        | type
         | None = None,
         /,
     ) -> None:
         self._add_from_overloaded_constructor(
-            ServiceLifetime.TRANSIENT,
-            service_type_or_implementation_factory,
-            implementation_factory,
+            lifetime=ServiceLifetime.TRANSIENT,
+            service_type_or_implementation_factory=service_type_or_implementation_factory,
+            implementation_factory_or_implementation_type=implementation_factory_or_implementation_type,
         )
 
     @overload
@@ -110,20 +121,31 @@ class ServiceCollection:
         /,
     ) -> None: ...
 
+    @overload
+    def add_singleton[TService](
+        self,
+        service_type: type[TService],
+        implementation_type: type,
+        /,
+    ) -> None: ...
+
     def add_singleton[TService](
         self,
         service_type_or_implementation_factory: type[TService]
         | Callable[..., Awaitable[TService]]
         | Callable[..., TService],
-        implementation_factory: Callable[..., Awaitable[TService]]
+        implementation_factory_or_implementation_type: Callable[
+            ..., Awaitable[TService]
+        ]
         | Callable[..., TService]
+        | type
         | None = None,
         /,
     ) -> None:
         self._add_from_overloaded_constructor(
-            ServiceLifetime.SINGLETON,
-            service_type_or_implementation_factory,
-            implementation_factory,
+            lifetime=ServiceLifetime.SINGLETON,
+            service_type_or_implementation_factory=service_type_or_implementation_factory,
+            implementation_factory_or_implementation_type=implementation_factory_or_implementation_type,
         )
 
     @overload
@@ -159,20 +181,31 @@ class ServiceCollection:
         /,
     ) -> None: ...
 
+    @overload
+    def add_scoped[TService](
+        self,
+        service_type: type[TService],
+        implementation_type: type,
+        /,
+    ) -> None: ...
+
     def add_scoped[TService](
         self,
         service_type_or_implementation_factory: type[TService]
         | Callable[..., Awaitable[TService]]
         | Callable[..., TService],
-        implementation_factory: Callable[..., Awaitable[TService]]
+        implementation_factory_or_implementation_type: Callable[
+            ..., Awaitable[TService]
+        ]
         | Callable[..., TService]
+        | type
         | None = None,
         /,
     ) -> None:
         self._add_from_overloaded_constructor(
-            ServiceLifetime.SCOPED,
-            service_type_or_implementation_factory,
-            implementation_factory,
+            lifetime=ServiceLifetime.SCOPED,
+            service_type_or_implementation_factory=service_type_or_implementation_factory,
+            implementation_factory_or_implementation_type=implementation_factory_or_implementation_type,
         )
 
     def build_service_provider(self) -> ServiceProvider:
@@ -189,27 +222,42 @@ class ServiceCollection:
         service_type_or_implementation_factory: type[TService]
         | Callable[..., Awaitable[TService]]
         | Callable[..., TService],
-        implementation_factory: Callable[..., Awaitable[TService]]
+        implementation_factory_or_implementation_type: Callable[
+            ..., Awaitable[TService]
+        ]
         | Callable[..., TService]
+        | type
         | None = None,
     ) -> None:
         service_type_to_add: type[TService] | None = None
         implementation_factory_to_add: (
             Callable[..., Awaitable[TService]] | Callable[..., TService] | None
         ) = None
+        implementation_type_to_add: type | None = None
 
         if isinstance(service_type_or_implementation_factory, type):
             service_type_to_add = service_type_or_implementation_factory
 
-        if service_type_to_add is not None and implementation_factory is not None:
-            implementation_factory_to_add = implementation_factory
-        elif service_type_to_add is None and implementation_factory is None:
+        if isinstance(implementation_factory_or_implementation_type, type):
+            implementation_type_to_add = implementation_factory_or_implementation_type
+        elif (
+            service_type_to_add is not None
+            and implementation_factory_or_implementation_type is not None
+        ):
+            implementation_factory_to_add = (
+                implementation_factory_or_implementation_type
+            )
+        elif (
+            service_type_to_add is None
+            and implementation_factory_or_implementation_type is None
+        ):
             implementation_factory_to_add = service_type_or_implementation_factory
 
         self._add(
-            lifetime,
+            lifetime=lifetime,
             service_type=service_type_to_add,
             implementation_factory=implementation_factory_to_add,
+            implementation_type=implementation_type_to_add,
         )
 
     def _add[TService](
@@ -219,15 +267,21 @@ class ServiceCollection:
         implementation_factory: Callable[..., Awaitable[TService]]
         | Callable[..., TService]
         | None = None,
+        implementation_type: type | None = None,
     ) -> None:
         provided_service_type = self._get_provided_service_type(
             service_type, implementation_factory
         )
 
         if implementation_factory is None:
+            implementation_type_to_add = (
+                implementation_type
+                if implementation_type is not None
+                else provided_service_type
+            )
             self._add_from_implementation_type(
                 service_type=provided_service_type,
-                implementation_type=provided_service_type,
+                implementation_type=implementation_type_to_add,
                 lifetime=lifetime,
             )
         elif inspect.iscoroutinefunction(implementation_factory):

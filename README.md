@@ -1,5 +1,5 @@
 <div align="center">
-<img alt="Logo" src="docs/logo.png" width="522" height="348">
+<img alt="Logo" src="https://raw.githubusercontent.com/AndreuCodina/aspy-dependency-injection/refs/heads/main/docs/logo.png" width="522" height="348">
 
 [![CI](https://img.shields.io/github/actions/workflow/status/AndreuCodina/aspy-dependency-injection/main.yaml?branch=main&logo=github&label=CI)](https://github.com/AndreuCodina/aspy-dependency-injection/actions/workflows/main.yaml)
 [![Coverage status](https://coveralls.io/repos/github/AndreuCodina/aspy-dependency-injection/badge.svg?branch=main)](https://coveralls.io/github/AndreuCodina/aspy-dependency-injection?branch=main)
@@ -142,3 +142,29 @@ services.add_transient(inject_database_client)
 ## Testing
 
 TBD
+
+## Registration with a base class
+
+You can register a service by specifying both the service type (base class / interface) and the implementation type (concrete class). This is useful when you want to inject services using abstractions.
+
+```python
+class NotificationService(ABC):
+    async def send_notification(self, recipient: str, message: str) -> None:
+        ...
+
+
+class EmailService(NotificationService):
+    async def send_notification(self, recipient: str, message: str) -> None:
+        pass
+
+
+class UserService:
+    def __init__(self, notification_service: NotificationService) -> None:
+        self.notification_service = notification_service
+
+    async def create_user(self, email: str) -> None:
+        await self.notification_service.send_notification(email, "Welcome to our service!")
+
+
+services.add_transient(NotificationService, EmailService)
+```
