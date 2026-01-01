@@ -96,6 +96,45 @@ async with service_provider.create_scope() as service_scope:
 - `Singleton`: The same instance is used every time the service is requested. Examples: Settings (`pydantic-settings`), machine learning models, database connection pools, caches.
 - `Scoped`: A new instance is created for each new scope, but the same instance is returned within the same scope. Examples: Database clients, unit of work.
 
+## Registration with implementation type
+
+You can register a service by specifying both the service type (interface or base class) and the implementation type (concrete class). This is useful when you want to program against interfaces or abstractions.
+
+```python
+class EmailServiceBase:
+    async def send_email(self, to: str, subject: str, body: str) -> None:
+        raise NotImplementedError
+
+
+class SmtpEmailService(EmailServiceBase):
+    async def send_email(self, to: str, subject: str, body: str) -> None:
+        # Send email via SMTP
+        pass
+
+
+class UserService:
+    def __init__(self, email_service: EmailServiceBase) -> None:
+        self.email_service = email_service
+    
+    async def create_user(self, email: str) -> None:
+        await self.email_service.send_email(email, "Welcome", "Welcome to our service!")
+
+
+services = ServiceCollection()
+services.add_singleton(EmailServiceBase, SmtpEmailService)
+services.add_transient(UserService)
+
+async with services.build_service_provider() as service_provider:
+    user_service = await service_provider.get_required_service(UserService)
+    await user_service.create_user("user@example.com")
+```
+
+In this example:
+- `EmailServiceBase` is registered as the service type
+- `SmtpEmailService` is used as the implementation
+- When `UserService` requests `EmailServiceBase`, it receives an instance of `SmtpEmailService`
+- This works with all lifetimes: `add_singleton`, `add_scoped`, and `add_transient`
+
 ## Factories
 
 Sometimes, you need to use a factory function to create a service. For example, you have settings (a connection string, database name, etc.) stored using the package `pydantic-settings` and you want to provide them to a service `DatabaseClient` to access a database.
