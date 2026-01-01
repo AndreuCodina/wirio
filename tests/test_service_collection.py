@@ -1,3 +1,4 @@
+from abc import ABC
 from contextlib import AbstractAsyncContextManager, AbstractContextManager
 from typing import TYPE_CHECKING, Self, override
 
@@ -306,7 +307,17 @@ class TestServiceCollection:
 
             assert isinstance(resolved_service, BaseServiceProvider)
 
-    async def test_resolve_implementation_factory_with_service_injected(self) -> None:
+    @pytest.mark.parametrize(
+        argnames=("service_lifetime"),
+        argvalues=[
+            ServiceLifetime.SINGLETON,
+            ServiceLifetime.SCOPED,
+            ServiceLifetime.TRANSIENT,
+        ],
+    )
+    async def test_resolve_implementation_factory_with_explicit_service_type(
+        self, service_lifetime: ServiceLifetime
+    ) -> None:
         class Service1:
             pass
 
@@ -320,8 +331,17 @@ class TestServiceCollection:
             return Service2()
 
         services = ServiceCollection()
-        services.add_transient(Service2, implementation_factory)
-        services.add_transient(Service1)
+
+        match service_lifetime:
+            case ServiceLifetime.SINGLETON:
+                services.add_singleton(Service2, implementation_factory)
+                services.add_singleton(Service1)
+            case ServiceLifetime.SCOPED:
+                services.add_scoped(Service2, implementation_factory)
+                services.add_scoped(Service1)
+            case ServiceLifetime.TRANSIENT:
+                services.add_transient(Service2, implementation_factory)
+                services.add_transient(Service1)
 
         async with services.build_service_provider() as service_provider:
             resolved_service_1 = await service_provider.get_required_service(Service1)
@@ -329,6 +349,43 @@ class TestServiceCollection:
 
             resolved_service_2 = await service_provider.get_required_service(Service2)
             assert isinstance(resolved_service_2, Service2)
+
+    @pytest.mark.parametrize(
+        argnames=("service_lifetime"),
+        argvalues=[
+            ServiceLifetime.SINGLETON,
+            ServiceLifetime.SCOPED,
+            ServiceLifetime.TRANSIENT,
+        ],
+    )
+    async def test_resolve_implementation_factory_with_explicit_service_type_being_a_base_class(
+        self, service_lifetime: ServiceLifetime
+    ) -> None:
+        class BaseService(ABC):  # noqa: B024
+            pass
+
+        class Service(BaseService):
+            pass
+
+        def implementation_factory() -> Service:
+            return Service()
+
+        services = ServiceCollection()
+
+        match service_lifetime:
+            case ServiceLifetime.SINGLETON:
+                services.add_singleton(Service, implementation_factory)
+            case ServiceLifetime.SCOPED:
+                services.add_scoped(Service, implementation_factory)
+            case ServiceLifetime.TRANSIENT:
+                services.add_transient(Service, implementation_factory)
+
+        async with services.build_service_provider() as service_provider:
+            resolved_service = await service_provider.get_required_service(Service)
+
+            assert isinstance(resolved_service, BaseService)
+            assert issubclass(type(resolved_service), BaseService)
+            assert isinstance(resolved_service, Service)
 
     @pytest.mark.parametrize(
         argnames=(
