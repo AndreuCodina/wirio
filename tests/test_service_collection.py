@@ -32,7 +32,6 @@ class TestServiceCollection:
             ServiceLifetime.SCOPED,
             ServiceLifetime.TRANSIENT,
         ],
-        ids=["singleton", "scoped", "transient"],
     )
     async def test_resolve_service_with_no_dependencies(
         self, service_lifetime: ServiceLifetime
@@ -61,7 +60,6 @@ class TestServiceCollection:
             ServiceLifetime.SCOPED,
             ServiceLifetime.TRANSIENT,
         ],
-        ids=["singleton", "scoped", "transient"],
     )
     async def test_resolve_service_using_scope(
         self, service_lifetime: ServiceLifetime
@@ -89,19 +87,18 @@ class TestServiceCollection:
             assert isinstance(resolved_service, ServiceWithNoDependencies)
 
     @pytest.mark.parametrize(
-        argnames=("is_async_implementation_factory"),
+        argnames=("service_lifetime", "is_async_implementation_factory"),
         argvalues=[
-            True,
-            False,
-        ],
-        ids=[
-            "async_implementation_factory",
-            "sync_implementation_factory",
+            (ServiceLifetime.SINGLETON, True),
+            (ServiceLifetime.SINGLETON, False),
+            (ServiceLifetime.SCOPED, True),
+            (ServiceLifetime.SCOPED, False),
+            (ServiceLifetime.TRANSIENT, True),
+            (ServiceLifetime.TRANSIENT, False),
         ],
     )
-    async def test_resolve_transient_service_with_implementation_factory_and_no_dependencies(
-        self,
-        is_async_implementation_factory: bool,
+    async def test_resolve_service_with_implementation_factory(
+        self, service_lifetime: ServiceLifetime, is_async_implementation_factory: bool
     ) -> None:
         async def async_implementation_factory(
             _: BaseServiceProvider,
@@ -120,7 +117,18 @@ class TestServiceCollection:
             if is_async_implementation_factory
             else sync_implementation_factory
         )
-        services.add_transient(ServiceWithNoDependencies, implementation_factory)
+
+        match service_lifetime:
+            case ServiceLifetime.SINGLETON:
+                services.add_singleton(
+                    ServiceWithNoDependencies, implementation_factory
+                )
+            case ServiceLifetime.SCOPED:
+                services.add_scoped(ServiceWithNoDependencies, implementation_factory)
+            case ServiceLifetime.TRANSIENT:
+                services.add_transient(
+                    ServiceWithNoDependencies, implementation_factory
+                )
 
         async with services.build_service_provider() as service_provider:
             resolved_service = await service_provider.get_required_service(
@@ -129,10 +137,29 @@ class TestServiceCollection:
 
             assert isinstance(resolved_service, ServiceWithNoDependencies)
 
-    async def test_resolve_transient_service_with_dependencies(self) -> None:
+    @pytest.mark.parametrize(
+        argnames=("service_lifetime"),
+        argvalues=[
+            ServiceLifetime.SINGLETON,
+            ServiceLifetime.SCOPED,
+            ServiceLifetime.TRANSIENT,
+        ],
+    )
+    async def test_resolve_service_with_dependencies(
+        self, service_lifetime: ServiceLifetime
+    ) -> None:
         services = ServiceCollection()
-        services.add_transient(ServiceWithNoDependencies)
-        services.add_transient(ServiceWithDependencies)
+
+        match service_lifetime:
+            case ServiceLifetime.SINGLETON:
+                services.add_singleton(ServiceWithNoDependencies)
+                services.add_singleton(ServiceWithDependencies)
+            case ServiceLifetime.SCOPED:
+                services.add_scoped(ServiceWithNoDependencies)
+                services.add_scoped(ServiceWithDependencies)
+            case ServiceLifetime.TRANSIENT:
+                services.add_transient(ServiceWithNoDependencies)
+                services.add_transient(ServiceWithDependencies)
 
         async with services.build_service_provider() as service_provider:
             resolved_service = await service_provider.get_required_service(
@@ -145,21 +172,37 @@ class TestServiceCollection:
             )
 
     @pytest.mark.parametrize(
-        argnames=("service_type"),
+        argnames=("service_lifetime", "service_type"),
         argvalues=[
-            ServiceWithAsyncContextManagerAndNoDependencies,
-            ServiceWithSyncContextManagerAndNoDependencies,
-        ],
-        ids=[
-            "async_context_manager",
-            "sync_context_manager",
+            (
+                ServiceLifetime.SINGLETON,
+                ServiceWithAsyncContextManagerAndNoDependencies,
+            ),
+            (ServiceLifetime.SINGLETON, ServiceWithSyncContextManagerAndNoDependencies),
+            (
+                ServiceLifetime.SCOPED,
+                ServiceWithAsyncContextManagerAndNoDependencies,
+            ),
+            (ServiceLifetime.SCOPED, ServiceWithSyncContextManagerAndNoDependencies),
+            (
+                ServiceLifetime.TRANSIENT,
+                ServiceWithAsyncContextManagerAndNoDependencies,
+            ),
+            (ServiceLifetime.TRANSIENT, ServiceWithSyncContextManagerAndNoDependencies),
         ],
     )
-    async def test_resolve_and_dispose_transient_service_with_context_manager_and_no_dependencies(
-        self, service_type: type[DisposeViewer]
+    async def test_resolve_and_dispose_service_with_context_manager_and_no_dependencies(
+        self, service_lifetime: ServiceLifetime, service_type: type[DisposeViewer]
     ) -> None:
         services = ServiceCollection()
-        services.add_transient(service_type)
+
+        match service_lifetime:
+            case ServiceLifetime.SINGLETON:
+                services.add_singleton(service_type)
+            case ServiceLifetime.SCOPED:
+                services.add_scoped(service_type)
+            case ServiceLifetime.TRANSIENT:
+                services.add_transient(service_type)
 
         async with services.build_service_provider() as service_provider:
             resolved_service = await service_provider.get_required_service(service_type)
@@ -169,12 +212,29 @@ class TestServiceCollection:
 
         assert resolved_service.is_disposed
 
-    async def test_resolve_and_dispose_transient_service_with_context_manager_and_dependencies(
-        self,
+    @pytest.mark.parametrize(
+        argnames=("service_lifetime"),
+        argvalues=[
+            ServiceLifetime.SINGLETON,
+            ServiceLifetime.SCOPED,
+            ServiceLifetime.TRANSIENT,
+        ],
+    )
+    async def test_resolve_and_dispose_service_with_context_manager_and_dependencies(
+        self, service_lifetime: ServiceLifetime
     ) -> None:
         services = ServiceCollection()
-        services.add_transient(ServiceWithAsyncContextManagerAndNoDependencies)
-        services.add_transient(ServiceWithAsyncContextManagerAndDependencies)
+
+        match service_lifetime:
+            case ServiceLifetime.SINGLETON:
+                services.add_singleton(ServiceWithAsyncContextManagerAndNoDependencies)
+                services.add_singleton(ServiceWithAsyncContextManagerAndDependencies)
+            case ServiceLifetime.SCOPED:
+                services.add_scoped(ServiceWithAsyncContextManagerAndNoDependencies)
+                services.add_scoped(ServiceWithAsyncContextManagerAndDependencies)
+            case ServiceLifetime.TRANSIENT:
+                services.add_transient(ServiceWithAsyncContextManagerAndNoDependencies)
+                services.add_transient(ServiceWithAsyncContextManagerAndDependencies)
 
         async with services.build_service_provider() as service_provider:
             resolved_service = await service_provider.get_required_service(
@@ -205,18 +265,24 @@ class TestServiceCollection:
                     SelfCircularDependencyService
                 )
 
-    async def test_resolve_same_transient_service_several_times(self) -> None:
+    async def test_return_a_different_transient_instance_each_time_is_requested(
+        self,
+    ) -> None:
         services = ServiceCollection()
         services.add_transient(ServiceWithNoDependencies)
 
         async with services.build_service_provider() as service_provider:
-            resolved_service = await service_provider.get_required_service(
+            resolved_service_1 = await service_provider.get_required_service(
                 ServiceWithNoDependencies
             )
-            assert isinstance(resolved_service, ServiceWithNoDependencies)
+            assert isinstance(resolved_service_1, ServiceWithNoDependencies)
 
-            await service_provider.get_required_service(ServiceWithNoDependencies)
-            assert isinstance(resolved_service, ServiceWithNoDependencies)
+            resolved_service_2 = await service_provider.get_required_service(
+                ServiceWithNoDependencies
+            )
+            assert isinstance(resolved_service_2, ServiceWithNoDependencies)
+
+            assert resolved_service_1 is not resolved_service_2
 
     async def test_get_service_returns_none_when_the_required_service_is_not_provided(
         self,
@@ -265,16 +331,31 @@ class TestServiceCollection:
             assert isinstance(resolved_service_2, Service2)
 
     @pytest.mark.parametrize(
-        argnames=("is_async_implementation_factory", "is_async_context_manager"),
+        argnames=(
+            "service_lifetime",
+            "is_async_implementation_factory",
+            "is_async_context_manager",
+        ),
         argvalues=[
-            (True, True),
-            (True, False),
-            (False, True),
-            (False, False),
+            (ServiceLifetime.SINGLETON, True, True),
+            (ServiceLifetime.SINGLETON, True, False),
+            (ServiceLifetime.SINGLETON, False, True),
+            (ServiceLifetime.SINGLETON, False, False),
+            (ServiceLifetime.SCOPED, True, True),
+            (ServiceLifetime.SCOPED, True, False),
+            (ServiceLifetime.SCOPED, False, True),
+            (ServiceLifetime.SCOPED, False, False),
+            (ServiceLifetime.TRANSIENT, True, True),
+            (ServiceLifetime.TRANSIENT, True, False),
+            (ServiceLifetime.TRANSIENT, False, True),
+            (ServiceLifetime.TRANSIENT, False, False),
         ],
     )
-    async def test_context_manager_is_called_with_implementation_factory(  # noqa: C901
-        self, is_async_implementation_factory: bool, is_async_context_manager: bool
+    async def test_call_context_manager_when_implementation_factory_is_provided(  # noqa: C901, PLR0912, PLR0915
+        self,
+        service_lifetime: ServiceLifetime,
+        is_async_implementation_factory: bool,
+        is_async_context_manager: bool,
     ) -> None:
         class AsyncService1(
             DisposeViewer, AbstractAsyncContextManager["AsyncService1"]
@@ -393,19 +474,63 @@ class TestServiceCollection:
             return SyncService2(service_1)
 
         services = ServiceCollection()
-        services.add_transient(
-            AsyncService1 if is_async_context_manager else SyncService1
-        )
+
+        match service_lifetime:
+            case ServiceLifetime.SINGLETON:
+                services.add_singleton(
+                    AsyncService1 if is_async_context_manager else SyncService1
+                )
+            case ServiceLifetime.SCOPED:
+                services.add_scoped(
+                    AsyncService1 if is_async_context_manager else SyncService1
+                )
+            case ServiceLifetime.TRANSIENT:
+                services.add_transient(
+                    AsyncService1 if is_async_context_manager else SyncService1
+                )
 
         if is_async_implementation_factory:
             if is_async_context_manager:
-                services.add_transient(AsyncService2, async_inject_async_service_2)
+                match service_lifetime:
+                    case ServiceLifetime.SINGLETON:
+                        services.add_singleton(
+                            AsyncService2, async_inject_async_service_2
+                        )
+                    case ServiceLifetime.SCOPED:
+                        services.add_scoped(AsyncService2, async_inject_async_service_2)
+                    case ServiceLifetime.TRANSIENT:
+                        services.add_transient(
+                            AsyncService2, async_inject_async_service_2
+                        )
+
             else:
-                services.add_transient(SyncService2, async_inject_sync_service_2)
+                match service_lifetime:
+                    case ServiceLifetime.SINGLETON:
+                        services.add_singleton(
+                            SyncService2, async_inject_sync_service_2
+                        )
+                    case ServiceLifetime.SCOPED:
+                        services.add_scoped(SyncService2, async_inject_sync_service_2)
+                    case ServiceLifetime.TRANSIENT:
+                        services.add_transient(
+                            SyncService2, async_inject_sync_service_2
+                        )
         elif is_async_context_manager:
-            services.add_transient(AsyncService2, sync_inject_async_service_2)
+            match service_lifetime:
+                case ServiceLifetime.SINGLETON:
+                    services.add_singleton(AsyncService2, sync_inject_async_service_2)
+                case ServiceLifetime.SCOPED:
+                    services.add_scoped(AsyncService2, sync_inject_async_service_2)
+                case ServiceLifetime.TRANSIENT:
+                    services.add_transient(AsyncService2, sync_inject_async_service_2)
         else:
-            services.add_transient(SyncService2, sync_inject_sync_service_2)
+            match service_lifetime:
+                case ServiceLifetime.SINGLETON:
+                    services.add_singleton(SyncService2, sync_inject_sync_service_2)
+                case ServiceLifetime.SCOPED:
+                    services.add_scoped(SyncService2, sync_inject_sync_service_2)
+                case ServiceLifetime.TRANSIENT:
+                    services.add_transient(SyncService2, sync_inject_sync_service_2)
 
         async with services.build_service_provider() as service_provider:
             resolved_service_2 = await service_provider.get_required_service(
@@ -426,8 +551,16 @@ class TestServiceCollection:
         assert resolved_service_2.service_1.is_disposed
         assert resolved_service_2.is_disposed
 
+    @pytest.mark.parametrize(
+        argnames=("service_lifetime"),
+        argvalues=[
+            ServiceLifetime.SINGLETON,
+            ServiceLifetime.SCOPED,
+            ServiceLifetime.TRANSIENT,
+        ],
+    )
     async def test_fail_when_implementation_factory_requests_not_registered_service(
-        self,
+        self, service_lifetime: ServiceLifetime
     ) -> None:
         class Service1:
             pass
@@ -441,7 +574,14 @@ class TestServiceCollection:
             return Service2()
 
         services = ServiceCollection()
-        services.add_transient(Service2, implementation_factory)
+
+        match service_lifetime:
+            case ServiceLifetime.SINGLETON:
+                services.add_singleton(Service2, implementation_factory)
+            case ServiceLifetime.SCOPED:
+                services.add_scoped(Service2, implementation_factory)
+            case ServiceLifetime.TRANSIENT:
+                services.add_transient(Service2, implementation_factory)
 
         async with services.build_service_provider() as service_provider:
             with pytest.raises(RuntimeError):
@@ -498,8 +638,16 @@ class TestServiceCollection:
                 ServiceWithGeneric[str]
             )
 
-    def test_fail_when_add_service_with_implementation_factory_but_without_type_hints(
-        self,
+    @pytest.mark.parametrize(
+        argnames=("service_lifetime"),
+        argvalues=[
+            ServiceLifetime.SINGLETON,
+            ServiceLifetime.SCOPED,
+            ServiceLifetime.TRANSIENT,
+        ],
+    )
+    def test_fail_when_register_service_with_implementation_factory_but_without_type_hints(
+        self, service_lifetime: ServiceLifetime
     ) -> None:
         def implementation_factory(  # noqa: ANN202
             _: BaseServiceProvider,
@@ -511,8 +659,54 @@ class TestServiceCollection:
         )
         services = ServiceCollection()
 
-        with pytest.raises(ValueError, match=expected_error_message):
-            services.add_transient(implementation_factory)
+        with pytest.raises(ValueError, match=expected_error_message):  # noqa: PT012
+            match service_lifetime:
+                case ServiceLifetime.SINGLETON:
+                    services.add_singleton(implementation_factory)
+                case ServiceLifetime.SCOPED:
+                    services.add_scoped(implementation_factory)
+                case ServiceLifetime.TRANSIENT:
+                    services.add_transient(implementation_factory)
 
-        with pytest.raises(ValueError, match=expected_error_message):
-            services.add_transient(lambda: 0)
+        with pytest.raises(ValueError, match=expected_error_message):  # noqa: PT012
+            match service_lifetime:
+                case ServiceLifetime.SINGLETON:
+                    services.add_singleton(lambda: 0)
+                case ServiceLifetime.SCOPED:
+                    services.add_scoped(lambda: 0)
+                case ServiceLifetime.TRANSIENT:
+                    services.add_transient(lambda: 0)
+
+    @pytest.mark.parametrize(
+        argnames=("service_lifetime"),
+        argvalues=[
+            ServiceLifetime.SINGLETON,
+            ServiceLifetime.SCOPED,
+            ServiceLifetime.TRANSIENT,
+        ],
+    )
+    async def test_resolve_service_when_implementation_type_is_provided(
+        self, service_lifetime: ServiceLifetime
+    ) -> None:
+        class Parent:
+            pass
+
+        class Child(Parent):
+            pass
+
+        services = ServiceCollection()
+
+        match service_lifetime:
+            case ServiceLifetime.SINGLETON:
+                services.add_singleton(Parent, Child)
+            case ServiceLifetime.SCOPED:
+                services.add_scoped(Parent, Child)
+            case ServiceLifetime.TRANSIENT:
+                services.add_transient(Parent, Child)
+
+        async with services.build_service_provider() as service_provider:
+            resolved_service = await service_provider.get_required_service(Parent)
+
+            assert isinstance(resolved_service, Parent)
+            assert issubclass(type(resolved_service), Parent)
+            assert isinstance(resolved_service, Child)
