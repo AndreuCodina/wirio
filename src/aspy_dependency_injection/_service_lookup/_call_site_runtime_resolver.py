@@ -288,22 +288,22 @@ class CallSiteRuntimeResolver(CallSiteVisitor[RuntimeResolverContext, object | N
                 )
                 raise RuntimeError(error_message)
 
-            unwrapped_parameter_type, is_optional = unwrap_optional_type(parameter_type)
+            unwrap_result = unwrap_optional_type(parameter_type)
             parameter_service = await scope.get_service_object(
-                TypedType.from_type(unwrapped_parameter_type)
+                TypedType.from_type(unwrap_result.unwrapped_type)
             )
 
             if parameter_service is None:
-                if is_optional and parameter.default is not Parameter.empty:
+                if unwrap_result.is_optional and parameter.default is not Parameter.empty:
                     parameter_services.append(parameter.default)
                     continue
 
-                if is_optional:
+                if unwrap_result.is_optional:
                     parameter_services.append(None)
                     continue
 
                 error_message = (
-                    f"Unable to resolve service for type '{unwrapped_parameter_type}' "
+                    f"Unable to resolve service for type '{unwrap_result.unwrapped_type}' "
                     f"while attempting to invoke implementation factory "
                     f"'{implementation_factory}'."
                 )

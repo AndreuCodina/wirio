@@ -19,9 +19,9 @@ class ParameterInformation:
             error_message = f"The parameter '{parameter.name}' of the class '{type_}' must have a type annotation"
             raise RuntimeError(error_message)
 
-        parameter_type, is_optional = unwrap_optional_type(parameter.annotation)
-        self._parameter_type = TypedType.from_type(parameter_type)
-        self._is_optional = is_optional
+        unwrap_result = unwrap_optional_type(parameter.annotation)
+        self._parameter_type = TypedType.from_type(unwrap_result.unwrapped_type)
+        self._is_optional = unwrap_result.is_optional
         self._has_default = parameter.default is not Parameter.empty
         self._default_value = parameter.default if self._has_default else None
 

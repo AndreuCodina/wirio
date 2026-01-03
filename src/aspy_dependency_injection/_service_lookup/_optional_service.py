@@ -1,8 +1,15 @@
+from dataclasses import dataclass
 from types import UnionType
 from typing import Annotated, Union, get_args, get_origin
 
 
-def unwrap_optional_type(annotation: type) -> tuple[type, bool]:
+@dataclass(frozen=True)
+class OptionalUnwrapResult:
+    unwrapped_type: type
+    is_optional: bool
+
+
+def unwrap_optional_type(annotation: type) -> OptionalUnwrapResult:
     """Return the wrapped type and whether the annotation represents ``T | None``."""
     unwrapped_annotation = annotation
     origin = get_origin(unwrapped_annotation)
@@ -25,6 +32,6 @@ def unwrap_optional_type(annotation: type) -> tuple[type, bool]:
             non_none_args.append(arg)
 
         if has_none and len(non_none_args) == 1:
-            return non_none_args[0], True
+            return OptionalUnwrapResult(unwrapped_type=non_none_args[0], is_optional=True)
 
-    return unwrapped_annotation, False
+    return OptionalUnwrapResult(unwrapped_type=unwrapped_annotation, is_optional=False)
