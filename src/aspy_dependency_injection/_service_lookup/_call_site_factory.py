@@ -204,7 +204,7 @@ class CallSiteFactory:
     ) -> ServiceCallSite:
         try:
             call_site_chain.add(service_identifier, implementation_type)
-            parameter_call_sites: list[ServiceCallSite] | None = None
+            parameter_call_sites: list[ServiceCallSite | None] | None = None
             constructor_information = ConstructorInformation(implementation_type)
             parameters = constructor_information.get_parameters()
             parameter_call_sites = await self._create_argument_call_sites(
@@ -214,6 +214,7 @@ class CallSiteFactory:
                 cache=cache,
                 service_type=service_identifier.service_type,
                 constructor_information=constructor_information,
+                parameters=parameters,
                 parameter_call_sites=parameter_call_sites,
             )
         finally:
@@ -221,17 +222,24 @@ class CallSiteFactory:
 
     async def _create_argument_call_sites(
         self, parameters: list[ParameterInformation], call_site_chain: CallSiteChain
-    ) -> list[ServiceCallSite]:
+    ) -> list[ServiceCallSite | None]:
         if len(parameters) == 0:
             return []
 
-        parameter_call_sites: list[ServiceCallSite] = []
+        parameter_call_sites: list[ServiceCallSite | None] = []
 
         for parameter in parameters:
             call_site = await self._create_call_site(
                 ServiceIdentifier.from_service_type(parameter.parameter_type),
                 call_site_chain,
             )
+
+            if call_site is None and (
+                parameter.is_optional or parameter.has_default_value
+            ):
+                parameter_call_sites.append(None)
+                continue
+
             assert call_site is not None
             parameter_call_sites.append(call_site)
 

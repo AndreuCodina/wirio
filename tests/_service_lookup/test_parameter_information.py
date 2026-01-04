@@ -47,9 +47,9 @@ class TestParameterInformation:
             string_union_with_none: str | None,
             string_union_with_none_and_default_to_none: str | None = None,
             string_union_with_none_and_default_to_value: str | None = "default",
-            union_of_string_with_none_and_default_to_value: Union[
+            union_of_string_with_none_and_default_to_value: Union[  # noqa: UP007
                 str, None
-            ] = "default",  # noqa: UP007
+            ] = "default",
             optional_string_and_default_to_value: Optional[str] = "default",  # noqa: UP045
             string_and_default_to_value: str = "default",
         ) -> None:

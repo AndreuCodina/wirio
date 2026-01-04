@@ -767,3 +767,30 @@ class TestServiceCollection:
             assert isinstance(resolved_service, Parent)
             assert issubclass(type(resolved_service), Parent)
             assert isinstance(resolved_service, Child)
+
+    async def test_assign_default_values_to_constructor_parameters_when_services_are_not_registered(
+        self,
+    ) -> None:
+        class ServiceWithDefaultValues:
+            def __init__(
+                self,
+                value1: str | None,
+                value2: str = "default2",
+                value3: str = "default3",
+            ) -> None:
+                self.value1 = value1
+                self.value2 = value2
+                self.value3 = value3
+
+        services = ServiceCollection()
+        services.add_transient(ServiceWithDefaultValues)
+
+        async with services.build_service_provider() as service_provider:
+            resolved_service = await service_provider.get_required_service(
+                ServiceWithDefaultValues
+            )
+
+            assert isinstance(resolved_service, ServiceWithDefaultValues)
+            assert resolved_service.value1 is None
+            assert resolved_service.value2 == "default2"
+            assert resolved_service.value3 == "default3"
