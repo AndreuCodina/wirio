@@ -1,13 +1,8 @@
+import typing
 from collections.abc import (
     Hashable,
 )
-from typing import (
-    Final,
-    final,
-    get_args,
-    get_origin,
-    override,
-)
+from typing import Final, final, override
 
 
 @final
@@ -18,16 +13,16 @@ class TypedType(Hashable):
     _args: Final[tuple[type, ...]]
 
     def __init__(self, type_: type) -> None:
-        origin = get_origin(type_)
+        origin = typing.get_origin(type_)
         has_no_generics = origin is None
 
         if has_no_generics:
             self._origin = type_
-            self._args = get_args(type_)
+            self._args = typing.get_args(type_)
             return
 
         self._origin = origin
-        self._args = get_args(type_)
+        self._args = typing.get_args(type_)
 
     @classmethod
     def from_type(cls, type_: type) -> TypedType:
@@ -69,8 +64,8 @@ class TypedType(Hashable):
 
         if len(args) > 0:
             for arg in args:
-                arg_origin = get_origin(arg)
-                arg_args = get_args(arg)
+                arg_origin = typing.get_origin(arg)
+                arg_args = typing.get_args(arg)
                 has_generics = arg_origin is not None
 
                 if has_generics:

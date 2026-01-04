@@ -154,6 +154,7 @@ class NotificationService(ABC):
 
 
 class EmailService(NotificationService):
+    @override
     async def send_notification(self, recipient: str, message: str) -> None:
         pass
 

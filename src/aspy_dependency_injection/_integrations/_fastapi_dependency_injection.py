@@ -10,7 +10,9 @@ from starlette.requests import Request
 from starlette.routing import Match
 from starlette.websockets import WebSocket
 
-from aspy_dependency_injection._service_lookup._typed_type import TypedType
+from aspy_dependency_injection._service_lookup._parameter_information import (
+    ParameterInformation,
+)
 from aspy_dependency_injection.injectable import Injectable
 
 if TYPE_CHECKING:
@@ -85,10 +87,10 @@ class FastApiDependencyInjection:
         async def _inject_async_target(*args: Any, **kwargs: Any) -> Any:  # noqa: ANN401
             parameters_to_inject = cls._get_parameters_to_inject(target)
             parameters_to_inject_resolved: dict[str, Any] = {
-                injected_parameter_name: await cls._get_request_container().service_provider.get_service_object(
-                    TypedType.from_type(injected_parameter_class)
+                injected_parameter_name: await cls._resolve_injected_parameter(
+                    parameter_information
                 )
-                for injected_parameter_name, injected_parameter_class in parameters_to_inject.items()
+                for injected_parameter_name, parameter_information in parameters_to_inject.items()
             }
             return await target(*args, **{**kwargs, **parameters_to_inject_resolved})
 
@@ -104,8 +106,10 @@ class FastApiDependencyInjection:
         return current_request.get().state.aspy_service_scope
 
     @classmethod
-    def _get_parameters_to_inject(cls, target: Callable[..., Any]) -> dict[str, type]:
-        result: dict[str, type] = {}
+    def _get_parameters_to_inject(
+        cls, target: Callable[..., Any]
+    ) -> dict[str, ParameterInformation]:
+        result: dict[str, ParameterInformation] = {}
 
         for parameter_name, parameter in inspect.signature(target).parameters.items():
             if parameter.annotation is Parameter.empty:
@@ -118,8 +122,8 @@ class FastApiDependencyInjection:
             if injectable_dependency is None:
                 continue
 
-            service_type = parameter.annotation.__args__[0]
-            result[parameter_name] = service_type
+            parameter_information = ParameterInformation(parameter=parameter)
+            result[parameter_name] = parameter_information
 
         return result
 
@@ -133,6 +137,25 @@ class FastApiDependencyInjection:
                     return dependency
 
         return None
+
+    @classmethod
+    async def _resolve_injected_parameter(
+        cls, parameter_information: ParameterInformation
+    ) -> object | None:
+        parameter_service = (
+            await cls._get_request_container().service_provider.get_service_object(
+                parameter_information.parameter_type
+            )
+        )
+
+        if parameter_service is None:
+            if parameter_information.is_optional:
+                return None
+
+            error_message = f"Unable to resolve service for type '{parameter_information.parameter_type}' while attempting to invoke endpoint"
+            raise RuntimeError(error_message)
+
+        return parameter_service
 
 
 @final

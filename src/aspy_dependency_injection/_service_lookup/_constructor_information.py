@@ -23,7 +23,7 @@ class ConstructorInformation:
         init_method = self._type_.to_type().__init__
         init_signature = inspect.signature(init_method)
         return [
-            ParameterInformation(parameter=parameter, type_=self._type_.to_type())
-            for name, parameter in init_signature.parameters.items()
-            if name not in ["self", "args", "kwargs"]
+            ParameterInformation(parameter=parameter)
+            for parameter_name, parameter in init_signature.parameters.items()
+            if parameter_name not in ["self", "args", "kwargs"]
         ]

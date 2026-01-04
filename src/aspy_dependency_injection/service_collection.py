@@ -1,5 +1,6 @@
 import inspect
-from typing import TYPE_CHECKING, Final, get_type_hints, overload
+import typing
+from typing import TYPE_CHECKING, Final, overload
 
 from aspy_dependency_injection._integrations._fastapi_dependency_injection import (
     FastApiDependencyInjection,
@@ -309,7 +310,7 @@ class ServiceCollection:
 
         assert implementation_factory is not None
 
-        type_hints: dict[str, type] = get_type_hints(implementation_factory)
+        type_hints: dict[str, type] = typing.get_type_hints(implementation_factory)
         return_type = type_hints.get("return")
 
         if return_type is None:
