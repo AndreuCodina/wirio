@@ -28,6 +28,7 @@ class ServiceCacheKey(Hashable):
     def __hash__(self) -> int:
         return (hash(self._service_identifier) * 397) ^ self._slot
 
+    @override
     def __eq__(self, value: object) -> bool:
         if not isinstance(value, ServiceCacheKey):
             return NotImplemented

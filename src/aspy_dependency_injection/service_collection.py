@@ -75,7 +75,7 @@ class ServiceCollection:
         service_type_or_implementation_factory: type[TService]
         | Callable[..., Awaitable[TService]]
         | Callable[..., TService],
-        implementation_factory_or_implementation_type: Callable[
+        implementation_factory_or_implementation_type_or_none: Callable[
             ..., Awaitable[TService]
         ]
         | Callable[..., TService]
@@ -86,7 +86,7 @@ class ServiceCollection:
         self._add_from_overloaded_constructor(
             lifetime=ServiceLifetime.TRANSIENT,
             service_type_or_implementation_factory=service_type_or_implementation_factory,
-            implementation_factory_or_implementation_type=implementation_factory_or_implementation_type,
+            implementation_factory_or_implementation_type_or_implementation_instance_none=implementation_factory_or_implementation_type_or_none,
         )
 
     @overload
@@ -130,23 +130,32 @@ class ServiceCollection:
         /,
     ) -> None: ...
 
+    @overload
+    def add_singleton[TService](
+        self,
+        service_type: type[TService],
+        implementation_instance: object,
+        /,
+    ) -> None: ...
+
     def add_singleton[TService](
         self,
         service_type_or_implementation_factory: type[TService]
         | Callable[..., Awaitable[TService]]
         | Callable[..., TService],
-        implementation_factory_or_implementation_type: Callable[
+        implementation_factory_or_implementation_type_or_implementation_instance_none: Callable[
             ..., Awaitable[TService]
         ]
         | Callable[..., TService]
         | type
+        | object
         | None = None,
         /,
     ) -> None:
         self._add_from_overloaded_constructor(
             lifetime=ServiceLifetime.SINGLETON,
             service_type_or_implementation_factory=service_type_or_implementation_factory,
-            implementation_factory_or_implementation_type=implementation_factory_or_implementation_type,
+            implementation_factory_or_implementation_type_or_implementation_instance_none=implementation_factory_or_implementation_type_or_implementation_instance_none,
         )
 
     @overload
@@ -195,7 +204,7 @@ class ServiceCollection:
         service_type_or_implementation_factory: type[TService]
         | Callable[..., Awaitable[TService]]
         | Callable[..., TService],
-        implementation_factory_or_implementation_type: Callable[
+        implementation_factory_or_implementation_type_or_none: Callable[
             ..., Awaitable[TService]
         ]
         | Callable[..., TService]
@@ -206,7 +215,7 @@ class ServiceCollection:
         self._add_from_overloaded_constructor(
             lifetime=ServiceLifetime.SCOPED,
             service_type_or_implementation_factory=service_type_or_implementation_factory,
-            implementation_factory_or_implementation_type=implementation_factory_or_implementation_type,
+            implementation_factory_or_implementation_type_or_implementation_instance_none=implementation_factory_or_implementation_type_or_none,
         )
 
     def build_service_provider(self) -> ServiceProvider:
@@ -223,11 +232,12 @@ class ServiceCollection:
         service_type_or_implementation_factory: type[TService]
         | Callable[..., Awaitable[TService]]
         | Callable[..., TService],
-        implementation_factory_or_implementation_type: Callable[
+        implementation_factory_or_implementation_type_or_implementation_instance_none: Callable[
             ..., Awaitable[TService]
         ]
         | Callable[..., TService]
         | type
+        | object
         | None = None,
     ) -> None:
         service_type_to_add: type[TService] | None = None
@@ -235,22 +245,31 @@ class ServiceCollection:
             Callable[..., Awaitable[TService]] | Callable[..., TService] | None
         ) = None
         implementation_type_to_add: type | None = None
+        implementation_instance_to_add: object | None = None
 
         if isinstance(service_type_or_implementation_factory, type):
             service_type_to_add = service_type_or_implementation_factory
 
-        if isinstance(implementation_factory_or_implementation_type, type):
-            implementation_type_to_add = implementation_factory_or_implementation_type
+        if isinstance(
+            implementation_factory_or_implementation_type_or_implementation_instance_none,
+            type,
+        ):
+            implementation_type_to_add = implementation_factory_or_implementation_type_or_implementation_instance_none
         elif (
             service_type_to_add is not None
-            and implementation_factory_or_implementation_type is not None
+            and implementation_factory_or_implementation_type_or_implementation_instance_none
+            is not None
         ):
-            implementation_factory_to_add = (
-                implementation_factory_or_implementation_type
-            )
+            if callable(
+                implementation_factory_or_implementation_type_or_implementation_instance_none,
+            ):
+                implementation_factory_to_add = implementation_factory_or_implementation_type_or_implementation_instance_none  # pyright: ignore[reportAssignmentType]
+            else:
+                implementation_instance_to_add = implementation_factory_or_implementation_type_or_implementation_instance_none
         elif (
             service_type_to_add is None
-            and implementation_factory_or_implementation_type is None
+            and implementation_factory_or_implementation_type_or_implementation_instance_none
+            is None
         ):
             implementation_factory_to_add = service_type_or_implementation_factory
 
@@ -259,22 +278,35 @@ class ServiceCollection:
             service_type=service_type_to_add,
             implementation_factory=implementation_factory_to_add,
             implementation_type=implementation_type_to_add,
+            implementation_instance=implementation_instance_to_add,
         )
 
     def _add[TService](
         self,
         lifetime: ServiceLifetime,
-        service_type: type[TService] | None = None,
+        service_type: type[TService] | None,
         implementation_factory: Callable[..., Awaitable[TService]]
         | Callable[..., TService]
-        | None = None,
-        implementation_type: type | None = None,
+        | None,
+        implementation_type: type | None,
+        implementation_instance: object | None,
     ) -> None:
         provided_service_type = self._get_provided_service_type(
             service_type, implementation_factory
         )
 
-        if implementation_factory is None:
+        if implementation_instance is not None:
+            implementation_type_to_add = (
+                implementation_type
+                if implementation_type is not None
+                else provided_service_type
+            )
+            self._add_from_implementation_instance(
+                service_type=provided_service_type,
+                implementation_instance=implementation_instance,
+                lifetime=lifetime,
+            )
+        elif implementation_factory is None:
             implementation_type_to_add = (
                 implementation_type
                 if implementation_type is not None
@@ -325,6 +357,19 @@ class ServiceCollection:
         descriptor = ServiceDescriptor.from_implementation_type(
             service_type=service_type,
             implementation_type=implementation_type,
+            lifetime=lifetime,
+        )
+        self._descriptors.append(descriptor)
+
+    def _add_from_implementation_instance(
+        self,
+        service_type: type,
+        implementation_instance: object,
+        lifetime: ServiceLifetime,
+    ) -> None:
+        descriptor = ServiceDescriptor.from_implementation_instance(
+            service_type=service_type,
+            implementation_instance=implementation_instance,
             lifetime=lifetime,
         )
         self._descriptors.append(descriptor)

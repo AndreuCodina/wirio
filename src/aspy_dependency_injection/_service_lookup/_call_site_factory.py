@@ -7,6 +7,9 @@ from aspy_dependency_injection._async_concurrent_dictionary import (
 from aspy_dependency_injection._service_lookup._async_factory_call_site import (
     AsyncFactoryCallSite,
 )
+from aspy_dependency_injection._service_lookup._constant_call_site import (
+    ConstantCallSite,
+)
 from aspy_dependency_injection._service_lookup._constructor_call_site import (
     ConstructorCallSite,
 )
@@ -166,18 +169,23 @@ class CallSiteFactory:
             service_descriptor.lifetime, service_identifier, slot
         )
 
-        if service_descriptor.sync_implementation_factory is not None:
+        if service_descriptor.implementation_instance is not None:
+            service_call_site = ConstantCallSite(
+                service_type=service_descriptor.service_type,
+                default_value=service_descriptor.implementation_instance,
+            )
+        elif service_descriptor.sync_implementation_factory is not None:
             assert service_descriptor.sync_implementation_factory is not None
             service_call_site = SyncFactoryCallSite(
                 cache=cache,
-                service_type=service_identifier.service_type,
+                service_type=service_descriptor.service_type,
                 implementation_factory=service_descriptor.sync_implementation_factory,
             )
         elif service_descriptor.async_implementation_factory is not None:
             assert service_descriptor.async_implementation_factory is not None
             service_call_site = AsyncFactoryCallSite(
                 cache=cache,
-                service_type=service_identifier.service_type,
+                service_type=service_descriptor.service_type,
                 implementation_factory=service_descriptor.async_implementation_factory,
             )
         elif service_descriptor.has_implementation_type():

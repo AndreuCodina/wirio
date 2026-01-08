@@ -135,7 +135,7 @@ def inject_database_client(application_settings: ApplicationSettings) -> Databas
         connection_string=application_settings.database_connection_string
     )
 
-services.add_singleton(ApplicationSettings)
+services.add_singleton(inject_application_settings)
 services.add_transient(inject_database_client)
 ```
 

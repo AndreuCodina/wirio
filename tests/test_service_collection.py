@@ -918,6 +918,7 @@ class TestServiceCollection:
             def __init__(self, service: str) -> None:
                 self.service = service
 
+        expected_error_message = "Unable to resolve service with type 'builtins.str' while attempting to activate a service"
         services = ServiceCollection()
         services.add_transient(Service)
 
@@ -925,7 +926,22 @@ class TestServiceCollection:
             with pytest.raises(RuntimeError) as exception_info:
                 await service_provider.get_required_service(Service)
 
-            assert (
-                str(exception_info.value)
-                == "Unable to resolve service with type 'builtins.str' while attempting to activate a service"
+            assert str(exception_info.value) == expected_error_message
+
+    async def test_register_implementation_instance(
+        self,
+    ) -> None:
+        services = ServiceCollection()
+        implementation_instance = ServiceWithNoDependencies()
+        services.add_singleton(ServiceWithNoDependencies, implementation_instance)
+
+        async with services.build_service_provider() as service_provider:
+            resolved_service_1 = await service_provider.get_required_service(
+                ServiceWithNoDependencies
             )
+            resolved_service_2 = await service_provider.get_required_service(
+                ServiceWithNoDependencies
+            )
+
+            assert resolved_service_1 is implementation_instance
+            assert resolved_service_2 is implementation_instance
