@@ -81,6 +81,7 @@ class TestFastApi:
         assert response.status_code == HTTPStatus.OK
 
     async def test_fail_when_non_optional_dependency_is_missing(self) -> None:
+        expected_error_message = "Unable to resolve service for type 'tests.utils.services.ServiceWithNoDependencies' while attempting to invoke endpoint"
         app = FastAPI()
 
         @app.get("/non-optional-dependency")
@@ -98,7 +99,4 @@ class TestFastApi:
             with pytest.raises(RuntimeError) as exception_info:
                 test_client.get("/non-optional-dependency")
 
-            assert (
-                str(exception_info.value)
-                == "Unable to resolve service for type 'tests.utils.services.ServiceWithNoDependencies' while attempting to invoke endpoint"
-            )
+            assert str(exception_info.value) == expected_error_message

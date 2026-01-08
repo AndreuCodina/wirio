@@ -14,6 +14,7 @@ class ServiceDescriptor:
     _service_type: Final[TypedType]
     _lifetime: Final[ServiceLifetime]
     _implementation_type: TypedType | None
+    _implementation_instance: object | None
     _sync_implementation_factory: Callable[..., object] | None
     _async_implementation_factory: Callable[..., Awaitable[object]] | None
 
@@ -21,6 +22,7 @@ class ServiceDescriptor:
         self._service_type = TypedType.from_type(service_type)
         self._lifetime = lifetime
         self._implementation_type = None
+        self._implementation_instance = None
         self._sync_implementation_factory = None
         self._async_implementation_factory = None
 
@@ -35,6 +37,10 @@ class ServiceDescriptor:
     @property
     def implementation_type(self) -> TypedType | None:
         return self._implementation_type
+
+    @property
+    def implementation_instance(self) -> object | None:
+        return self._implementation_instance
 
     @property
     def sync_implementation_factory(
@@ -54,6 +60,17 @@ class ServiceDescriptor:
     ) -> Self:
         self = cls(service_type=service_type, lifetime=lifetime)
         self._implementation_type = TypedType.from_type(implementation_type)
+        return self
+
+    @classmethod
+    def from_implementation_instance(
+        cls,
+        service_type: type,
+        implementation_instance: object,
+        lifetime: ServiceLifetime,
+    ) -> Self:
+        self = cls(service_type=service_type, lifetime=lifetime)
+        self._implementation_instance = implementation_instance
         return self
 
     @classmethod

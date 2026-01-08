@@ -47,6 +47,8 @@ class FastApiDependencyInjection:
 
         @asynccontextmanager
         async def new_lifespan(app: FastAPI) -> AsyncGenerator[Any]:
+            await service_provider.__aenter__()
+
             async with old_lifespan(app) as state:
                 yield state
 

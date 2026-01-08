@@ -38,6 +38,7 @@ class ServiceIdentifier(Hashable):
     def __hash__(self) -> int:
         return hash(self._service_type)
 
+    @override
     def __eq__(self, value: object) -> bool:
         if not isinstance(value, ServiceIdentifier):
             return NotImplemented

@@ -10,6 +10,9 @@ if TYPE_CHECKING:
     from aspy_dependency_injection._service_lookup._async_factory_call_site import (
         AsyncFactoryCallSite,
     )
+    from aspy_dependency_injection._service_lookup._constant_call_site import (
+        ConstantCallSite,
+    )
     from aspy_dependency_injection._service_lookup._constructor_call_site import (
         ConstructorCallSite,
     )
@@ -77,6 +80,11 @@ class CallSiteVisitor[TArgument, TResult](ABC):
                     constructor_call_site=cast("ConstructorCallSite", call_site),
                     argument=argument,
                 )
+            case CallSiteKind.CONSTANT:
+                return self._visit_constant(
+                    constant_call_site=cast("ConstantCallSite", call_site),
+                    argument=argument,
+                )
             case CallSiteKind.SERVICE_PROVIDER:
                 return self._visit_service_provider(
                     service_provider_call_site=cast(
@@ -88,6 +96,11 @@ class CallSiteVisitor[TArgument, TResult](ABC):
     @abstractmethod
     async def _visit_constructor(
         self, constructor_call_site: ConstructorCallSite, argument: TArgument
+    ) -> TResult: ...
+
+    @abstractmethod
+    def _visit_constant(
+        self, constant_call_site: ConstantCallSite, argument: TArgument
     ) -> TResult: ...
 
     @abstractmethod

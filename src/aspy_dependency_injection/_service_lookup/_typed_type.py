@@ -87,6 +87,7 @@ class TypedType(Hashable):
     def __hash__(self) -> int:
         return hash(self._origin) ^ hash(self._args)
 
+    @override
     def __eq__(self, value: object) -> bool:
         if not isinstance(value, TypedType):
             return NotImplemented

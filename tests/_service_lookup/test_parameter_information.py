@@ -70,16 +70,14 @@ class TestParameterInformation:
         def function(value: int | str) -> None:
             pass
 
+        expected_error_message = "The parameter 'value' has a Union type without None"
         signature = inspect.signature(function)
         parameter = signature.parameters["value"]
 
         with pytest.raises(RuntimeError) as exception_info:
             ParameterInformation(parameter)
 
-        assert (
-            str(exception_info.value)
-            == "The parameter 'value' has a Union type without None"
-        )
+        assert str(exception_info.value) == expected_error_message
 
     def test_fail_when_union_type_has_several_types_including_none_instead_of_only_a_type_with_none(
         self,

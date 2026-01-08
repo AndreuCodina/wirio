@@ -27,6 +27,9 @@ if TYPE_CHECKING:
     from aspy_dependency_injection._service_lookup._async_factory_call_site import (
         AsyncFactoryCallSite,
     )
+    from aspy_dependency_injection._service_lookup._constant_call_site import (
+        ConstantCallSite,
+    )
     from aspy_dependency_injection._service_lookup._constructor_call_site import (
         ConstructorCallSite,
     )
@@ -64,6 +67,10 @@ class CallSiteRuntimeResolver(CallSiteVisitor[RuntimeResolverContext, object | N
     async def resolve(
         self, call_site: ServiceCallSite, scope: ServiceProviderEngineScope
     ) -> object | None:
+        # Fast path to avoid virtual calls if we already have the cached value in the root scope
+        if scope.is_root_scope and call_site.value is not None:
+            return call_site.value
+
         return await self._visit_call_site(
             call_site,
             RuntimeResolverContext(
@@ -83,7 +90,7 @@ class CallSiteRuntimeResolver(CallSiteVisitor[RuntimeResolverContext, object | N
         service_provider_engine_scope = argument.scope.root_provider.root
 
         async with call_site.lock:
-            # Lock the callsite and check if another coroutine already cached the value
+            # Lock the call_site and check if another coroutine already cached the value
             if call_site.value is not None:
                 return call_site.value
 
@@ -206,6 +213,14 @@ class CallSiteRuntimeResolver(CallSiteVisitor[RuntimeResolverContext, object | N
             service.__enter__()
 
         return service
+
+    @override
+    def _visit_constant(
+        self,
+        constant_call_site: ConstantCallSite,
+        argument: RuntimeResolverContext,
+    ) -> object:
+        return constant_call_site.default_value
 
     @override
     async def _visit_sync_factory(
