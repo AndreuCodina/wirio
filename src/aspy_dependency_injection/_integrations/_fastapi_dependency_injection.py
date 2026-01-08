@@ -117,9 +117,7 @@ class FastApiDependencyInjection:
             if parameter.annotation is Parameter.empty:
                 continue
 
-            injectable_dependency = cls._get_injectable_dependency(
-                parameter.annotation.__metadata__
-            )
+            injectable_dependency = cls._get_injectable_dependency(parameter)
 
             if injectable_dependency is None:
                 continue
@@ -130,7 +128,12 @@ class FastApiDependencyInjection:
         return result
 
     @classmethod
-    def _get_injectable_dependency(cls, metadata: Sequence[Any]) -> Injectable | None:
+    def _get_injectable_dependency(cls, parameter: Parameter) -> Injectable | None:
+        if not hasattr(parameter.annotation, "__metadata__"):
+            return None
+
+        metadata: Sequence[Any] = parameter.annotation.__metadata__
+
         for metadata_item in metadata:
             if hasattr(metadata_item, "dependency"):
                 dependency = metadata_item.dependency()  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType, reportAttributeAccessIssue]

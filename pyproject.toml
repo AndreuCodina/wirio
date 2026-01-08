@@ -1,6 +1,6 @@
 [project]
 name = "aspy-dependency-injection"
-version = "0.4.0"
+version = "0.4.1"
 description = "Dependency injection"
 authors = [
     { name = "Andreu Codina", email = "30506301+AndreuCodina@users.noreply.github.com" },

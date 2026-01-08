@@ -61,6 +61,28 @@ class TestFastApi:
 
         assert response.status_code == HTTPStatus.OK
 
+    async def test_not_infere_with_non_annotated_parameters(self) -> None:
+        app = FastAPI()
+        router = APIRouter()
+
+        @router.get("/non-annotated-parameter")
+        async def non_annotated_parameter_endpoint(  # pyright: ignore[reportUnusedFunction]
+            some_parameter: str,
+        ) -> None:
+            assert some_parameter == "test-value"
+
+        app.include_router(router)
+        services = ServiceCollection()
+        services.configure_fastapi(app)
+
+        with TestClient(app) as test_client:
+            response = test_client.get(
+                "/non-annotated-parameter",
+                params={"some_parameter": "test-value"},
+            )
+
+        assert response.status_code == HTTPStatus.OK
+
     def test_optional_dependency_returns_none_when_not_registered(self) -> None:
         app = FastAPI()
 
