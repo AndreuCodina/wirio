@@ -135,9 +135,10 @@ def inject_database_client(application_settings: ApplicationSettings) -> Databas
         connection_string=application_settings.database_connection_string
     )
 
-services.add_singleton(inject_application_settings)
 services.add_transient(inject_database_client)
 ```
+
+The factories can take as parameters other services registered. In this case, `inject_database_client` takes `ApplicationSettings` as a parameter, and the dependency injection mechanism will resolve it automatically.
 
 ## Testing
 

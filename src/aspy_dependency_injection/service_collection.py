@@ -296,11 +296,6 @@ class ServiceCollection:
         )
 
         if implementation_instance is not None:
-            implementation_type_to_add = (
-                implementation_type
-                if implementation_type is not None
-                else provided_service_type
-            )
             self._add_from_implementation_instance(
                 service_type=provided_service_type,
                 implementation_instance=implementation_instance,
