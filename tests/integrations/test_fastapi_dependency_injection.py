@@ -2,7 +2,7 @@ from http import HTTPStatus
 from typing import TYPE_CHECKING, Annotated
 
 import pytest
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter, Depends, FastAPI
 from fastapi.testclient import TestClient
 
 from aspy_dependency_injection.annotations import Inject
@@ -61,7 +61,8 @@ class TestFastApi:
 
         assert response.status_code == HTTPStatus.OK
 
-    async def test_not_infere_with_non_annotated_parameters(self) -> None:
+    async def test_not_interfere_with_non_annotated_parameters(self) -> None:
+        expected_test_value = "test-value"
         app = FastAPI()
         router = APIRouter()
 
@@ -69,7 +70,7 @@ class TestFastApi:
         async def non_annotated_parameter_endpoint(  # pyright: ignore[reportUnusedFunction]
             some_parameter: str,
         ) -> None:
-            assert some_parameter == "test-value"
+            assert some_parameter == expected_test_value
 
         app.include_router(router)
         services = ServiceCollection()
@@ -78,8 +79,31 @@ class TestFastApi:
         with TestClient(app) as test_client:
             response = test_client.get(
                 "/non-annotated-parameter",
-                params={"some_parameter": "test-value"},
+                params={"some_parameter": expected_test_value},
             )
+
+        assert response.status_code == HTTPStatus.OK
+
+    async def test_not_interfere_with_fastapi_depends(self) -> None:
+        expected_test_value = "test-value"
+        app = FastAPI()
+        router = APIRouter()
+
+        def test_dependency() -> str:
+            return expected_test_value
+
+        @router.get("/fastapi-depends")
+        async def fastapi_depends_endpoint(  # pyright: ignore[reportUnusedFunction]
+            test_dependency: Annotated[str, Depends(test_dependency)],
+        ) -> None:
+            assert test_dependency == expected_test_value
+
+        app.include_router(router)
+        services = ServiceCollection()
+        services.configure_fastapi(app)
+
+        with TestClient(app) as test_client:
+            response = test_client.get("/fastapi-depends")
 
         assert response.status_code == HTTPStatus.OK
 
@@ -122,3 +146,35 @@ class TestFastApi:
                 test_client.get("/non-optional-dependency")
 
             assert str(exception_info.value) == expected_error_message
+
+    async def test_combine_request_types_fastapi_depends_and_aspy_inject(self) -> None:
+        expected_request_parameter = "test-value1"
+        expected_fastapi_depends = "test-value2"
+        expected_aspy_inject = "test-value3"
+        app = FastAPI()
+        router = APIRouter()
+
+        def test_dependency() -> str:
+            return expected_fastapi_depends
+
+        @router.get("/endpoint")
+        async def fastapi_depends_endpoint(  # pyright: ignore[reportUnusedFunction]
+            request_parameter: str,
+            fastapi_depends: Annotated[str, Depends(test_dependency)],
+            aspy_inject: Annotated[str, Inject()],
+        ) -> None:
+            assert request_parameter == expected_request_parameter
+            assert fastapi_depends == expected_fastapi_depends
+            assert aspy_inject == expected_aspy_inject
+
+        app.include_router(router)
+        services = ServiceCollection()
+        services.add_singleton(str, expected_aspy_inject)
+        services.configure_fastapi(app)
+
+        with TestClient(app) as test_client:
+            response = test_client.get(
+                "/endpoint", params={"request_parameter": expected_request_parameter}
+            )
+
+        assert response.status_code == HTTPStatus.OK

@@ -61,8 +61,14 @@ class FastApiDependencyInjection:
         cls, target: Callable[..., Any]
     ) -> bool:
         for parameter in inspect.signature(target).parameters.values():
-            if parameter.annotation is not None and isinstance(
-                parameter.annotation, Injectable
+            if (
+                parameter.annotation is not None
+                and hasattr(parameter.annotation, "__metadata__")
+                and hasattr(parameter.annotation.__metadata__[0], "dependency")
+                and hasattr(
+                    parameter.annotation.__metadata__[0].dependency,
+                    "__is_aspy_depends__",
+                )
             ):
                 return True
 
@@ -75,7 +81,7 @@ class FastApiDependencyInjection:
                 isinstance(route, APIRoute)
                 and route.dependant.call is not None
                 and inspect.iscoroutinefunction(route.dependant.call)
-                and not cls._are_annotated_parameters_with_aspy_dependencies(
+                and cls._are_annotated_parameters_with_aspy_dependencies(
                     route.dependant.call
                 )
             ):
@@ -135,7 +141,9 @@ class FastApiDependencyInjection:
         metadata: Sequence[Any] = parameter.annotation.__metadata__
 
         for metadata_item in metadata:
-            if hasattr(metadata_item, "dependency"):
+            if hasattr(metadata_item, "dependency") and hasattr(
+                metadata_item.dependency, "__is_aspy_depends__"
+            ):
                 dependency = metadata_item.dependency()  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType, reportAttributeAccessIssue]
 
                 if isinstance(dependency, Injectable):

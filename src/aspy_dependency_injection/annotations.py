@@ -9,4 +9,5 @@ def Inject() -> Injectable:  # noqa: N802
     def _dependency() -> Injectable:
         return Injectable()
 
+    _dependency.__is_aspy_depends__ = True  # pyright: ignore[reportFunctionMemberAccess]
     return Depends(_dependency, use_cache=False)
