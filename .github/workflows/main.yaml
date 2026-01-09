@@ -27,6 +27,10 @@ jobs:
         with:
           python-version-file: .python-version
 
+      - name: Install Python packages
+        run: uv sync --locked
+        shell: bash
+
       - name: Test
         run: uv run --frozen -- pytest --cov=aspy_dependency_injection --cov-branch --cov-report=xml tests
         shell: bash
@@ -36,3 +40,6 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           file: ${{ github.workspace }}/coverage.xml
+
+      - name: Deploy documentation
+        run: uv run --frozen -- mkdocs gh-deploy

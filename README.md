@@ -4,6 +4,7 @@
 [![CI](https://img.shields.io/github/actions/workflow/status/AndreuCodina/aspy-dependency-injection/main.yaml?branch=main&logo=github&label=CI)](https://github.com/AndreuCodina/aspy-dependency-injection/actions/workflows/main.yaml)
 [![Coverage status](https://coveralls.io/repos/github/AndreuCodina/aspy-dependency-injection/badge.svg?branch=main)](https://coveralls.io/github/AndreuCodina/aspy-dependency-injection?branch=main)
 [![PyPI - version](https://img.shields.io/pypi/v/aspy-dependency-injection?color=blue&label=pypi)](https://pypi.org/project/aspy-dependency-injection/)
+[![Documentation](https://img.shields.io/badge/📚_documentation-3D9970)](https://AndreuCodina.github.io/aspy-dependency-injection)
 [![Python - versions](https://img.shields.io/pypi/pyversions/aspy-dependency-injection.svg)](https://github.com/AndreuCodina/aspy-dependency-injection)
 [![License](https://img.shields.io/github/license/AndreuCodina/aspy-dependency-injection.svg)](https://github.com/AndreuCodina/aspy-dependency-injection/blob/main/LICENSE)
 </div>
@@ -22,7 +23,7 @@
 uv add aspy-dependency-injection
 ```
 
-## Quickstart with FastAPI
+## ✨ Quickstart with FastAPI
 
 Inject services into async endpoints using `Annotated[..., Inject()]`.
 
@@ -51,7 +52,7 @@ services.add_transient(UserService)
 services.configure_fastapi(app)
 ```
 
-## Quickstart without FastAPI
+## ✨ Quickstart without FastAPI
 
 You convert the service collection into a service provider:
 
@@ -90,13 +91,13 @@ async with service_provider.create_scope() as service_scope:
     await user_service.create_user()
 ```
 
-## Lifetimes
+## 🔄 Lifetimes
 
 - `Transient`: A new instance is created every time the service is requested. Examples: Services without state, workflows, repositories, service clients...
 - `Singleton`: The same instance is used every time the service is requested. Examples: Settings (`pydantic-settings`), machine learning models, database connection pools, caches.
 - `Scoped`: A new instance is created for each new scope, but the same instance is returned within the same scope. Examples: Database clients, unit of work.
 
-## Factories
+## 🏭 Factories
 
 Sometimes, you need to use a factory function to create a service. For example, you have settings (a connection string, database name, etc.) stored using the package `pydantic-settings` and you want to provide them to a service `DatabaseClient` to access a database.
 
@@ -140,11 +141,25 @@ services.add_transient(inject_database_client)
 
 The factories can take as parameters other services registered. In this case, `inject_database_client` takes `ApplicationSettings` as a parameter, and the dependency injection mechanism will resolve it automatically.
 
-## Testing
+## 🧪 Simplified testing
 
-TBD
+You can create a fixture in `conftest.py` that provides a `ServiceProvider` instance:
 
-## Registration with a base class
+```python
+@pytest.fixture
+async def service_provider() -> AsyncGenerator[ServiceProvider]:
+    async with services.build_service_provider() as service_provider:
+        yield service_provider
+```
+
+And then you can inject it into your tests and resolve the services.
+
+```python
+async def test_demo(service_provider: ServiceProvider) -> None:
+    user_service = await service_provider.get_required_service(UserService)
+```
+
+## 📝 Interfaces & abstract classes
 
 You can register a service by specifying both the service type (base class / interface) and the implementation type (concrete class). This is useful when you want to inject services using abstractions.
 
@@ -170,3 +185,7 @@ class UserService:
 
 services.add_transient(NotificationService, EmailService)
 ```
+
+## 📚 Documentation
+
+For more information, [check out the documentation](https://AndreuCodina.github.io/aspy-dependency-injection).
