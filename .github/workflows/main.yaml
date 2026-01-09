@@ -12,6 +12,8 @@ concurrency:
 jobs:
   publish-coverage:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write # Allow mkdocs to push to gh-pages branch
     steps:
       - name: Checkout repository
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
@@ -41,5 +43,5 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           file: ${{ github.workspace }}/coverage.xml
 
-      - name: Deploy documentation
+      - name: Publish documentation
         run: uv run --frozen -- mkdocs gh-deploy --config-file docs/mkdocs.yml --remote-branch gh-pages
