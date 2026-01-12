@@ -23,11 +23,6 @@ jobs:
           version-file: pyproject.toml
           resolution-strategy: lowest
 
-      - name: Install Python
-        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
-        with:
-          python-version-file: .python-version
-
       - name: Install Python packages
         run: uv sync --locked
         shell: bash
@@ -54,11 +49,6 @@ jobs:
           resolution-strategy: lowest
           python-version: ${{ matrix.python-version }}
 
-      - name: Install Python
-        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
-        with:
-          python-version: ${{ matrix.python-version }}
-
       - name: Install Python packages
         run: uv sync --resolution ${{ matrix.resolution-strategy }}
         shell: bash
@@ -77,7 +67,7 @@ jobs:
         shell: bash
 
       - name: Publish coverage
-        if: ${{ matrix.python-version == '3.14' && matrix.resolution-strategy == 'lowest-direct' }}
+        if: ${{ matrix.python-version == '3.13' && matrix.resolution-strategy == 'lowest-direct' }}
         uses: coverallsapp/github-action@5cbfd81b66ca5d10c19b062c04de0199c215fb6e # v2.3.7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
