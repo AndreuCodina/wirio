@@ -1,4 +1,5 @@
 import asyncio
+from types import TracebackType
 from typing import TYPE_CHECKING, Final, Self, final, override
 
 from aspy_dependency_injection._service_lookup._service_identifier import (
@@ -10,6 +11,8 @@ from aspy_dependency_injection._service_lookup._supports_async_context_manager i
 from aspy_dependency_injection._service_lookup._supports_context_manager import (
     SupportsContextManager,
 )
+from aspy_dependency_injection._service_lookup._typed_type import TypedType
+from aspy_dependency_injection._service_lookup.service_cache_key import ServiceCacheKey
 from aspy_dependency_injection.abstractions.base_service_provider import (
     BaseServiceProvider,
 )
@@ -20,15 +23,7 @@ from aspy_dependency_injection.abstractions.service_scope_factory import (
 from aspy_dependency_injection.exceptions import ObjectDisposedError
 
 if TYPE_CHECKING:
-    from types import TracebackType
-
-    from aspy_dependency_injection._service_lookup._typed_type import TypedType
-    from aspy_dependency_injection._service_lookup.service_cache_key import (
-        ServiceCacheKey,
-    )
-    from aspy_dependency_injection.service_provider import (
-        ServiceProvider,
-    )
+    from aspy_dependency_injection.service_provider import ServiceProvider
 
 
 @final
@@ -37,14 +32,16 @@ class ServiceProviderEngineScope(
 ):
     """Container resolving services with scope."""
 
-    _root_provider: Final[ServiceProvider]
+    _root_provider: Final["ServiceProvider"]
     _is_root_scope: Final[bool]
     _is_disposed: bool
     _disposables: list[object] | None
     _resolved_services: Final[dict[ServiceCacheKey, object | None]]
     _resolved_services_lock: Final[asyncio.Lock]
 
-    def __init__(self, service_provider: ServiceProvider, is_root_scope: bool) -> None:
+    def __init__(
+        self, service_provider: "ServiceProvider", is_root_scope: bool
+    ) -> None:
         self._root_provider = service_provider
         self._is_root_scope = is_root_scope
         self._is_disposed = False
@@ -53,7 +50,7 @@ class ServiceProviderEngineScope(
         self._resolved_services_lock = asyncio.Lock()
 
     @property
-    def root_provider(self) -> ServiceProvider:
+    def root_provider(self) -> "ServiceProvider":
         return self._root_provider
 
     @property
@@ -61,7 +58,7 @@ class ServiceProviderEngineScope(
         return self._is_root_scope
 
     @property
-    def realized_services(self) -> dict[ServiceCacheKey, object | None]:
+    def resolved_services(self) -> dict[ServiceCacheKey, object | None]:
         return self._resolved_services
 
     @property

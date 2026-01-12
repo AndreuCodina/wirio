@@ -1,5 +1,7 @@
 import asyncio
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
+from types import TracebackType
 from typing import TYPE_CHECKING, Final, Self, final, override
 
 from aspy_dependency_injection._async_concurrent_dictionary import (
@@ -10,11 +12,17 @@ from aspy_dependency_injection._service_lookup._call_site_factory import CallSit
 from aspy_dependency_injection._service_lookup._runtime_service_provider_engine import (
     RuntimeServiceProviderEngine,
 )
+from aspy_dependency_injection._service_lookup._service_call_site import (
+    ServiceCallSite,
+)
 from aspy_dependency_injection._service_lookup._service_identifier import (
     ServiceIdentifier,
 )
 from aspy_dependency_injection._service_lookup._service_provider_call_site import (
     ServiceProviderCallSite,
+)
+from aspy_dependency_injection._service_lookup._service_provider_engine import (
+    ServiceProviderEngine,
 )
 from aspy_dependency_injection._service_lookup._typed_type import TypedType
 from aspy_dependency_injection.abstractions.base_service_provider import (
@@ -22,6 +30,7 @@ from aspy_dependency_injection.abstractions.base_service_provider import (
 )
 from aspy_dependency_injection.abstractions.service_scope import (
     AbstractAsyncContextManager,
+    ServiceScope,
 )
 from aspy_dependency_injection.exceptions import ObjectDisposedError
 from aspy_dependency_injection.service_provider_engine_scope import (
@@ -29,16 +38,6 @@ from aspy_dependency_injection.service_provider_engine_scope import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable
-    from types import TracebackType
-
-    from aspy_dependency_injection._service_lookup._service_call_site import (
-        ServiceCallSite,
-    )
-    from aspy_dependency_injection._service_lookup._service_provider_engine import (
-        ServiceProviderEngine,
-    )
-    from aspy_dependency_injection.abstractions.service_scope import ServiceScope
     from aspy_dependency_injection.service_collection import ServiceCollection
 
 
@@ -54,7 +53,7 @@ class ServiceProvider(
 ):
     """Provider that resolves services."""
 
-    _services: Final[ServiceCollection]
+    _services: Final["ServiceCollection"]
     _root: Final[ServiceProviderEngineScope]
     _engine: Final[ServiceProviderEngine]
     _service_accessors: Final[
@@ -63,7 +62,7 @@ class ServiceProvider(
     _is_disposed: bool
     _call_site_factory: Final[CallSiteFactory]
 
-    def __init__(self, services: ServiceCollection) -> None:
+    def __init__(self, services: "ServiceCollection") -> None:
         self._services = services
         self._root = ServiceProviderEngineScope(
             service_provider=self, is_root_scope=True

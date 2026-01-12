@@ -1,32 +1,32 @@
 import functools
 import inspect
+from collections.abc import AsyncGenerator, Callable
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
 from inspect import Parameter
 from typing import TYPE_CHECKING, Any, final
 
+from fastapi import FastAPI
 from fastapi.routing import APIRoute
 from starlette.requests import Request
-from starlette.routing import Match
+from starlette.routing import BaseRoute, Match
+from starlette.types import ASGIApp, Receive, Scope, Send
 from starlette.websockets import WebSocket
 
 from aspy_dependency_injection._service_lookup._parameter_information import (
     ParameterInformation,
 )
 from aspy_dependency_injection.injectable import Injectable
+from aspy_dependency_injection.service_provider import (
+    ServiceProvider,
+    ServiceScope,
+)
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator, Callable, Sequence
-
-    from fastapi import FastAPI
-    from starlette.routing import BaseRoute
-    from starlette.types import ASGIApp, Receive, Scope, Send
+    from collections.abc import Sequence
 
     from aspy_dependency_injection.service_collection import ServiceCollection
-    from aspy_dependency_injection.service_provider import (
-        ServiceProvider,
-        ServiceScope,
-    )
+
 
 current_request: ContextVar[Request | WebSocket] = ContextVar("aspy_starlette_request")
 
@@ -34,7 +34,7 @@ current_request: ContextVar[Request | WebSocket] = ContextVar("aspy_starlette_re
 @final
 class FastApiDependencyInjection:
     @classmethod
-    def setup(cls, app: FastAPI, services: ServiceCollection) -> None:
+    def setup(cls, app: FastAPI, services: "ServiceCollection") -> None:
         service_provider = services.build_service_provider()
         app.state.aspy_service_provider = service_provider
         app.add_middleware(_AspyAsgiMiddleware)

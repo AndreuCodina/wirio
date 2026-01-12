@@ -1,11 +1,9 @@
 from abc import ABC, abstractmethod
 from contextlib import AbstractAsyncContextManager
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from aspy_dependency_injection.abstractions.base_service_provider import (
-        BaseServiceProvider,
-    )
+from aspy_dependency_injection.abstractions.base_service_provider import (
+    BaseServiceProvider,
+)
 
 
 class ServiceScope(AbstractAsyncContextManager["ServiceScope"], ABC):

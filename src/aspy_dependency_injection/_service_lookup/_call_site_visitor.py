@@ -1,30 +1,28 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, cast
+from typing import cast
 
+from aspy_dependency_injection._service_lookup._async_factory_call_site import (
+    AsyncFactoryCallSite,
+)
 from aspy_dependency_injection._service_lookup._call_site_kind import CallSiteKind
+from aspy_dependency_injection._service_lookup._constant_call_site import (
+    ConstantCallSite,
+)
+from aspy_dependency_injection._service_lookup._constructor_call_site import (
+    ConstructorCallSite,
+)
+from aspy_dependency_injection._service_lookup._service_call_site import (
+    ServiceCallSite,
+)
+from aspy_dependency_injection._service_lookup._service_provider_call_site import (
+    ServiceProviderCallSite,
+)
+from aspy_dependency_injection._service_lookup._sync_factory_call_site import (
+    SyncFactoryCallSite,
+)
 from aspy_dependency_injection._service_lookup.call_site_result_cache_location import (
     CallSiteResultCacheLocation,
 )
-
-if TYPE_CHECKING:
-    from aspy_dependency_injection._service_lookup._async_factory_call_site import (
-        AsyncFactoryCallSite,
-    )
-    from aspy_dependency_injection._service_lookup._constant_call_site import (
-        ConstantCallSite,
-    )
-    from aspy_dependency_injection._service_lookup._constructor_call_site import (
-        ConstructorCallSite,
-    )
-    from aspy_dependency_injection._service_lookup._service_call_site import (
-        ServiceCallSite,
-    )
-    from aspy_dependency_injection._service_lookup._service_provider_call_site import (
-        ServiceProviderCallSite,
-    )
-    from aspy_dependency_injection._service_lookup._sync_factory_call_site import (
-        SyncFactoryCallSite,
-    )
 
 
 class CallSiteVisitor[TArgument, TResult](ABC):

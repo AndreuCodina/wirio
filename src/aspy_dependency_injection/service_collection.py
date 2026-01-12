@@ -1,6 +1,9 @@
 import inspect
 import typing
-from typing import TYPE_CHECKING, Final, overload
+from collections.abc import Awaitable, Callable
+from typing import Final, overload
+
+from fastapi import FastAPI
 
 from aspy_dependency_injection._integrations._fastapi_dependency_injection import (
     FastApiDependencyInjection,
@@ -10,11 +13,6 @@ from aspy_dependency_injection.service_lifetime import ServiceLifetime
 from aspy_dependency_injection.service_provider import (
     ServiceProvider,
 )
-
-if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable
-
-    from fastapi import FastAPI
 
 
 class ServiceCollection:

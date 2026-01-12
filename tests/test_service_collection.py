@@ -1,6 +1,7 @@
 from abc import ABC
 from contextlib import AbstractAsyncContextManager, AbstractContextManager
-from typing import TYPE_CHECKING, Self, override
+from types import TracebackType
+from typing import Self, override
 
 import pytest
 
@@ -22,9 +23,6 @@ from tests.utils.services import (
     ServiceWithOptionalDependencyWithDefault,
     ServiceWithSyncContextManagerAndNoDependencies,
 )
-
-if TYPE_CHECKING:
-    from types import TracebackType
 
 
 class TestServiceCollection:

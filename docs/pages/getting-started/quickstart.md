@@ -1,6 +1,6 @@
 # Quickstart
 
-You need to instance two services, `EmailService` and `UserService`, and `UserService` depends on the former.
+**Use case:** Your application needs to instance two services, `EmailService` and `UserService`, and `UserService` depends on the former.
 
 ```python
 class EmailService:
@@ -20,9 +20,9 @@ services.add_transient(EmailService)
 services.add_transient(UserService)
 ```
 
-You'll use `.add_X` depending on the desired [lifetime](../core-concepts/lifetimes.md): transient, scoped or singleton.
+You'll use `.add_X` depending on the desired [lifetime](../core-concepts/lifetimes.md). In this case, both services are registered as transient, meaning a new instance will be created each time it's requested.
 
-Finally, you convert the service collection into a service provider.
+Finally, you convert the service collection into a service provider, which will validate and build the dependency graph, and you'll be able to request instances from it.
 
 ```python
 async with services.build_service_provider() as service_provider:
@@ -31,6 +31,6 @@ async with services.build_service_provider() as service_provider:
 
 **Full code:**
 
-```python hl_lines="18-20 24"
+```python hl_lines="18-20 24-25"
 --8<-- "docs/code/quickstart.py"
 ```

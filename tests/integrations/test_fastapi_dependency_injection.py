@@ -1,5 +1,6 @@
+from collections.abc import Generator
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Annotated
+from typing import Annotated
 
 import pytest
 from fastapi import APIRouter, Depends, FastAPI
@@ -8,9 +9,6 @@ from fastapi.testclient import TestClient
 from aspy_dependency_injection.annotations import Inject
 from aspy_dependency_injection.service_collection import ServiceCollection
 from tests.utils.services import ServiceWithNoDependencies
-
-if TYPE_CHECKING:
-    from collections.abc import Generator
 
 
 @pytest.fixture

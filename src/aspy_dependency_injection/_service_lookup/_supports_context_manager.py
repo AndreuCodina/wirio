@@ -1,7 +1,5 @@
-from typing import TYPE_CHECKING, Protocol, Self, runtime_checkable
-
-if TYPE_CHECKING:
-    from types import TracebackType
+from types import TracebackType
+from typing import Protocol, Self, runtime_checkable
 
 
 @runtime_checkable

@@ -5,7 +5,7 @@ from typing import ClassVar, final
 class AspyUndefined:
     """A type used as a sentinel for undefined values."""
 
-    INSTANCE: ClassVar[AspyUndefined]
+    INSTANCE: ClassVar["AspyUndefined"]
 
 
 AspyUndefined.INSTANCE = AspyUndefined()

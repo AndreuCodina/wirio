@@ -1,3 +1,5 @@
+import sys
+
 import pytest
 
 from aspy_dependency_injection._service_lookup._typed_type import TypedType
@@ -33,55 +35,90 @@ class CustomClassWithOptionalGeneric2[T = None]:
 
 class TestTypedType:
     @pytest.mark.parametrize(
-        argnames=("type_", "expected_representation"),
+        argnames=(
+            "type_",
+            "expected_representation_python_less_than_3_14",
+            "expected_representation_python_greater_than_or_equal_3_14",
+        ),
         argvalues=[
-            (int, "builtins.int"),
-            (list[int], "builtins.list[builtins.int]"),
-            (CustomClass, "tests._service_lookup.test_typed_type.CustomClass"),
+            (int, "builtins.int", "builtins.int"),
+            (list[int], "builtins.list[builtins.int]", "builtins.list[builtins.int]"),
+            (
+                CustomClass,
+                "tests._service_lookup.test_typed_type.CustomClass",
+                "tests._service_lookup.test_typed_type.CustomClass",
+            ),
             (
                 CustomClassWithGeneric1[int],
+                "tests._service_lookup.test_typed_type.CustomClassWithGeneric1[builtins.int]",
                 "tests._service_lookup.test_typed_type.CustomClassWithGeneric1[builtins.int]",
             ),
             (
                 CustomClassWithGeneric2[CustomClassWithGeneric2[int]],
                 "tests._service_lookup.test_typed_type.CustomClassWithGeneric2[tests._service_lookup.test_typed_type.CustomClassWithGeneric2[builtins.int]]",
+                "tests._service_lookup.test_typed_type.CustomClassWithGeneric2[tests._service_lookup.test_typed_type.CustomClassWithGeneric2[builtins.int]]",
             ),
             (
                 CustomClassWithGenerics1[int, str],
                 "tests._service_lookup.test_typed_type.CustomClassWithGenerics1[builtins.int, builtins.str]",
+                "tests._service_lookup.test_typed_type.CustomClassWithGenerics1[builtins.int, builtins.str]",
             ),
-            (int | str, "typing.Union[builtins.int, builtins.str]"),
+            (
+                int | str,
+                "types.UnionType[builtins.int, builtins.str]",
+                "typing.Union[builtins.int, builtins.str]",
+            ),
             (
                 CustomClassWithGenerics2[
                     int | CustomClassWithGeneric1[int | str],
                     CustomClassWithGeneric1[CustomClassWithGeneric1[str]],
                 ],
+                "tests._service_lookup.test_typed_type.CustomClassWithGenerics2[typing.Union[builtins.int, tests._service_lookup.test_typed_type.CustomClassWithGeneric1[types.UnionType[builtins.int, builtins.str]]], tests._service_lookup.test_typed_type.CustomClassWithGeneric1[tests._service_lookup.test_typed_type.CustomClassWithGeneric1[builtins.str]]]",
                 "tests._service_lookup.test_typed_type.CustomClassWithGenerics2[typing.Union[builtins.int, tests._service_lookup.test_typed_type.CustomClassWithGeneric1[typing.Union[builtins.int, builtins.str]]], tests._service_lookup.test_typed_type.CustomClassWithGeneric1[tests._service_lookup.test_typed_type.CustomClassWithGeneric1[builtins.str]]]",
             ),
         ],
     )
-    def test_represent_types(self, type_: type, expected_representation: str) -> None:
+    def test_represent_types(
+        self,
+        type_: type,
+        expected_representation_python_less_than_3_14: str,
+        expected_representation_python_greater_than_or_equal_3_14: str,
+    ) -> None:
         typed_type = TypedType.from_type(type_)
 
         representation = repr(typed_type)
 
-        assert representation == expected_representation
+        if sys.version_info >= (3, 14):
+            assert (
+                representation
+                == expected_representation_python_greater_than_or_equal_3_14
+            )
+        if sys.version_info < (3, 14):
+            assert representation == expected_representation_python_less_than_3_14
 
     @pytest.mark.parametrize(
-        argnames=("type_", "expected_representation"),
+        argnames=(
+            "type_",
+            "expected_representation_python_less_than_3_14",
+            "expected_representation_python_greater_than_or_equal_3_14",
+        ),
         argvalues=[
-            (int, None),
-            (CustomClass, None),
+            (int, None, None),
+            (CustomClass, None, None),
             (
                 CustomClassWithGenerics2[
                     int | CustomClassWithGeneric1[int], CustomClass
                 ],
+                "tests._service_lookup.test_typed_type.CustomClassWithGenerics2[typing.Union[int, tests._service_lookup.test_typed_type.CustomClassWithGeneric1[int]], tests._service_lookup.test_typed_type.CustomClass]",
                 "tests._service_lookup.test_typed_type.CustomClassWithGenerics2[int | tests._service_lookup.test_typed_type.CustomClassWithGeneric1[int], tests._service_lookup.test_typed_type.CustomClass]",
             ),
         ],
     )
     def test_retain_type_information_when_create_instances_of_classes_with_generics(
-        self, type_: type, expected_representation: str | None
+        self,
+        type_: type,
+        expected_representation_python_less_than_3_14: str | None,
+        expected_representation_python_greater_than_or_equal_3_14: str | None,
     ) -> None:
         typed_type = TypedType.from_type(type_)
         type_instance = typed_type.invoke(parameter_values=[])
@@ -92,7 +129,12 @@ class TestTypedType:
             else None
         )
 
-        assert orig_class == expected_representation
+        if sys.version_info >= (3, 14):
+            assert (
+                orig_class == expected_representation_python_greater_than_or_equal_3_14
+            )
+        if sys.version_info < (3, 14):
+            assert orig_class == expected_representation_python_less_than_3_14
 
     @pytest.mark.parametrize(
         argnames=("type_1", "type_2", "is_equal"),

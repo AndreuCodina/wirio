@@ -161,7 +161,7 @@ async def test_create_user(service_provider: ServiceProvider) -> None:
 
 ## 📝 Interfaces & abstract classes
 
-You can register a service by specifying both the service type (base class / interface) and the implementation type (concrete class). This is useful when you want to inject services using abstractions.
+You can register a service by specifying both the service type (interface / abstract class) and the implementation type (concrete class). This is useful when you want to inject services using abstractions.
 
 ```python
 class NotificationService(ABC):

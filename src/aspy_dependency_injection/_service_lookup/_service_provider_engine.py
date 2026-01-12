@@ -1,15 +1,12 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
+from collections.abc import Awaitable, Callable
 
-if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable
-
-    from aspy_dependency_injection._service_lookup._service_call_site import (
-        ServiceCallSite,
-    )
-    from aspy_dependency_injection.service_provider_engine_scope import (
-        ServiceProviderEngineScope,
-    )
+from aspy_dependency_injection._service_lookup._service_call_site import (
+    ServiceCallSite,
+)
+from aspy_dependency_injection.service_provider_engine_scope import (
+    ServiceProviderEngineScope,
+)
 
 
 class ServiceProviderEngine(ABC):

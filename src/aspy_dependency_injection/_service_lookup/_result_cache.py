@@ -1,16 +1,14 @@
-from typing import TYPE_CHECKING, Final, final
+from typing import Final, final
 
 from aspy_dependency_injection._service_lookup._service_identifier import (
     ServiceIdentifier,
 )
+from aspy_dependency_injection._service_lookup._typed_type import TypedType
 from aspy_dependency_injection._service_lookup.call_site_result_cache_location import (
     CallSiteResultCacheLocation,
 )
 from aspy_dependency_injection._service_lookup.service_cache_key import ServiceCacheKey
 from aspy_dependency_injection.service_lifetime import ServiceLifetime
-
-if TYPE_CHECKING:
-    from aspy_dependency_injection._service_lookup._typed_type import TypedType
 
 
 @final
@@ -32,7 +30,7 @@ class ResultCache:
         lifetime: ServiceLifetime,
         service_identifier: ServiceIdentifier,
         slot: int,
-    ) -> ResultCache:
+    ) -> "ResultCache":
         match lifetime:
             case ServiceLifetime.SINGLETON:
                 location = CallSiteResultCacheLocation.ROOT
@@ -45,7 +43,7 @@ class ResultCache:
         return cls(location, key)
 
     @classmethod
-    def none(cls, service_type: TypedType) -> ResultCache:
+    def none(cls, service_type: TypedType) -> "ResultCache":
         cache_key = ServiceCacheKey(
             service_identifier=ServiceIdentifier.from_service_type(service_type), slot=0
         )

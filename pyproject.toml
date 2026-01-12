@@ -11,9 +11,10 @@ license-files = ["LICENSE"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.13",
     "Intended Audience :: Developers",
 ]
-requires-python = ">=3.14"
+requires-python = ">=3.13"
 dependencies = ["fastapi[standard-no-fastapi-cloud-cli]>=0.118.0"]
 
 [project.urls]

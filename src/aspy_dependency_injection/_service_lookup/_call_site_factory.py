@@ -7,6 +7,7 @@ from aspy_dependency_injection._async_concurrent_dictionary import (
 from aspy_dependency_injection._service_lookup._async_factory_call_site import (
     AsyncFactoryCallSite,
 )
+from aspy_dependency_injection._service_lookup._call_site_chain import CallSiteChain
 from aspy_dependency_injection._service_lookup._constant_call_site import (
     ConstantCallSite,
 )
@@ -15,6 +16,9 @@ from aspy_dependency_injection._service_lookup._constructor_call_site import (
 )
 from aspy_dependency_injection._service_lookup._constructor_information import (
     ConstructorInformation,
+)
+from aspy_dependency_injection._service_lookup._parameter_information import (
+    ParameterInformation,
 )
 from aspy_dependency_injection._service_lookup._result_cache import ResultCache
 from aspy_dependency_injection._service_lookup._service_call_site import (
@@ -26,16 +30,42 @@ from aspy_dependency_injection._service_lookup._service_identifier import (
 from aspy_dependency_injection._service_lookup._sync_factory_call_site import (
     SyncFactoryCallSite,
 )
+from aspy_dependency_injection._service_lookup._typed_type import TypedType
 from aspy_dependency_injection._service_lookup.service_cache_key import ServiceCacheKey
+from aspy_dependency_injection.service_descriptor import ServiceDescriptor
 
 if TYPE_CHECKING:
-    from aspy_dependency_injection._service_lookup._call_site_chain import CallSiteChain
-    from aspy_dependency_injection._service_lookup._parameter_information import (
-        ParameterInformation,
-    )
-    from aspy_dependency_injection._service_lookup._typed_type import TypedType
     from aspy_dependency_injection.service_collection import ServiceCollection
-    from aspy_dependency_injection.service_descriptor import ServiceDescriptor
+
+
+@final
+class _ServiceDescriptorCacheItem:
+    _item: ServiceDescriptor | None
+    _items: list[ServiceDescriptor] | None
+
+    def __init__(self) -> None:
+        self._item = None
+        self._items = None
+
+    @property
+    def last(self) -> ServiceDescriptor:
+        if self._items is not None and len(self._items) > 0:
+            return self._items[len(self._items) - 1]
+
+        assert self._item is not None
+        return self._item
+
+    def add(self, descriptor: ServiceDescriptor) -> "_ServiceDescriptorCacheItem":
+        new_cache_item = _ServiceDescriptorCacheItem()
+
+        if self._item is None:
+            new_cache_item._item = descriptor
+        else:
+            new_cache_item._item = self._item
+            new_cache_item._items = self._items if self._items is not None else []
+            new_cache_item._items.append(descriptor)
+
+        return new_cache_item
 
 
 @final
@@ -47,7 +77,7 @@ class CallSiteFactory:
     _call_site_cache: Final[AsyncConcurrentDictionary[ServiceCacheKey, ServiceCallSite]]
     _call_site_locks: Final[AsyncConcurrentDictionary[ServiceIdentifier, asyncio.Lock]]
 
-    def __init__(self, services: ServiceCollection) -> None:
+    def __init__(self, services: "ServiceCollection") -> None:
         self._descriptors = services.descriptors.copy()
         self._descriptor_lookup = {}
         self._call_site_cache = AsyncConcurrentDictionary[
@@ -253,33 +283,3 @@ class CallSiteFactory:
             parameter_call_sites.append(call_site)
 
         return parameter_call_sites
-
-
-@final
-class _ServiceDescriptorCacheItem:
-    _item: ServiceDescriptor | None
-    _items: list[ServiceDescriptor] | None
-
-    def __init__(self) -> None:
-        self._item = None
-        self._items = None
-
-    @property
-    def last(self) -> ServiceDescriptor:
-        if self._items is not None and len(self._items) > 0:
-            return self._items[len(self._items) - 1]
-
-        assert self._item is not None
-        return self._item
-
-    def add(self, descriptor: ServiceDescriptor) -> _ServiceDescriptorCacheItem:
-        new_cache_item = _ServiceDescriptorCacheItem()
-
-        if self._item is None:
-            new_cache_item._item = descriptor
-        else:
-            new_cache_item._item = self._item
-            new_cache_item._items = self._items if self._items is not None else []
-            new_cache_item._items.append(descriptor)
-
-        return new_cache_item

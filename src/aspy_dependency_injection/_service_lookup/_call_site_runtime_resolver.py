@@ -1,18 +1,33 @@
 import inspect
 import typing
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from enum import Flag
 from typing import (
-    TYPE_CHECKING,
     ClassVar,
     final,
     override,
 )
 
 from aspy_dependency_injection._aspy_undefined import AspyUndefined
+from aspy_dependency_injection._service_lookup._async_factory_call_site import (
+    AsyncFactoryCallSite,
+)
 from aspy_dependency_injection._service_lookup._call_site_visitor import CallSiteVisitor
+from aspy_dependency_injection._service_lookup._constant_call_site import (
+    ConstantCallSite,
+)
+from aspy_dependency_injection._service_lookup._constructor_call_site import (
+    ConstructorCallSite,
+)
 from aspy_dependency_injection._service_lookup._parameter_information import (
     ParameterInformation,
+)
+from aspy_dependency_injection._service_lookup._service_call_site import (
+    ServiceCallSite,
+)
+from aspy_dependency_injection._service_lookup._service_provider_call_site import (
+    ServiceProviderCallSite,
 )
 from aspy_dependency_injection._service_lookup._supports_async_context_manager import (
     SupportsAsyncContextManager,
@@ -20,32 +35,13 @@ from aspy_dependency_injection._service_lookup._supports_async_context_manager i
 from aspy_dependency_injection._service_lookup._supports_context_manager import (
     SupportsContextManager,
 )
-
-if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable
-
-    from aspy_dependency_injection._service_lookup._async_factory_call_site import (
-        AsyncFactoryCallSite,
-    )
-    from aspy_dependency_injection._service_lookup._constant_call_site import (
-        ConstantCallSite,
-    )
-    from aspy_dependency_injection._service_lookup._constructor_call_site import (
-        ConstructorCallSite,
-    )
-    from aspy_dependency_injection._service_lookup._service_call_site import (
-        ServiceCallSite,
-    )
-    from aspy_dependency_injection._service_lookup._service_provider_call_site import (
-        ServiceProviderCallSite,
-    )
-    from aspy_dependency_injection._service_lookup._sync_factory_call_site import (
-        SyncFactoryCallSite,
-    )
-    from aspy_dependency_injection._service_lookup._typed_type import TypedType
-    from aspy_dependency_injection.service_provider_engine_scope import (
-        ServiceProviderEngineScope,
-    )
+from aspy_dependency_injection._service_lookup._sync_factory_call_site import (
+    SyncFactoryCallSite,
+)
+from aspy_dependency_injection._service_lookup._typed_type import TypedType
+from aspy_dependency_injection.service_provider_engine_scope import (
+    ServiceProviderEngineScope,
+)
 
 
 class _RuntimeResolverLock(Flag):
@@ -62,7 +58,7 @@ class RuntimeResolverContext:
 
 @final
 class CallSiteRuntimeResolver(CallSiteVisitor[RuntimeResolverContext, object | None]):
-    INSTANCE: ClassVar[CallSiteRuntimeResolver]
+    INSTANCE: ClassVar["CallSiteRuntimeResolver"]
 
     async def resolve(
         self, call_site: ServiceCallSite, scope: ServiceProviderEngineScope
@@ -127,7 +123,7 @@ class CallSiteRuntimeResolver(CallSiteVisitor[RuntimeResolverContext, object | N
     ) -> object | None:
         is_lock_taken = False
         resolved_services_lock = service_provider_engine_scope.resolved_services_lock
-        resolved_services = service_provider_engine_scope.realized_services
+        resolved_services = service_provider_engine_scope.resolved_services
 
         # Taking locks only once allows us to fork resolution process
         # on another coroutine without causing the deadlock because we

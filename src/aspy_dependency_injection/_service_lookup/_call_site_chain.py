@@ -1,10 +1,19 @@
-from typing import TYPE_CHECKING, Final, final
+from typing import Final, final
 
-if TYPE_CHECKING:
-    from aspy_dependency_injection._service_lookup._service_identifier import (
-        ServiceIdentifier,
-    )
-    from aspy_dependency_injection._service_lookup._typed_type import TypedType
+from aspy_dependency_injection._service_lookup._service_identifier import (
+    ServiceIdentifier,
+)
+from aspy_dependency_injection._service_lookup._typed_type import TypedType
+
+
+@final
+class _ChainItemInformation:
+    _order: Final[int]
+    _implementation_type: Final[TypedType | None]
+
+    def __init__(self, order: int, implementation_type: TypedType | None) -> None:
+        self._order = order
+        self._implementation_type = implementation_type
 
 
 @final
@@ -32,13 +41,3 @@ class CallSiteChain:
         if service_identifier in self._call_site_chain:
             error_message = f"A circular dependency was detected for the service of type '{service_identifier.service_type}'"
             raise RuntimeError(error_message)
-
-
-@final
-class _ChainItemInformation:
-    _order: Final[int]
-    _implementation_type: Final[TypedType | None]
-
-    def __init__(self, order: int, implementation_type: TypedType | None) -> None:
-        self._order = order
-        self._implementation_type = implementation_type

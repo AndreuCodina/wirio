@@ -1,11 +1,9 @@
 import asyncio
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from aspy_dependency_injection._service_lookup._call_site_kind import CallSiteKind
-    from aspy_dependency_injection._service_lookup._result_cache import ResultCache
-    from aspy_dependency_injection._service_lookup._typed_type import TypedType
+from aspy_dependency_injection._service_lookup._call_site_kind import CallSiteKind
+from aspy_dependency_injection._service_lookup._result_cache import ResultCache
+from aspy_dependency_injection._service_lookup._typed_type import TypedType
 
 
 class ServiceCallSite(ABC):

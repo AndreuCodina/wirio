@@ -1,8 +1,6 @@
 from contextlib import AbstractAsyncContextManager, AbstractContextManager
-from typing import TYPE_CHECKING, Self, override
-
-if TYPE_CHECKING:
-    from types import TracebackType
+from types import TracebackType
+from typing import Self, override
 
 
 class ServiceWithNoDependencies:
@@ -103,7 +101,7 @@ class ServiceWithSyncContextManagerAndNoDependencies(
 
 
 class SelfCircularDependencyService:
-    def __init__(self, service: SelfCircularDependencyService) -> None:
+    def __init__(self, service: "SelfCircularDependencyService") -> None:
         self.service = service
 
 

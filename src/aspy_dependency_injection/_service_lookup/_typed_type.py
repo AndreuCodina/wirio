@@ -25,11 +25,11 @@ class TypedType(Hashable):
         self._args = typing.get_args(type_)
 
     @classmethod
-    def from_type(cls, type_: type) -> TypedType:
+    def from_type(cls, type_: type) -> "TypedType":
         return cls(type_)
 
     @classmethod
-    def from_instance(cls, instance: object) -> TypedType:
+    def from_instance(cls, instance: object) -> "TypedType":
         instance_type = getattr(instance, "__orig_class__", None)
 
         if instance_type is None:

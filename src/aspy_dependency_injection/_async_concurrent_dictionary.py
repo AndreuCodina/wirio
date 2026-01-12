@@ -1,8 +1,6 @@
 import asyncio
-from typing import TYPE_CHECKING, Final
-
-if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable
+from typing import Final
 
 
 class AsyncConcurrentDictionary[TKey, TValue]:
@@ -28,9 +26,6 @@ class AsyncConcurrentDictionary[TKey, TValue]:
 
     def get(self, key: TKey) -> TValue | None:
         return self._dict.get(key)
-
-    def __getitem__(self, key: TKey, /) -> TValue:
-        return self._dict[key]
 
     async def upsert(self, key: TKey, value: TValue) -> None:
         async with self._lock:

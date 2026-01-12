@@ -1,13 +1,10 @@
-from typing import TYPE_CHECKING, Final, final, override
+from collections.abc import Awaitable, Callable
+from typing import Final, final, override
 
 from aspy_dependency_injection._service_lookup._call_site_kind import CallSiteKind
+from aspy_dependency_injection._service_lookup._result_cache import ResultCache
 from aspy_dependency_injection._service_lookup._service_call_site import ServiceCallSite
-
-if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable
-
-    from aspy_dependency_injection._service_lookup._result_cache import ResultCache
-    from aspy_dependency_injection._service_lookup._typed_type import TypedType
+from aspy_dependency_injection._service_lookup._typed_type import TypedType
 
 
 @final

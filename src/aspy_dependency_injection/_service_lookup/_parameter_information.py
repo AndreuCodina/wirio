@@ -1,5 +1,6 @@
 import typing
 from inspect import Parameter
+from types import UnionType
 from typing import Annotated, Any, Union, final
 
 from aspy_dependency_injection._service_lookup._typed_type import TypedType
@@ -36,12 +37,12 @@ class ParameterInformation:
 
             origin = typing.get_origin(parameter_type)
 
-            if origin is Union:
+            if self._is_origin_a_union(origin):
                 args = typing.get_args(parameter_type)
                 self._extract_from_union(parameter, args)
             else:
                 self._parameter_type = TypedType.from_type(parameter_type)
-        elif origin is Union:
+        elif self._is_origin_a_union(origin):
             self._extract_from_union(parameter, args)
         else:
             self._parameter_type = TypedType.from_type(parameter.annotation)
@@ -65,6 +66,9 @@ class ParameterInformation:
     @property
     def default_value(self) -> object | None:
         return self._default_value
+
+    def _is_origin_a_union(self, origin: type) -> bool:
+        return origin is Union or origin is UnionType
 
     def _extract_from_union(self, parameter: Parameter, args: tuple[Any, ...]) -> None:
         length_of_a_union_of_a_type_and_none = 2  # Example: int | None

@@ -45,9 +45,10 @@ def add_sqlmodel(services: ServiceCollection, connection_string: str) -> None:
     ) -> AsyncSession:
         return async_sessionmaker()
 
-    services.add_singleton(inject_async_engine)
-    services.add_singleton(inject_async_sessionmaker)
-    services.add_transient(inject_async_session)
+
+services.add_singleton(inject_async_engine)
+services.add_singleton(inject_async_sessionmaker)
+services.add_transient(inject_async_session)
 ```
 
 And then your `main.py` would be:
@@ -77,17 +78,17 @@ add_sqlmodel(
 
 Other libraries embrace a container-class API: you extend a `Container`, override methods, or mutate attributes to register services. That style works, but it comes with trade-offs that `Aspy Dependency Injection` intentionally avoids:
 
-- **Interoperability:** Both approaches technically work across frameworks, but the collection style keeps things primitive—just create an instance and start registering. Container subclasses introduce class-level state, overridden hooks, and metaclass magic that become friction points when you try to share the same container between, say, a CLI bootstrapper and an async worker, or application code and test cases.
+- **Interoperability:** Both approaches technically work across frameworks, but the collection style keeps things primitive (just create an instance and start registering). Container subclasses introduce class-level state, overridden hooks, and metaclass magic that become friction points when you try to share the same container between, say, a CLI bootstrapper and an async worker, or application code and test cases.
 - **Composability:** Collection-first helpers (`add_logging`, `add_sqlmodel`, etc.) compose like ordinary functions. Container subclasses tend to accumulate registration logic across inheritance hierarchies, making it harder to cherry-pick modules or share them between apps.
 - **Predictability:** Once `build_service_provider()` runs, the provider is sealed. Container-class APIs often allow late mutation or rely on attribute access magic, which can hide ordering bugs.
 - **Testability:** Tests can spin up a fresh `ServiceCollection`, register fakes, and build a provider in a few lines. When registrations sit inside container subclasses, swapping implementations usually means subclassing again or using custom hooks.
 
 In short, the ServiceCollection model mirrors ASP.NET Core’s ergonomics while staying idiomatic to Python: no inheritance requirements, just functional building blocks you can plug together as needed.
 
-### How to Structure Feature Packages
+## How to Structure Feature Packages
 
 1. **Expose a single public entry point** (for example, `def add_feature(services: ServiceCollection, **options) -> ServiceCollection`).
-2. **Register abstractions, not concrete types.** Use interfaces or protocols in shared libraries so consumers can replace implementations when needed.
+2. **Register abstractions, not concrete types.** Use interfaces in shared libraries, so consumers can replace implementations when needed.
 3. **Keep configuration explicit.** Pass options via parameters or small dataclasses instead of global state.
 4. **Document prerequisites.** If `add_sqlmodel` expects a configured `Engine`, accept it as a parameter or register a factory that builds one from provided settings.
 

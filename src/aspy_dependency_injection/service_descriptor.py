@@ -1,11 +1,8 @@
-from typing import TYPE_CHECKING, Final, Self
+from collections.abc import Awaitable, Callable
+from typing import Final, Self
 
 from aspy_dependency_injection._service_lookup._typed_type import TypedType
-
-if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable
-
-    from aspy_dependency_injection.service_lifetime import ServiceLifetime
+from aspy_dependency_injection.service_lifetime import ServiceLifetime
 
 
 class ServiceDescriptor:

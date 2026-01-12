@@ -1,10 +1,9 @@
 from collections.abc import Hashable
-from typing import TYPE_CHECKING, Final, final, override
+from typing import Final, final, override
 
-if TYPE_CHECKING:
-    from aspy_dependency_injection._service_lookup._service_identifier import (
-        ServiceIdentifier,
-    )
+from aspy_dependency_injection._service_lookup._service_identifier import (
+    ServiceIdentifier,
+)
 
 
 @final
