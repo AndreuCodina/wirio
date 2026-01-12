@@ -44,4 +44,4 @@ jobs:
           file: ${{ github.workspace }}/coverage.xml
 
       - name: Publish documentation
-        run: uv run --frozen -- mkdocs gh-deploy --config-file docs/mkdocs.yml --remote-branch gh-pages --strict
+        run: uv run --frozen -- mkdocs gh-deploy --config-file docs/mkdocs.yml --remote-branch gh-pages --clean --strict
