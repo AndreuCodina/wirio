@@ -1,6 +1,6 @@
 # Quickstart
 
-You convert the service collection into a service provider:
+You need to instance two services, `EmailService` and `UserService`, and `UserService` depends on the former.
 
 ```python
 class EmailService:
@@ -10,23 +10,27 @@ class EmailService:
 class UserService:
     def __init__(self, email_service: EmailService) -> None:
         self.email_service = email_service
-    
-    async def create_user(self) -> None:
-        pass
+```
 
-    
+Then, instead of creating the instances manually, you register them as services.
+
+```python
 services = ServiceCollection()
 services.add_transient(EmailService)
 services.add_transient(UserService)
-
-async def main() -> None:
-    async with services.build_service_provider() as service_provider:
-        user_service = await service_provider.get_required_service(UserService)
-        await user_service.create_user()
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
 ```
 
+You'll use `.add_X` depending on the desired [lifetime](../core-concepts/lifetimes.md): transient, scoped or singleton.
 
+Finally, you convert the service collection into a service provider.
+
+```python
+async with services.build_service_provider() as service_provider:
+    user_service = await service_provider.get_required_service(UserService)
+```
+
+**Full code:**
+
+```python hl_lines="18-20 24"
+--8<-- "docs/code/quickstart.py"
+```

@@ -2,6 +2,19 @@ site_name: Aspy Dependency Injection
 repo_url: https://github.com/AndreuCodina/aspy-dependency-injection
 repo_name: AndreuCodina/aspy-dependency-injection
 docs_dir: pages
+watch:
+  - code
+strict: true
+validation:
+  nav:
+    omitted_files: warn
+    not_found: warn
+    absolute_links: warn
+  links:
+    not_found: warn
+    anchors: warn
+    absolute_links: warn
+    unrecognized_links: warn
 theme:
   name: material
   features:
@@ -43,6 +56,7 @@ nav:
   - Core concepts:
       - Service lifetimes: core-concepts/lifetimes.md
       - Factories: core-concepts/factories.md
+      - Pluggable architecture: core-concepts/pluggable-architecture.md
       - Interfaces & abstract classes: core-concepts/interfaces-and-abstract-classes.md
   - Testing: testing.md
   - API reference:

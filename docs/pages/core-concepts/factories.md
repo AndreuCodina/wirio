@@ -19,7 +19,7 @@ async with DatabaseClient(database_connection_string) as client:
     ...
 ```
 
-And, if you want to re-use it, you create a factory function with yield:
+And, if you want to reuse it, you create a factory function with yield:
 
 ```python
 async def create_database_client(application_settings: ApplicationSettings) -> AsyncGenerator[DatabaseClient]:
