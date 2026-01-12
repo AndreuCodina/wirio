@@ -27,9 +27,6 @@ class AsyncConcurrentDictionary[TKey, TValue]:
     def get(self, key: TKey) -> TValue | None:
         return self._dict.get(key)
 
-    def __getitem__(self, key: TKey, /) -> TValue:
-        return self._dict[key]
-
     async def upsert(self, key: TKey, value: TValue) -> None:
         async with self._lock:
             self._dict[key] = value

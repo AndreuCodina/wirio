@@ -58,7 +58,7 @@ class ServiceProviderEngineScope(
         return self._is_root_scope
 
     @property
-    def realized_services(self) -> dict[ServiceCacheKey, object | None]:
+    def resolved_services(self) -> dict[ServiceCacheKey, object | None]:
         return self._resolved_services
 
     @property

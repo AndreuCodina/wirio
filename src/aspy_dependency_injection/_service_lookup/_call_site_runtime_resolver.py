@@ -123,7 +123,7 @@ class CallSiteRuntimeResolver(CallSiteVisitor[RuntimeResolverContext, object | N
     ) -> object | None:
         is_lock_taken = False
         resolved_services_lock = service_provider_engine_scope.resolved_services_lock
-        resolved_services = service_provider_engine_scope.realized_services
+        resolved_services = service_provider_engine_scope.resolved_services
 
         # Taking locks only once allows us to fork resolution process
         # on another coroutine without causing the deadlock because we
