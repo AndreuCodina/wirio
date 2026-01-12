@@ -4,9 +4,9 @@
 [![CI](https://img.shields.io/github/actions/workflow/status/AndreuCodina/aspy-dependency-injection/main.yaml?branch=main&logo=github&label=CI)](https://github.com/AndreuCodina/aspy-dependency-injection/actions/workflows/main.yaml)
 [![Coverage status](https://coveralls.io/repos/github/AndreuCodina/aspy-dependency-injection/badge.svg?branch=main)](https://coveralls.io/github/AndreuCodina/aspy-dependency-injection?branch=main)
 [![PyPI - version](https://img.shields.io/pypi/v/aspy-dependency-injection?color=blue&label=pypi)](https://pypi.org/project/aspy-dependency-injection/)
-[![Documentation](https://img.shields.io/badge/📚_documentation-3D9970)](https://AndreuCodina.github.io/aspy-dependency-injection)
 [![Python - versions](https://img.shields.io/pypi/pyversions/aspy-dependency-injection.svg)](https://github.com/AndreuCodina/aspy-dependency-injection)
 [![License](https://img.shields.io/github/license/AndreuCodina/aspy-dependency-injection.svg)](https://github.com/AndreuCodina/aspy-dependency-injection/blob/main/LICENSE)
+[![Documentation](https://img.shields.io/badge/📚_documentation-3D9970)](https://andreucodina.github.io/aspy-dependency-injection)
 </div>
 
 ## Features
@@ -54,7 +54,7 @@ services.configure_fastapi(app)
 
 ## ✨ Quickstart without FastAPI
 
-You convert the service collection into a service provider:
+Define your services and create a service provider.
 
 ```python
 class EmailService:
@@ -118,7 +118,7 @@ async with DatabaseClient(database_connection_string) as client:
     ...
 ```
 
-And, if you want to re-use it, you create a factory function with yield:
+And, if you want to reuse it, you create a factory function with yield:
 
 ```python
 async def create_database_client(application_settings: ApplicationSettings) -> AsyncGenerator[DatabaseClient]:
@@ -155,7 +155,7 @@ async def service_provider() -> AsyncGenerator[ServiceProvider]:
 And then you can inject it into your tests and resolve the services.
 
 ```python
-async def test_demo(service_provider: ServiceProvider) -> None:
+async def test_create_user(service_provider: ServiceProvider) -> None:
     user_service = await service_provider.get_required_service(UserService)
 ```
 

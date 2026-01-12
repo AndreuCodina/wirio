@@ -9,3 +9,7 @@ check-code-pyright:
 	uv run -- ruff check
 	uv run -- ruff format --diff
 	uv run -- pyright
+
+.PHONY: serve-documentation
+serve-documentation:
+	uv run -- mkdocs serve --config-file docs/mkdocs.yml --strict --livereload
