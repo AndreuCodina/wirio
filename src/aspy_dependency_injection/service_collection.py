@@ -10,9 +10,7 @@ from aspy_dependency_injection._integrations._fastapi_dependency_injection impor
 )
 from aspy_dependency_injection.service_descriptor import ServiceDescriptor
 from aspy_dependency_injection.service_lifetime import ServiceLifetime
-from aspy_dependency_injection.service_provider import (
-    ServiceProvider,
-)
+from aspy_dependency_injection.service_provider import ServiceProvider
 
 
 class ServiceCollection:
@@ -81,6 +79,7 @@ class ServiceCollection:
         | None = None,
         /,
     ) -> None:
+        """Add a transient service."""
         self._add_from_overloaded_constructor(
             lifetime=ServiceLifetime.TRANSIENT,
             service_type_or_implementation_factory=service_type_or_implementation_factory,
@@ -150,6 +149,7 @@ class ServiceCollection:
         | None = None,
         /,
     ) -> None:
+        """Add a singleton service."""
         self._add_from_overloaded_constructor(
             lifetime=ServiceLifetime.SINGLETON,
             service_type_or_implementation_factory=service_type_or_implementation_factory,
@@ -210,6 +210,7 @@ class ServiceCollection:
         | None = None,
         /,
     ) -> None:
+        """Add a scoped service."""
         self._add_from_overloaded_constructor(
             lifetime=ServiceLifetime.SCOPED,
             service_type_or_implementation_factory=service_type_or_implementation_factory,

@@ -4,6 +4,7 @@ repo_name: AndreuCodina/aspy-dependency-injection
 docs_dir: pages
 watch:
   - code
+  - ../src
 strict: true
 validation:
   nav:
@@ -41,12 +42,14 @@ plugins:
             show_category_heading: false
             show_signature: true
             show_signature_annotations: true
-            separate_signature: false
+            show_if_no_docstring: false
+            separate_signature: true
             show_overloads: true
             overloads_only: true
+            show_bases: true
+            inherited_members: true
             docstring_style: sphinx
             show_source: false
-            show_bases: false
 nav:
   - Introduction: index.md
   - Getting started:
@@ -61,6 +64,7 @@ nav:
   - Testing: testing.md
   - API reference:
       - ServiceCollection: api-reference/service-collection.md
+      - BaseServiceProvider: api-reference/base-service-provider.md
       - ServiceProvider: api-reference/service-provider.md
       - ServiceScope: api-reference/service-scope.md
   - Other:

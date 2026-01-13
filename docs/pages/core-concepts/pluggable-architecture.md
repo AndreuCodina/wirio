@@ -8,7 +8,7 @@
 - The resulting graph is immutable once `build_service_provider()` is invoked, ensuring the runtime container is predictable and thread-safe.
 - Because everything flows through the collection, reusable packages can add services without assuming how the host application instantiates the provider.
 
-## Extension modules (`add_*` helpers)
+## ServiceCollection extensions (`add_*` helpers)
 
 You, or the own libraries you use, can provide functions that accept a `ServiceCollection` and register the required services. For example, a logging package might expose an `add_logging` function, providing good defaults and injectable services:
 
@@ -26,7 +26,7 @@ def add_observability(services: ServiceCollection) -> None:
     services.add_singleton(Tracer, OtelTracer)
 ```
 
-A database integration package might provide an `add_sqlmodel` function that sets up SQLModel, so all the typical boilerplate is handled for you with just a single line of code:
+The `sqlmodel` library might provide by default the `add_sqlmodel` extension, which sets up SQLModel, so all the typical boilerplate is handled for you with just a single line of code:
 
 ```python
 def add_sqlmodel(services: ServiceCollection, connection_string: str) -> None:
@@ -46,9 +46,9 @@ def add_sqlmodel(services: ServiceCollection, connection_string: str) -> None:
         return async_sessionmaker()
 
 
-services.add_singleton(inject_async_engine)
-services.add_singleton(inject_async_sessionmaker)
-services.add_transient(inject_async_session)
+    services.add_singleton(inject_async_engine)
+    services.add_singleton(inject_async_sessionmaker)
+    services.add_transient(inject_async_session)
 ```
 
 And then your `main.py` would be:
@@ -74,6 +74,19 @@ add_sqlmodel(
 )
 ```
 
+As a note, if you created your own `add_sqlmodel` extension, the code would be even shorter because you can reuse the `ApplicationSettings` instance already registered in `ServiceCollection`:
+
+```python hl_lines="8"
+def add_sqlmodel(services: ServiceCollection) -> None:
+    def inject_async_engine(application_settings: ApplicationSettings) -> AsyncEngine:
+        return create_async_engine(application_settings.postgresql_connection_string)
+    
+    ...
+
+
+add_sqlmodel(services)
+```
+
 ## Why not a Container subclass?
 
 Other libraries embrace a container-class API: you extend a `Container`, override methods, or mutate attributes to register services. That style works, but it comes with trade-offs that `Aspy Dependency Injection` intentionally avoids:
@@ -85,13 +98,13 @@ Other libraries embrace a container-class API: you extend a `Container`, overrid
 
 In short, the ServiceCollection model mirrors ASP.NET Core’s ergonomics while staying idiomatic to Python: no inheritance requirements, just functional building blocks you can plug together as needed.
 
-## How to Structure Feature Packages
+## How to structure feature packages
 
-1. **Expose a single public entry point** (for example, `def add_feature(services: ServiceCollection, **options) -> ServiceCollection`).
+1. **Expose a single public entry point** (for example, `def add_feature(services: ServiceCollection, **options) -> None`).
 2. **Register abstractions, not concrete types.** Use interfaces in shared libraries, so consumers can replace implementations when needed.
 3. **Keep configuration explicit.** Pass options via parameters or small dataclasses instead of global state.
 4. **Document prerequisites.** If `add_sqlmodel` expects a configured `Engine`, accept it as a parameter or register a factory that builds one from provided settings.
 
-## Putting It Together
+## Putting it together
 
 The end result is a plug-and-play ecosystem: logging, observability, data stores, caching, and custom application modules all plug into `ServiceCollection` the same way. This symmetry makes it trivial to port patterns from ASP.NET Core DI, reuse mental models, and share modules across Python services that embrace the dependency injection container.

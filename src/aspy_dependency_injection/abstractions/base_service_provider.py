@@ -13,6 +13,7 @@ class BaseServiceProvider(ABC):
     async def get_service[TService](
         self, service_type: type[TService]
     ) -> TService | None:
+        """Get service of type `TService`."""
         service = await self.get_service_object(TypedType.from_type(service_type))
 
         if service is None:
@@ -23,6 +24,7 @@ class BaseServiceProvider(ABC):
     async def get_required_service[TService](
         self, service_type: type[TService]
     ) -> TService:
+        """Get service of type `TService`."""
         service = await self.get_service_object(TypedType.from_type(service_type))
         assert service is not None
         return cast("TService", service)
