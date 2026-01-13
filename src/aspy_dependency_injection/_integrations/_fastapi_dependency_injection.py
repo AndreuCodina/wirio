@@ -4,7 +4,7 @@ from collections.abc import AsyncGenerator, Callable
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
 from inspect import Parameter
-from typing import TYPE_CHECKING, Any, final
+from typing import TYPE_CHECKING, Any, cast, final
 
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
@@ -15,6 +15,9 @@ from starlette.websockets import WebSocket
 
 from aspy_dependency_injection._service_lookup._parameter_information import (
     ParameterInformation,
+)
+from aspy_dependency_injection.abstractions.base_service_provider import (
+    BaseServiceProvider,
 )
 from aspy_dependency_injection.injectable import Injectable
 from aspy_dependency_injection.service_provider import (
@@ -155,10 +158,9 @@ class FastApiDependencyInjection:
     async def _resolve_injected_parameter(
         cls, parameter_information: ParameterInformation
     ) -> object | None:
-        parameter_service = (
-            await cls._get_request_container().service_provider.get_service_object(
-                parameter_information.parameter_type
-            )
+        scoped_provider = cast(BaseServiceProvider, cls._get_request_container())
+        parameter_service = await scoped_provider.get_service_object(
+            parameter_information.parameter_type
         )
 
         if parameter_service is None:
