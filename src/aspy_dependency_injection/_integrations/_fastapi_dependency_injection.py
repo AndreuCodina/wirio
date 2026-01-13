@@ -155,10 +155,9 @@ class FastApiDependencyInjection:
     async def _resolve_injected_parameter(
         cls, parameter_information: ParameterInformation
     ) -> object | None:
-        parameter_service = (
-            await cls._get_request_container().service_provider.get_service_object(
-                parameter_information.parameter_type
-            )
+        service_scope = cls._get_request_container()
+        parameter_service = await service_scope.get_service_object(
+            parameter_information.parameter_type
         )
 
         if parameter_service is None:
