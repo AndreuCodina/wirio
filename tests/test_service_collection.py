@@ -79,7 +79,7 @@ class TestServiceCollection:
             services.build_service_provider() as service_provider,
             service_provider.create_scope() as service_scope,
         ):
-            assert service_scope.service_provider is service_provider
+            assert service_scope.service_provider is service_scope
             resolved_service = await service_scope.get_required_service(
                 ServiceWithNoDependencies
             )
