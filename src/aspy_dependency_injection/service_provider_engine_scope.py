@@ -74,7 +74,7 @@ class ServiceProviderEngineScope(
     @property
     @override
     def service_provider(self) -> "ServiceProvider":
-        return self._root_provider
+        return self
 
     @override
     def create_scope(self) -> ServiceScope:
