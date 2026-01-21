@@ -69,3 +69,12 @@ class NoKeyedServiceRegisteredError(AspyDependencyInjectionError):
     def __init__(self, service_type: TypedType, service_key_type: type) -> None:
         message = f"No keyed service for type '{service_type}' using key type '{service_key_type}' has been registered"
         super().__init__(message)
+
+
+@final
+class KeyedServiceAnyKeyUsedToResolveServiceError(AspyDependencyInjectionError):
+    """The exception that is thrown when KeyedService.AnyKey is used to resolve a single service."""
+
+    def __init__(self) -> None:
+        message = "KeyedService.ANY_KEY cannot be used to resolve a single service"
+        super().__init__(message)

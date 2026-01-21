@@ -114,7 +114,7 @@ class TestTypedType:
             ),
         ],
     )
-    def test_retain_type_information_when_create_instances_of_classes_with_generics(
+    def test_retain_type_information_when_creating_instances_of_classes_with_generics(
         self,
         type_: type,
         expected_representation_python_less_than_3_14: str | None,
@@ -184,7 +184,7 @@ class TestTypedType:
         argnames=("type_"),
         argvalues=[int, CustomClass],
     )
-    def test_fail_when_create_from_instance_without_type_information(
+    def test_fail_when_creating_from_instance_without_type_information(
         self, type_: type
     ) -> None:
         with pytest.raises(

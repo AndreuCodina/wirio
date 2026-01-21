@@ -172,6 +172,7 @@ class CallSiteFactory:
                 self._DEFAULT_SLOT,
             )
 
+        # Check if there is a registration with `KeyedService.ANY_KEY`
         if service_identifier.service_key is not None:
             catch_all_identifier = ServiceIdentifier(
                 service_type=service_identifier.service_type,
