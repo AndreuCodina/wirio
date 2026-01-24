@@ -106,9 +106,9 @@ class FastApiDependencyInjection:
 
     @classmethod
     def _get_request_container(cls) -> ServiceScope:
-        """When inside a request, returns the scoped container instance handling the current request.
+        """When inside a request, return the scoped container instance handling the current request.
 
-        This is what you almost always want.It has all the information the app container has in addition
+        This is what we almost always want. It has all the information the app container has in addition
         to data specific to the current request.
         """
         return current_request.get().state.aspy_service_scope

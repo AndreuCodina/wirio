@@ -62,12 +62,16 @@ nav:
       - Async-first design: core-concepts/async-first-design.md
       - Pluggable architecture: core-concepts/pluggable-architecture.md
       - Interfaces & abstract classes: core-concepts/interfaces-and-abstract-classes.md
+      - Keyed services: core-concepts/keyed-services.md
   - Testing: testing.md
   - API reference:
       - ServiceCollection: api-reference/service-collection.md
       - BaseServiceProvider: api-reference/base-service-provider.md
       - ServiceProvider: api-reference/service-provider.md
       - ServiceScope: api-reference/service-scope.md
+      - KeyedService: api-reference/keyed-service.md
+      - ServiceProviderIsService: api-reference/service-provider-is-service.md
+      - ServiceProviderIsKeyedService: api-reference/service-provider-is-keyed-service.md
       - Exceptions: api-reference/exceptions.md
   - Other:
       - Changelogs: other/changelogs.md

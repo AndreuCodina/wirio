@@ -7,18 +7,21 @@
 [![Python - versions](https://img.shields.io/pypi/pyversions/aspy-dependency-injection.svg)](https://github.com/AndreuCodina/aspy-dependency-injection)
 [![License](https://img.shields.io/github/license/AndreuCodina/aspy-dependency-injection.svg)](https://github.com/AndreuCodina/aspy-dependency-injection/blob/main/LICENSE)
 [![Documentation](https://img.shields.io/badge/📚_documentation-3D9970)](https://andreucodina.github.io/aspy-dependency-injection)
+
 </div>
 
 ## Features
+
 - **Use it everywhere:** Use dependency injection in web servers, background tasks, console applications, Jupyter notebooks, tests, etc.
 - **Lifetimes**: `Singleton` (same instance per application), `Scoped` (same instance per HTTP request scope) and `Transient` (different instance per resolution).
 - **FastAPI integration** out of the box, and pluggable to any web framework.
-- **Automatic resolution and disposal**: Automatically resolve constructor parameters and manage async and non-async context managers. It's no longer your concern to know how to create or dispose services.
+- **Automatic resolution and disposal**: Automatically resolve constructor parameters and manage async and non-async context managers. It's no longer our concern to know how to create or dispose services.
 - **Clear design** inspired by one of the most used and battle-tested DI libraries, adding async-native support, important features and good defaults.
 - **Centralized configuration**: Register all services in one place using a clean syntax, and without decorators.
 - **ty** and **Pyright** strict compliant.
 
 ## Installation
+
 ```bash
 uv add aspy-dependency-injection
 ```
@@ -51,7 +54,7 @@ services.configure_fastapi(app)
 
 ## ✨ Quickstart without FastAPI
 
-Define your services and create a service provider.
+Define services and create a service provider.
 
 ```python
 class EmailService:
@@ -61,8 +64,8 @@ class EmailService:
 class UserService:
     def __init__(self, email_service: EmailService) -> None:
         self.email_service = email_service
-    
-    
+
+
 services = ServiceCollection()
 services.add_transient(EmailService)
 services.add_transient(UserService)
@@ -71,7 +74,7 @@ async with services.build_service_provider() as service_provider:
     user_service = await service_provider.get_required_service(UserService)
 ```
 
-If you want a scope per operation (e.g., per HTTP request or message from a queue), you can create a scope from the service provider:
+If we want a scope per operation (e.g., per HTTP request or message from a queue), we can create a scope from the service provider:
 
 ```python
 async with service_provider.create_scope() as service_scope:
@@ -86,7 +89,7 @@ async with service_provider.create_scope() as service_scope:
 
 ## 🏭 Factories
 
-Sometimes, you need to use a factory function to create a service. For example, you have settings (a connection string, database name, etc.) stored using the package `pydantic-settings` and you want to provide them to a service `DatabaseClient` to access a database.
+Sometimes, we need to use a factory function to create a service. For example, we have settings (a connection string, database name, etc.) stored using the package `pydantic-settings` and we want to provide them to a service `DatabaseClient` to access a database.
 
 ```python
 class ApplicationSettings(BaseSettings):
@@ -98,14 +101,14 @@ class DatabaseClient:
         pass
 ```
 
-In a real `DatabaseClient` implementation, you must use a sync or async context manager, i.e., you instance it with:
+In a real `DatabaseClient` implementation, we must use a sync or async context manager, i.e., we instance it with:
 
 ```python
 async with DatabaseClient(database_connection_string) as client:
     ...
 ```
 
-And, if you want to reuse it, you create a factory function with yield:
+And, if we want to reuse it, we create a factory function with yield:
 
 ```python
 async def create_database_client(application_settings: ApplicationSettings) -> AsyncGenerator[DatabaseClient]:
@@ -113,9 +116,9 @@ async def create_database_client(application_settings: ApplicationSettings) -> A
         yield database_client
 ```
 
-With that factory, you have to provide manually a singleton of `ApplicationSettings`, and to know if `DatabaseClient` implements a sync or async context manager, or neither. Apart from that, if you need a singleton or scoped instance of `DatabaseClient`, it's very complex to manage the disposal of the instance.
+With that factory, we have to provide manually a singleton of `ApplicationSettings`, and to know if `DatabaseClient` implements a sync or async context manager, or neither. Apart from that, if we need a singleton or scoped instance of `DatabaseClient`, it's very complex to manage the disposal of the instance.
 
-Then, why don't just return it? With this package, you just have this:
+Then, why don't just return it? With this package, we just have this:
 
 ```python
 def inject_database_client(application_settings: ApplicationSettings) -> DatabaseClient:
@@ -130,7 +133,7 @@ The factories can take as parameters other services registered. In this case, `i
 
 ## 🧪 Simplified testing
 
-You can create a fixture in `conftest.py` that provides a `ServiceProvider` instance:
+We can create a fixture in `conftest.py` that provides a `ServiceProvider` instance:
 
 ```python
 @pytest.fixture
@@ -139,7 +142,7 @@ async def service_provider() -> AsyncGenerator[ServiceProvider]:
         yield service_provider
 ```
 
-And then you can inject it into your tests and resolve the services.
+And then we can inject it into our tests and resolve the services.
 
 ```python
 async def test_create_user(service_provider: ServiceProvider) -> None:
@@ -148,18 +151,18 @@ async def test_create_user(service_provider: ServiceProvider) -> None:
 
 ## 📝 Interfaces & abstract classes
 
-You can register a service by specifying both the service type (interface / abstract class) and the implementation type (concrete class). This is useful when you want to inject services using abstractions.
+We can register a service by specifying both the service type (interface / abstract class) and the implementation type (concrete class). This is useful when we want to inject services using abstractions.
 
 ```python
 class NotificationService(ABC):
     @abstractmethod
-    async def send_notification(self, recipient: str, message: str) -> None:
+    async def send_notification(self, user_id: str, message: str) -> None:
         ...
 
 
 class EmailService(NotificationService):
     @override
-    async def send_notification(self, recipient: str, message: str) -> None:
+    async def send_notification(self, user_id: str, message: str) -> None:
         pass
 
 
@@ -168,10 +171,50 @@ class UserService:
         self.notification_service = notification_service
 
     async def create_user(self, email: str) -> None:
-        await self.notification_service.send_notification(email, "Welcome to our service!")
+        user = self.create_user(email)
+        await self.notification_service.send_notification(user.id, "Welcome to our service!")
 
 
 services.add_transient(NotificationService, EmailService)
+```
+
+## 📝 Keyed services
+
+We can register a service by specifying both the service type and a key. This is useful when we want to resolve services using abstractions and an explicit key.
+
+```python
+class NotificationService(ABC):
+    @abstractmethod
+    async def send_notification(self, user_id: str, message: str) -> None:
+        ...
+
+
+class EmailService(NotificationService):
+    @override
+    async def send_notification(self, user_id: str, message: str) -> None:
+        pass
+
+
+class PushNotificationService(NotificationService):
+    @override
+    async def send_notification(self, user_id: str, message: str) -> None:
+        pass
+
+
+class UserService:
+    def __init__(
+        self,
+        notification_service: Annotated[NotificationService, FromKeyedServices("email"),
+    ) -> None:
+        self.notification_service = notification_service
+
+    async def create_user(self, email: str) -> None:
+        user = self.create_user(email)
+        await self.notification_service.send_notification(user.id, "Welcome to our service!")
+
+
+services.add_keyed_transient("email", NotificationService, EmailService)
+services.add_keyed_transient("push", NotificationService, EmailService)
 ```
 
 ## 📚 Documentation

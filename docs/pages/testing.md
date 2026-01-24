@@ -22,13 +22,13 @@ async def test_create_user(service_provider: ServiceProvider) -> None:
 
 ## Recommended setup
 
-You have a `services` singleton declared in `main.py` that is used to build the `ServiceProvider` for the application.
+We have a `services` singleton declared in `main.py` that is used to build the `ServiceProvider` for the application.
 
 ```python
 services = ServiceCollection()
 ```
 
-Depending on the complexity of your tests, you might want to alter the services before creating the service provider. Due to this, it's always a good idea to update `main.py` and create a function instead of having a singleton, so that each test can call it to get a fresh `ServiceCollection` instance.
+Depending on the complexity of our tests, we might want to alter the services before creating the service provider. Due to this, it's always a good idea to update `main.py` and create a function instead of having a singleton, so that each test can call it to get a fresh `ServiceCollection` instance.
 
 ```python
 def configure_services() -> ServiceCollection:

@@ -1,0 +1,3 @@
+# ServiceProviderIsService
+
+::: aspy_dependency_injection.abstractions.service_provider_is_service.ServiceProviderIsService
