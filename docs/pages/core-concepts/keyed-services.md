@@ -30,7 +30,7 @@ class PushNotificationService(NotificationService):
 class UserService:
     def __init__(
         self,
-        notification_service: Annotated[NotificationService, FromKeyedServices("email"),
+        notification_service: Annotated[NotificationService, FromKeyedServices("email")],
     ) -> None:
         self.notification_service = notification_service
 
@@ -40,7 +40,7 @@ class UserService:
 
 
 services.add_keyed_transient("email", NotificationService, EmailService)
-services.add_keyed_transient("push", NotificationService, EmailService)
+services.add_keyed_transient("push", NotificationService, PushNotificationService)
 ```
 
 In the example we're using a key of type string, but we can use any type (enums, integers, etc.).
@@ -87,11 +87,11 @@ def inject_secondary_postgres_client(_: str | None) -> PostgresClient:
 
 
 def inject_tenant_postgres_client(tenant_id: str | None) -> PostgresClient:
-    return PostgresClient(f"postgresql://{service_key}.example/db")
+    return PostgresClient(f"postgresql://{tenant_id}.example/db")
 
 
 services = ServiceCollection()
-services.add_keyed_singleton("principal", inject_principal_postgres_client_postgres_client)
+services.add_keyed_singleton("principal", inject_principal_postgres_client)
 services.add_keyed_singleton("secondary", inject_secondary_postgres_client)
 services.add_keyed_singleton(KeyedService.ANY_KEY, inject_tenant_postgres_client)
 

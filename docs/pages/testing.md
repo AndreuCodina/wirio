@@ -83,7 +83,7 @@ async def service_provider(mocker: MockerFixture) -> AsyncGenerator[ServiceProvi
 Remember that if `EmailService` is already registered in `services`, adding it again will override the previous registration.
 Now, when we resolve `EmailService` in our tests, we'll get the mock implementation instead of the real one.
 
-**Note:** Another option would be no to register `EmailService` in local, and register it depending on the environment.
+**Note:** Another option would be not to register `EmailService` in local, and register it depending on the environment.
 
 ## Override a service per test
 

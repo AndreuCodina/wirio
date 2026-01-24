@@ -214,7 +214,7 @@ class UserService:
 
 
 services.add_keyed_transient("email", NotificationService, EmailService)
-services.add_keyed_transient("push", NotificationService, EmailService)
+services.add_keyed_transient("push", NotificationService, PushNotificationService)
 ```
 
 ## 📚 Documentation

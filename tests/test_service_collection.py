@@ -22,6 +22,7 @@ from aspy_dependency_injection.exceptions import (
     CannotResolveParameterServiceFromImplementationFactoryError,
     CannotResolveServiceError,
     CircularDependencyError,
+    InvalidServiceKeyTypeError,
     KeyedServiceAnyKeyUsedToResolveServiceError,
     NoKeyedServiceRegisteredError,
     NoServiceRegisteredError,
@@ -171,23 +172,23 @@ class TestServiceCollection:
         service_lifetime: ServiceLifetime,
         is_async_implementation_factory: bool,
     ) -> None:
-        class KeyedService:
+        class KeyedServiceClas:
             def __init__(self, the_service_key: str) -> None:
                 self.the_service_key = the_service_key
 
         async def async_implementation_factory(
             the_key: str | None,
             _: BaseServiceProvider,
-        ) -> KeyedService:
+        ) -> KeyedServiceClas:
             assert the_key is not None
-            return KeyedService(the_service_key=the_key)
+            return KeyedServiceClas(the_service_key=the_key)
 
         def sync_implementation_factory(
             the_key: str | None,
             _: BaseServiceProvider,
-        ) -> KeyedService:
+        ) -> KeyedServiceClas:
             assert the_key is not None
-            return KeyedService(the_service_key=the_key)
+            return KeyedServiceClas(the_service_key=the_key)
 
         service_key = "test_key"
         services = ServiceCollection()
@@ -201,23 +202,23 @@ class TestServiceCollection:
         match service_lifetime:
             case ServiceLifetime.SINGLETON:
                 services.add_keyed_singleton(
-                    service_key, KeyedService, implementation_factory
+                    service_key, KeyedServiceClas, implementation_factory
                 )
             case ServiceLifetime.SCOPED:
                 services.add_keyed_scoped(
-                    service_key, KeyedService, implementation_factory
+                    service_key, KeyedServiceClas, implementation_factory
                 )
             case ServiceLifetime.TRANSIENT:
                 services.add_keyed_transient(
-                    service_key, KeyedService, implementation_factory
+                    service_key, KeyedServiceClas, implementation_factory
                 )
 
         async with services.build_service_provider() as service_provider:
             resolved_service = await service_provider.get_required_keyed_service(
-                service_key, KeyedService
+                service_key, KeyedServiceClas
             )
 
-            assert isinstance(resolved_service, KeyedService)
+            assert isinstance(resolved_service, KeyedServiceClas)
             assert resolved_service.the_service_key == service_key
 
     @pytest.mark.parametrize(
@@ -1194,6 +1195,22 @@ class TestServiceCollection:
             assert isinstance(resolved_service, ServiceWithServiceKey)
             assert resolved_service.service_key == expected_service_key
 
+    async def test_fail_when_service_key_annotation_type_mismatches_service_key_type(
+        self,
+    ) -> None:
+        class ServiceWithServiceKey:
+            def __init__(self, service_key: Annotated[str, ServiceKey()]) -> None:
+                self.service_key = service_key
+
+        services = ServiceCollection()
+        services.add_keyed_transient(1, ServiceWithServiceKey)
+
+        async with services.build_service_provider() as service_provider:
+            with pytest.raises(InvalidServiceKeyTypeError):
+                await service_provider.get_required_keyed_service(
+                    1, ServiceWithServiceKey
+                )
+
     async def test_resolve_keyed_service_using_from_keyed_services_annotation(
         self,
     ) -> None:
@@ -1426,22 +1443,22 @@ class TestServiceCollection:
         self,
     ) -> None:
         @dataclass(frozen=True)
-        class KeyedService:
+        class KeyedServiceClass:
             service_key: object | None
 
         services = ServiceCollection()
 
-        def inject_service(key: object | None) -> KeyedService:
-            return KeyedService(service_key=key)
+        def inject_service(key: object | None) -> KeyedServiceClass:
+            return KeyedServiceClass(service_key=key)
 
         services.add_keyed_transient(None, inject_service)
 
         async with services.build_service_provider() as service_provider:
             resolved_service = await service_provider.get_required_keyed_service(
-                None, KeyedService
+                None, KeyedServiceClass
             )
 
-            assert isinstance(resolved_service, KeyedService)
+            assert isinstance(resolved_service, KeyedServiceClass)
             assert resolved_service.service_key is None
 
     async def test_resolve_a_service_using_none_as_key_but_not_registered_as_a_keyed_service(

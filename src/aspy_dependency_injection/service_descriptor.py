@@ -15,7 +15,6 @@ class ServiceDescriptor:
     _implementation_type: TypedType | None
     _implementation_instance: object | None
     _sync_implementation_factory: Callable[..., object] | None
-    _sync_implementation_factory: Callable[..., object] | None
     _async_implementation_factory: Callable[..., Awaitable[object]] | None
     _service_key: object | None
 

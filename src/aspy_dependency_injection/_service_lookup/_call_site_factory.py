@@ -365,13 +365,13 @@ class CallSiteFactory(ServiceProviderIsKeyedService, ServiceProviderIsService):
                 if service_identifier.service_key is not None and isinstance(
                     parameter.injectable_dependency, ServiceKeyInjectable
                 ):
-                    # Even though the parameter may be strongly typed, support `object` if `ANY_KEY`` is used
+                    # Even though the parameter may be strongly typed, support `object` if `ANY_KEY` is used
 
                     if service_identifier.service_key == KeyedService.ANY_KEY:
                         parameter_type = TypedType.from_type(object)
-                    elif parameter_type is type(
+                    elif parameter_type.to_type() is not type(
                         service_identifier.service_key
-                    ) and parameter_type is not type(object):
+                    ) and parameter_type.to_type() is not type(object):
                         raise InvalidServiceKeyTypeError
 
                     call_site = ConstantCallSite(
