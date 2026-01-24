@@ -16,7 +16,7 @@ Regarding the use of those libraries, we need to know whether we need to use an 
 
 We can add synchronous services to a synchronous dependency injection library, but at the moment we need to add asynchronous services, they'll crash because they can't be instantiated correctly (`__aenter__`) or we'll need to use workarounds such as creating a thread to run async code, which adds performance overhead and complexity.
 
-At the end, if a dependency injection library is not async-first, in order to support sync and async code, it'll introduce performarce issues or duplicate the codebase (async must be propagated, and the locking mechanisms and logic change).
+At the end, if a dependency injection library is not async-first, in order to support sync and async code, it'll introduce performance issues or duplicate the codebase (async must be propagated, and the locking mechanisms and logic change).
 
 So, if we want a dependency injection library that works well with async code and can resolve both synchronous and asynchronous, it must be designed with async in mind from the beginning.
 
