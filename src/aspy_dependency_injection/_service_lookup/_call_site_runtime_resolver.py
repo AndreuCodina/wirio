@@ -40,6 +40,9 @@ from aspy_dependency_injection._service_lookup._sync_factory_call_site import (
 )
 from aspy_dependency_injection._service_lookup._typed_type import TypedType
 from aspy_dependency_injection.annotations import FromKeyedServicesInjectable
+from aspy_dependency_injection.exceptions import (
+    CannotResolveParameterServiceFromImplementationFactoryError,
+)
 from aspy_dependency_injection.service_provider_engine_scope import (
     ServiceProviderEngineScope,
 )
@@ -296,8 +299,9 @@ class CallSiteRuntimeResolver(CallSiteVisitor[RuntimeResolverContext, object | N
                 elif parameter_information.is_optional:
                     parameter_services.append(None)
                 else:
-                    error_message = f"Unable to resolve service for type '{parameter_information.parameter_type}'"
-                    raise RuntimeError(error_message)
+                    raise CannotResolveParameterServiceFromImplementationFactoryError(
+                        parameter_information.parameter_type
+                    )
             else:
                 parameter_services.append(parameter_service)
 

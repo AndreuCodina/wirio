@@ -4,6 +4,7 @@ from aspy_dependency_injection._service_lookup._service_identifier import (
     ServiceIdentifier,
 )
 from aspy_dependency_injection._service_lookup._typed_type import TypedType
+from aspy_dependency_injection.exceptions import CircularDependencyError
 
 
 @final
@@ -39,5 +40,4 @@ class CallSiteChain:
 
     def check_circular_dependency(self, service_identifier: ServiceIdentifier) -> None:
         if service_identifier in self._call_site_chain:
-            error_message = f"A circular dependency was detected for the service of type '{service_identifier.service_type}'"
-            raise RuntimeError(error_message)
+            raise CircularDependencyError(service_identifier.service_type)

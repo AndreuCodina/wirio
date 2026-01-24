@@ -54,6 +54,26 @@ class CannotResolveServiceError(AspyDependencyInjectionError):
 
 
 @final
+class CannotResolveParameterServiceFromImplementationFactoryError(
+    AspyDependencyInjectionError
+):
+    """The exception that is thrown when a service for a parameter of an implementation factory cannot be resolved."""
+
+    def __init__(self, parameter_type: TypedType) -> None:
+        message = f"Unable to resolve service for type '{parameter_type}' while attempting to invoke an implementation factory"
+        super().__init__(message)
+
+
+@final
+class CannotResolveServiceFromEndpointError(AspyDependencyInjectionError):
+    """The exception that is thrown when a service for a parameter of an endpoint cannot be resolved."""
+
+    def __init__(self, parameter_type: TypedType) -> None:
+        message = f"Unable to resolve service for type '{parameter_type}' while attempting to invoke endpoint"
+        super().__init__(message)
+
+
+@final
 class NoServiceRegisteredError(AspyDependencyInjectionError):
     """The exception that is thrown when no service is registered for a given type."""
 
@@ -77,4 +97,13 @@ class KeyedServiceAnyKeyUsedToResolveServiceError(AspyDependencyInjectionError):
 
     def __init__(self) -> None:
         message = "KeyedService.ANY_KEY cannot be used to resolve a single service"
+        super().__init__(message)
+
+
+@final
+class CircularDependencyError(AspyDependencyInjectionError):
+    """The exception that is thrown when a circular dependency is detected."""
+
+    def __init__(self, service_type: TypedType) -> None:
+        message = f"A circular dependency was detected for the service of type '{service_type}'"
         super().__init__(message)

@@ -13,7 +13,9 @@ from aspy_dependency_injection.abstractions.base_service_provider import (
 from aspy_dependency_injection.abstractions.keyed_service import KeyedService
 from aspy_dependency_injection.annotations import FromKeyedServices, ServiceKey
 from aspy_dependency_injection.exceptions import (
+    CannotResolveParameterServiceFromImplementationFactoryError,
     CannotResolveServiceError,
+    CircularDependencyError,
     KeyedServiceAnyKeyUsedToResolveServiceError,
     NoKeyedServiceRegisteredError,
     NoServiceRegisteredError,
@@ -330,12 +332,11 @@ class TestServiceCollection:
         assert resolved_service.service_with_async_context_manager_and_no_dependencies.is_disposed
 
     async def test_fail_when_resolving_circular_dependency(self) -> None:
-        expected_error_message = "A circular dependency was detected for the service of type 'tests.utils.services.SelfCircularDependencyService'"
         services = ServiceCollection()
         services.add_transient(SelfCircularDependencyService)
 
         async with services.build_service_provider() as service_provider:
-            with pytest.raises(RuntimeError, match=expected_error_message):
+            with pytest.raises(CircularDependencyError):
                 await service_provider.get_required_service(
                     SelfCircularDependencyService
                 )
@@ -722,7 +723,9 @@ class TestServiceCollection:
                 services.add_transient(Service2, implementation_factory)
 
         async with services.build_service_provider() as service_provider:
-            with pytest.raises(RuntimeError):
+            with pytest.raises(
+                CannotResolveParameterServiceFromImplementationFactoryError
+            ):
                 await service_provider.get_required_service(Service2)
 
     @pytest.mark.parametrize(
@@ -1503,3 +1506,17 @@ class TestServiceCollection:
                 resolved_service.service_dependency,
                 ServiceDependency,
             )
+
+    async def test_fail_when_service_key_annotation_can_not_be_used_when_parent_service_is_not_a_keyed_service(
+        self,
+    ) -> None:
+        class ServiceWithServiceKey:
+            def __init__(self, service_key: Annotated[int, ServiceKey()]) -> None:
+                self.service_key = service_key
+
+        services = ServiceCollection()
+        services.add_transient(ServiceWithServiceKey)
+
+        async with services.build_service_provider() as service_provider:
+            with pytest.raises(CannotResolveServiceError):
+                await service_provider.get_required_service(ServiceWithServiceKey)

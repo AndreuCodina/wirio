@@ -6,7 +6,8 @@ import pytest
 from fastapi import APIRouter, Depends, FastAPI
 from fastapi.testclient import TestClient
 
-from aspy_dependency_injection.annotations import FromServices
+from aspy_dependency_injection.annotations import FromKeyedServices, FromServices
+from aspy_dependency_injection.exceptions import CannotResolveServiceFromEndpointError
 from aspy_dependency_injection.service_collection import ServiceCollection
 from tests.utils.services import ServiceWithNoDependencies
 
@@ -74,7 +75,7 @@ class TestFastApi:
                 params={"some_parameter": expected_test_value},
             )
 
-        assert response.status_code == HTTPStatus.OK
+            assert response.status_code == HTTPStatus.OK
 
     async def test_not_interfere_with_fastapi_depends(self) -> None:
         expected_test_value = "test-value"
@@ -97,7 +98,7 @@ class TestFastApi:
         with TestClient(app) as test_client:
             response = test_client.get("/fastapi-depends")
 
-        assert response.status_code == HTTPStatus.OK
+            assert response.status_code == HTTPStatus.OK
 
     def test_return_service_when_optional_dependency_is_registered(self) -> None:
         app = FastAPI()
@@ -117,7 +118,7 @@ class TestFastApi:
         with TestClient(app) as test_client:
             response = test_client.get("/optional-dependency")
 
-        assert response.status_code == HTTPStatus.OK
+            assert response.status_code == HTTPStatus.OK
 
     def test_return_service_when_optional_dependency_is_not_registered(self) -> None:
         app = FastAPI()
@@ -136,10 +137,9 @@ class TestFastApi:
         with TestClient(app) as test_client:
             response = test_client.get("/optional-dependency")
 
-        assert response.status_code == HTTPStatus.OK
+            assert response.status_code == HTTPStatus.OK
 
     async def test_fail_when_non_optional_dependency_is_missing(self) -> None:
-        expected_error_message = "Unable to resolve service for type 'tests.utils.services.ServiceWithNoDependencies' while attempting to invoke endpoint"
         app = FastAPI()
 
         @app.get("/non-optional-dependency")
@@ -153,11 +153,9 @@ class TestFastApi:
         services = ServiceCollection()
         services.configure_fastapi(app)
 
-        with TestClient(app) as test_client:
-            with pytest.raises(RuntimeError) as exception_info:
+        with TestClient(app) as test_client:  # noqa: SIM117
+            with pytest.raises(CannotResolveServiceFromEndpointError):
                 test_client.get("/non-optional-dependency")
-
-            assert str(exception_info.value) == expected_error_message
 
     async def test_combine_request_types_fastapi_depends_and_aspy_inject(self) -> None:
         expected_request_parameter = "test-value1"
@@ -189,4 +187,27 @@ class TestFastApi:
                 "/endpoint", params={"request_parameter": expected_request_parameter}
             )
 
-        assert response.status_code == HTTPStatus.OK
+            assert response.status_code == HTTPStatus.OK
+
+    async def test_resolve_keyed_service(self) -> None:
+        service_key = "key"
+        app = FastAPI()
+        router = APIRouter()
+
+        @router.get("/endpoint")
+        async def endpoint(  # pyright: ignore[reportUnusedFunction]
+            service: Annotated[
+                ServiceWithNoDependencies, FromKeyedServices(service_key)
+            ],
+        ) -> None:
+            assert isinstance(service, ServiceWithNoDependencies)
+
+        app.include_router(router)
+        services = ServiceCollection()
+        services.add_keyed_transient(service_key, ServiceWithNoDependencies)
+        services.configure_fastapi(app)
+
+        with TestClient(app) as test_client:
+            response = test_client.get("/endpoint")
+
+            assert response.status_code == HTTPStatus.OK

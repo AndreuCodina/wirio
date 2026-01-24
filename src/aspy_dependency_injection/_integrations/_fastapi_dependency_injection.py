@@ -17,6 +17,8 @@ from aspy_dependency_injection._service_lookup._parameter_information import (
     ParameterInformation,
 )
 from aspy_dependency_injection._utils._param_utils import ParamUtils
+from aspy_dependency_injection.annotations import FromKeyedServicesInjectable
+from aspy_dependency_injection.exceptions import CannotResolveServiceFromEndpointError
 from aspy_dependency_injection.service_provider import (
     ServiceProvider,
     ServiceScope,
@@ -135,18 +137,29 @@ class FastApiDependencyInjection:
     async def _resolve_injected_parameter(
         cls, parameter_information: ParameterInformation
     ) -> object | None:
-        parameter_service = (
-            await cls._get_request_container().service_provider.get_service_object(
-                parameter_information.parameter_type
+        parameter_service: object | None
+
+        if isinstance(
+            parameter_information.injectable_dependency, FromKeyedServicesInjectable
+        ):
+            parameter_service = await cls._get_request_container().service_provider.get_keyed_service_object(
+                parameter_information.injectable_dependency.key,
+                parameter_information.parameter_type,
             )
-        )
+        else:
+            parameter_service = (
+                await cls._get_request_container().service_provider.get_service_object(
+                    parameter_information.parameter_type
+                )
+            )
 
         if parameter_service is None:
             if parameter_information.is_optional:
                 return None
 
-            error_message = f"Unable to resolve service for type '{parameter_information.parameter_type}' while attempting to invoke endpoint"
-            raise RuntimeError(error_message)
+            raise CannotResolveServiceFromEndpointError(
+                parameter_information.parameter_type
+            )
 
         return parameter_service
 
