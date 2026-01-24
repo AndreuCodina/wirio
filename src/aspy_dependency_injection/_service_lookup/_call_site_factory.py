@@ -241,8 +241,7 @@ class CallSiteFactory:
             not service_descriptor.is_keyed_service
             and service_descriptor.sync_implementation_factory is not None
         ):
-            assert service_descriptor.sync_implementation_factory is not None
-            service_call_site = SyncFactoryCallSite(
+            service_call_site = SyncFactoryCallSite.from_implementation_factory(
                 cache=cache,
                 service_type=service_descriptor.service_type,
                 implementation_factory=service_descriptor.sync_implementation_factory,
@@ -251,33 +250,30 @@ class CallSiteFactory:
             service_descriptor.is_keyed_service
             and service_descriptor.keyed_sync_implementation_factory is not None
         ):
-            assert service_descriptor.sync_implementation_factory is not None
-            service_call_site = SyncFactoryCallSite(
+            service_call_site = SyncFactoryCallSite.from_keyed_implementation_factory(
                 cache=cache,
                 service_type=service_descriptor.service_type,
-                implementation_factory=service_descriptor.sync_implementation_factory,
-                service_key=service_descriptor.service_key,
+                implementation_factory=service_descriptor.keyed_sync_implementation_factory,
+                service_key=service_identifier.service_key,
             )
         elif (
             not service_descriptor.is_keyed_service
             and service_descriptor.async_implementation_factory is not None
         ):
-            assert service_descriptor.async_implementation_factory is not None
-            service_call_site = AsyncFactoryCallSite(
+            service_call_site = AsyncFactoryCallSite.from_implementation_factory(
                 cache=cache,
                 service_type=service_descriptor.service_type,
                 implementation_factory=service_descriptor.async_implementation_factory,
             )
         elif (
             service_descriptor.is_keyed_service
-            and service_descriptor.async_implementation_factory is not None
+            and service_descriptor.keyed_async_implementation_factory is not None
         ):
-            assert service_descriptor.async_implementation_factory is not None
-            service_call_site = AsyncFactoryCallSite(
+            service_call_site = AsyncFactoryCallSite.from_keyed_implementation_factory(
                 cache=cache,
                 service_type=service_descriptor.service_type,
-                implementation_factory=service_descriptor.async_implementation_factory,
-                service_key=service_descriptor.service_key,
+                implementation_factory=service_descriptor.keyed_async_implementation_factory,
+                service_key=service_identifier.service_key,
             )
         elif service_descriptor.has_implementation_type():
             implementation_type = service_descriptor.get_implementation_type()

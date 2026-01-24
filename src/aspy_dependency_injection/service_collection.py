@@ -5,6 +5,7 @@ from typing import Final, overload
 
 from fastapi import FastAPI
 
+from aspy_dependency_injection._aspy_undefined import AspyUndefined
 from aspy_dependency_injection._integrations._fastapi_dependency_injection import (
     FastApiDependencyInjection,
 )
@@ -83,7 +84,7 @@ class ServiceCollection:
         self._add_from_overloaded_constructor(
             lifetime=ServiceLifetime.TRANSIENT,
             service_type_or_implementation_factory=service_type_or_implementation_factory,
-            implementation_factory_or_implementation_type_or_implementation_instance_none=implementation_factory_or_implementation_type_or_none,
+            implementation_factory_or_implementation_type_or_implementation_instance_or_none=implementation_factory_or_implementation_type_or_none,
         )
 
     @overload
@@ -140,7 +141,7 @@ class ServiceCollection:
         service_type_or_implementation_factory: type[TService]
         | Callable[..., Awaitable[TService]]
         | Callable[..., TService],
-        implementation_factory_or_implementation_type_or_implementation_instance_none: Callable[
+        implementation_factory_or_implementation_type_or_implementation_instance_or_none: Callable[
             ..., Awaitable[TService]
         ]
         | Callable[..., TService]
@@ -153,7 +154,7 @@ class ServiceCollection:
         self._add_from_overloaded_constructor(
             lifetime=ServiceLifetime.SINGLETON,
             service_type_or_implementation_factory=service_type_or_implementation_factory,
-            implementation_factory_or_implementation_type_or_implementation_instance_none=implementation_factory_or_implementation_type_or_implementation_instance_none,
+            implementation_factory_or_implementation_type_or_implementation_instance_or_none=implementation_factory_or_implementation_type_or_implementation_instance_or_none,
         )
 
     @overload
@@ -214,70 +215,74 @@ class ServiceCollection:
         self._add_from_overloaded_constructor(
             lifetime=ServiceLifetime.SCOPED,
             service_type_or_implementation_factory=service_type_or_implementation_factory,
-            implementation_factory_or_implementation_type_or_implementation_instance_none=implementation_factory_or_implementation_type_or_none,
+            implementation_factory_or_implementation_type_or_implementation_instance_or_none=implementation_factory_or_implementation_type_or_none,
         )
 
     @overload
-    def add_keyed_transient[TService](
+    def add_keyed_transient[TKey, TService](
         self,
-        service_key: object | None,
+        service_key: TKey | None,  # pyright: ignore[reportInvalidTypeVarUse]
         service_type: type[TService],
         /,
     ) -> None: ...
 
     @overload
-    def add_keyed_transient[TService](
+    def add_keyed_transient[TKey, TService, *TFactoryParameter](
         self,
-        service_key: object | None,
+        service_key: TKey | None,
         service_type: type[TService],
-        implementation_factory: Callable[..., Awaitable[TService]],
+        implementation_factory: Callable[
+            [TKey | None, *TFactoryParameter], Awaitable[TService]
+        ],
         /,
     ) -> None: ...
 
     @overload
-    def add_keyed_transient[TService](
+    def add_keyed_transient[TKey, TService, *TFactoryParameter](
         self,
-        service_key: object | None,
+        service_key: TKey | None,
         service_type: type[TService],
-        implementation_factory: Callable[..., TService],
+        implementation_factory: Callable[[TKey | None, *TFactoryParameter], TService],
         /,
     ) -> None: ...
 
     @overload
-    def add_keyed_transient[TService](
+    def add_keyed_transient[TKey, TService, *TFactoryParameter](
         self,
-        service_key: object | None,
-        implementation_factory: Callable[..., Awaitable[TService]],
+        service_key: TKey | None,
+        implementation_factory: Callable[
+            [TKey | None, *TFactoryParameter], Awaitable[TService]
+        ],
         /,
     ) -> None: ...
 
     @overload
-    def add_keyed_transient[TService](
+    def add_keyed_transient[TKey, TService, *TFactoryParameter](
         self,
-        service_key: object | None,
-        implementation_factory: Callable[..., TService],
+        service_key: TKey | None,
+        implementation_factory: Callable[[TKey | None, *TFactoryParameter], TService],
         /,
     ) -> None: ...
 
     @overload
-    def add_keyed_transient[TService](
+    def add_keyed_transient[TKey, TService](
         self,
-        service_key: object | None,
+        service_key: TKey | None,  # pyright: ignore[reportInvalidTypeVarUse]
         service_type: type[TService],
         implementation_type: type,
         /,
     ) -> None: ...
 
-    def add_keyed_transient[TService](
+    def add_keyed_transient[TKey, TService, *TFactoryParameter](
         self,
-        service_key: object | None,
+        service_key: TKey | None,
         service_type_or_implementation_factory: type[TService]
-        | Callable[..., Awaitable[TService]]
-        | Callable[..., TService],
+        | Callable[[TKey | None, *TFactoryParameter], Awaitable[TService]]
+        | Callable[[TKey | None, *TFactoryParameter], TService],
         implementation_factory_or_implementation_type_or_none: Callable[
-            ..., Awaitable[TService]
+            [TKey | None, *TFactoryParameter], Awaitable[TService]
         ]
-        | Callable[..., TService]
+        | Callable[[TKey | None, *TFactoryParameter], TService]
         | type
         | None = None,
         /,
@@ -286,77 +291,84 @@ class ServiceCollection:
         self._add_from_overloaded_constructor(
             lifetime=ServiceLifetime.TRANSIENT,
             service_type_or_implementation_factory=service_type_or_implementation_factory,
-            implementation_factory_or_implementation_type_or_implementation_instance_none=implementation_factory_or_implementation_type_or_none,
+            implementation_factory_or_implementation_type_or_implementation_instance_or_none=implementation_factory_or_implementation_type_or_none,
             service_key=service_key,
         )
 
     @overload
-    def add_keyed_singleton[TService](
-        self, service_key: object | None, service_type: type[TService], /
-    ) -> None: ...
-
-    @overload
-    def add_keyed_singleton[TService](
+    def add_keyed_singleton[TKey, TService](
         self,
-        service_key: object | None,
+        service_key: TKey | None,  # pyright: ignore[reportInvalidTypeVarUse]
         service_type: type[TService],
-        implementation_factory: Callable[..., Awaitable[TService]],
         /,
     ) -> None: ...
 
     @overload
-    def add_keyed_singleton[TService](
+    def add_keyed_singleton[TKey, TService, *TFactoryParameter](
         self,
-        service_key: object | None,
+        service_key: TKey | None,
         service_type: type[TService],
-        implementation_factory: Callable[..., TService],
+        implementation_factory: Callable[
+            [TKey | None, *TFactoryParameter], Awaitable[TService]
+        ],
         /,
     ) -> None: ...
 
     @overload
-    def add_keyed_singleton[TService](
+    def add_keyed_singleton[TKey, TService, *TFactoryParameter](
         self,
-        service_key: object | None,
-        implementation_factory: Callable[..., Awaitable[TService]],
+        service_key: TKey | None,
+        service_type: type[TService],
+        implementation_factory: Callable[[TKey | None, *TFactoryParameter], TService],
         /,
     ) -> None: ...
 
     @overload
-    def add_keyed_singleton[TService](
+    def add_keyed_singleton[TKey, TService, *TFactoryParameter](
         self,
-        service_key: object | None,
-        implementation_factory: Callable[..., TService],
+        service_key: TKey | None,
+        implementation_factory: Callable[
+            [TKey | None, *TFactoryParameter], Awaitable[TService]
+        ],
         /,
     ) -> None: ...
 
     @overload
-    def add_keyed_singleton[TService](
+    def add_keyed_singleton[TKey, TService, *TFactoryParameter](
         self,
-        service_key: object | None,
+        service_key: TKey | None,
+        implementation_factory: Callable[[TKey | None, *TFactoryParameter], TService],
+        /,
+    ) -> None: ...
+
+    @overload
+    def add_keyed_singleton[TKey, TService](
+        self,
+        service_key: TKey | None,  # pyright: ignore[reportInvalidTypeVarUse]
         service_type: type[TService],
         implementation_type: type,
         /,
     ) -> None: ...
 
     @overload
-    def add_keyed_singleton[TService](
+    def add_keyed_singleton[TKey, TService](
         self,
-        service_key: object | None,
+        service_key: TKey | None,  # pyright: ignore[reportInvalidTypeVarUse]
         service_type: type[TService],
         implementation_instance: object,
         /,
     ) -> None: ...
 
-    def add_keyed_singleton[TService](
+    def add_keyed_singleton[TKey, TService, *TFactoryParameter](
         self,
-        service_key: object | None,
+        service_key: TKey | None,
         service_type_or_implementation_factory: type[TService]
-        | Callable[..., Awaitable[TService]]
-        | Callable[..., TService],
-        implementation_factory_or_implementation_type_or_implementation_instance_none: Callable[
-            ..., Awaitable[TService]
+        | Callable[[TKey | None, *TFactoryParameter], Awaitable[TService]]
+        | Callable[[TKey | None, *TFactoryParameter], TService],
+        implementation_factory_or_implementation_type_or_implementation_instance_or_none: Callable[
+            [TKey | None, *TFactoryParameter], Awaitable[TService]
         ]
-        | Callable[..., TService]
+        | Callable[[TKey | None, *TFactoryParameter], TService]
         | type
         | object
         | None = None,
@@ -366,77 +378,84 @@ class ServiceCollection:
         self._add_from_overloaded_constructor(
             lifetime=ServiceLifetime.SINGLETON,
             service_type_or_implementation_factory=service_type_or_implementation_factory,
-            implementation_factory_or_implementation_type_or_implementation_instance_none=implementation_factory_or_implementation_type_or_implementation_instance_none,
+            implementation_factory_or_implementation_type_or_implementation_instance_or_none=implementation_factory_or_implementation_type_or_implementation_instance_or_none,
             service_key=service_key,
         )
 
     @overload
-    def add_keyed_scoped[TService](
-        self, service_key: object | None, service_type: type[TService], /
-    ) -> None: ...
-
-    @overload
-    def add_keyed_scoped[TService](
+    def add_keyed_scoped[TKey, TService](
         self,
-        service_key: object | None,
+        service_key: TKey | None,  # pyright: ignore[reportInvalidTypeVarUse]
         service_type: type[TService],
-        implementation_factory: Callable[..., Awaitable[TService]],
         /,
     ) -> None: ...
 
     @overload
-    def add_keyed_scoped[TService](
+    def add_keyed_scoped[TKey, TService, *TFactoryParameter](
         self,
-        service_key: object | None,
+        service_key: TKey | None,
         service_type: type[TService],
-        implementation_factory: Callable[..., TService],
+        implementation_factory: Callable[
+            [TKey | None, *TFactoryParameter], Awaitable[TService]
+        ],
         /,
     ) -> None: ...
 
     @overload
-    def add_keyed_scoped[TService](
+    def add_keyed_scoped[TKey, TService, *TFactoryParameter](
         self,
-        service_key: object | None,
-        implementation_factory: Callable[..., Awaitable[TService]],
+        service_key: TKey | None,
+        service_type: type[TService],
+        implementation_factory: Callable[[TKey | None, *TFactoryParameter], TService],
         /,
     ) -> None: ...
 
     @overload
-    def add_keyed_scoped[TService](
+    def add_keyed_scoped[TKey, TService, *TFactoryParameter](
         self,
-        service_key: object | None,
-        implementation_factory: Callable[..., TService],
+        service_key: TKey | None,
+        implementation_factory: Callable[
+            [TKey | None, *TFactoryParameter], Awaitable[TService]
+        ],
         /,
     ) -> None: ...
 
     @overload
-    def add_keyed_scoped[TService](
+    def add_keyed_scoped[TKey, TService, *TFactoryParameter](
         self,
-        service_key: object | None,
+        service_key: TKey | None,
+        implementation_factory: Callable[[TKey | None, *TFactoryParameter], TService],
+        /,
+    ) -> None: ...
+
+    @overload
+    def add_keyed_scoped[TKey, TService](
+        self,
+        service_key: TKey | None,  # pyright: ignore[reportInvalidTypeVarUse]
         service_type: type[TService],
         implementation_type: type,
         /,
     ) -> None: ...
 
-    def add_keyed_scoped[TService](
+    def add_keyed_scoped[TKey, TService, *TFactoryParameter](
         self,
-        service_key: object | None,
+        service_key: TKey | None,
         service_type_or_implementation_factory: type[TService]
-        | Callable[..., Awaitable[TService]]
-        | Callable[..., TService],
+        | Callable[[TKey | None, *TFactoryParameter], Awaitable[TService]]
+        | Callable[[TKey | None, *TFactoryParameter], TService],
         implementation_factory_or_implementation_type_or_none: Callable[
-            ..., Awaitable[TService]
+            [TKey | None, *TFactoryParameter], Awaitable[TService]
         ]
         | Callable[..., TService]
         | type
         | None = None,
         /,
     ) -> None:
-        """Add a scoped service."""
+        """Add a keyed scoped service."""
         self._add_from_overloaded_constructor(
             lifetime=ServiceLifetime.SCOPED,
             service_type_or_implementation_factory=service_type_or_implementation_factory,
-            implementation_factory_or_implementation_type_or_implementation_instance_none=implementation_factory_or_implementation_type_or_none,
+            implementation_factory_or_implementation_type_or_implementation_instance_or_none=implementation_factory_or_implementation_type_or_none,
             service_key=service_key,
         )
 
@@ -454,14 +473,14 @@ class ServiceCollection:
         service_type_or_implementation_factory: type[TService]
         | Callable[..., Awaitable[TService]]
         | Callable[..., TService],
-        implementation_factory_or_implementation_type_or_implementation_instance_none: Callable[
+        implementation_factory_or_implementation_type_or_implementation_instance_or_none: Callable[
             ..., Awaitable[TService]
         ]
         | Callable[..., TService]
         | type
         | object
         | None = None,
-        service_key: object | None = None,
+        service_key: object | None = AspyUndefined.INSTANCE,
     ) -> None:
         service_type_to_add: type[TService] | None = None
         implementation_factory_to_add: (
@@ -474,24 +493,24 @@ class ServiceCollection:
             service_type_to_add = service_type_or_implementation_factory
 
         if isinstance(
-            implementation_factory_or_implementation_type_or_implementation_instance_none,
+            implementation_factory_or_implementation_type_or_implementation_instance_or_none,
             type,
         ):
-            implementation_type_to_add = implementation_factory_or_implementation_type_or_implementation_instance_none
+            implementation_type_to_add = implementation_factory_or_implementation_type_or_implementation_instance_or_none
         elif (
             service_type_to_add is not None
-            and implementation_factory_or_implementation_type_or_implementation_instance_none
+            and implementation_factory_or_implementation_type_or_implementation_instance_or_none
             is not None
         ):
             if callable(
-                implementation_factory_or_implementation_type_or_implementation_instance_none,
+                implementation_factory_or_implementation_type_or_implementation_instance_or_none,
             ):
-                implementation_factory_to_add = implementation_factory_or_implementation_type_or_implementation_instance_none  # pyright: ignore[reportAssignmentType]
+                implementation_factory_to_add = implementation_factory_or_implementation_type_or_implementation_instance_or_none  # pyright: ignore[reportAssignmentType]
             else:
-                implementation_instance_to_add = implementation_factory_or_implementation_type_or_implementation_instance_none
+                implementation_instance_to_add = implementation_factory_or_implementation_type_or_implementation_instance_or_none
         elif (
             service_type_to_add is None
-            and implementation_factory_or_implementation_type_or_implementation_instance_none
+            and implementation_factory_or_implementation_type_or_implementation_instance_or_none
             is None
         ):
             implementation_factory_to_add = service_type_or_implementation_factory
@@ -519,12 +538,14 @@ class ServiceCollection:
         provided_service_type = self._get_provided_service_type(
             service_type, implementation_factory
         )
+        is_service_key_provided = service_key is not AspyUndefined.INSTANCE
+        service_key_to_add = service_key if is_service_key_provided else None
 
         if implementation_instance is not None:
             self._add_from_implementation_instance(
                 service_type=provided_service_type,
                 implementation_instance=implementation_instance,
-                service_key=service_key,
+                service_key=service_key_to_add,
                 lifetime=lifetime,
             )
         elif implementation_factory is None:
@@ -545,23 +566,37 @@ class ServiceCollection:
             self._add_from_implementation_type(
                 service_type=provided_service_type,
                 implementation_type=implementation_type_to_add,
-                service_key=service_key,
+                service_key=service_key_to_add,
                 lifetime=lifetime,
             )
         elif inspect.iscoroutinefunction(implementation_factory):
-            self._add_from_async_implementation_factory(
-                service_type=provided_service_type,
-                implementation_factory=implementation_factory,
-                service_key=service_key,
-                lifetime=lifetime,
-            )
-        else:
-            self._add_from_sync_implementation_factory(
-                service_type=provided_service_type,
-                implementation_factory=implementation_factory,
-                service_key=service_key,
-                lifetime=lifetime,
-            )
+            if is_service_key_provided:
+                self._add_from_keyed_async_implementation_factory(
+                    service_type=provided_service_type,
+                    implementation_factory=implementation_factory,
+                    service_key=service_key_to_add,
+                    lifetime=lifetime,
+                )
+            else:
+                self._add_from_async_implementation_factory(
+                    service_type=provided_service_type,
+                    implementation_factory=implementation_factory,
+                    lifetime=lifetime,
+                )
+        else:  # noqa: PLR5501
+            if is_service_key_provided:
+                self._add_from_keyed_sync_implementation_factory(
+                    service_type=provided_service_type,
+                    implementation_factory=implementation_factory,
+                    service_key=service_key_to_add,
+                    lifetime=lifetime,
+                )
+            else:
+                self._add_from_sync_implementation_factory(
+                    service_type=provided_service_type,
+                    implementation_factory=implementation_factory,
+                    lifetime=lifetime,
+                )
 
     def _get_provided_service_type[TService](
         self,
@@ -618,10 +653,23 @@ class ServiceCollection:
         self,
         service_type: type,
         implementation_factory: Callable[..., object],
-        service_key: object | None,
         lifetime: ServiceLifetime,
     ) -> None:
         descriptor = ServiceDescriptor.from_sync_implementation_factory(
+            service_type=service_type,
+            implementation_factory=implementation_factory,
+            lifetime=lifetime,
+        )
+        self._descriptors.append(descriptor)
+
+    def _add_from_keyed_sync_implementation_factory(
+        self,
+        service_type: type,
+        implementation_factory: Callable[..., object],
+        service_key: object | None,
+        lifetime: ServiceLifetime,
+    ) -> None:
+        descriptor = ServiceDescriptor.from_keyed_sync_implementation_factory(
             service_type=service_type,
             implementation_factory=implementation_factory,
             service_key=service_key,
@@ -633,10 +681,23 @@ class ServiceCollection:
         self,
         service_type: type,
         implementation_factory: Callable[..., Awaitable[object]],
-        service_key: object | None,
         lifetime: ServiceLifetime,
     ) -> None:
         descriptor = ServiceDescriptor.from_async_implementation_factory(
+            service_type=service_type,
+            implementation_factory=implementation_factory,
+            lifetime=lifetime,
+        )
+        self._descriptors.append(descriptor)
+
+    def _add_from_keyed_async_implementation_factory(
+        self,
+        service_type: type,
+        implementation_factory: Callable[..., Awaitable[object]],
+        service_key: object | None,
+        lifetime: ServiceLifetime,
+    ) -> None:
+        descriptor = ServiceDescriptor.from_keyed_async_implementation_factory(
             service_type=service_type,
             implementation_factory=implementation_factory,
             service_key=service_key,
