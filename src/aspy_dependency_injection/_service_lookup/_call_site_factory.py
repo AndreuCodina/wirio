@@ -1,5 +1,5 @@
 import asyncio
-from typing import TYPE_CHECKING, ClassVar, Final, final
+from typing import TYPE_CHECKING, ClassVar, Final, final, override
 
 from aspy_dependency_injection._async_concurrent_dictionary import (
     AsyncConcurrentDictionary,
@@ -32,9 +32,18 @@ from aspy_dependency_injection._service_lookup._sync_factory_call_site import (
 )
 from aspy_dependency_injection._service_lookup._typed_type import TypedType
 from aspy_dependency_injection._service_lookup.service_cache_key import ServiceCacheKey
+from aspy_dependency_injection.abstractions.base_service_provider import (
+    BaseServiceProvider,
+)
 from aspy_dependency_injection.abstractions.keyed_service import KeyedService
 from aspy_dependency_injection.abstractions.service_key_lookup_mode import (
     ServiceKeyLookupMode,
+)
+from aspy_dependency_injection.abstractions.service_provider_is_keyed_service import (
+    ServiceProviderIsKeyedService,
+)
+from aspy_dependency_injection.abstractions.service_provider_is_service import (
+    ServiceProviderIsService,
 )
 from aspy_dependency_injection.annotations import (
     FromKeyedServicesInjectable,
@@ -82,7 +91,7 @@ class _ServiceDescriptorCacheItem:
 
 
 @final
-class CallSiteFactory:
+class CallSiteFactory(ServiceProviderIsKeyedService, ServiceProviderIsService):
     _DEFAULT_SLOT: ClassVar[int] = 0
 
     _descriptors: Final[list[ServiceDescriptor]]
@@ -100,6 +109,22 @@ class CallSiteFactory:
             ServiceIdentifier, asyncio.Lock
         ]()
         self._populate()
+
+    @override
+    def is_service(self, service_type: type) -> bool:
+        return self._is_service(
+            ServiceIdentifier.from_service_type(
+                service_type=TypedType.from_type(service_type)
+            )
+        )
+
+    @override
+    def is_keyed_service(self, service_key: object | None, service_type: type) -> bool:
+        return self._is_service(
+            ServiceIdentifier.from_service_type(
+                service_type=TypedType.from_type(service_type), service_key=service_key
+            )
+        )
 
     async def get_call_site(
         self, service_identifier: ServiceIdentifier, call_site_chain: CallSiteChain
@@ -403,3 +428,24 @@ class CallSiteFactory:
             parameter_call_sites.append(call_site)
 
         return parameter_call_sites
+
+    def _is_service(self, service_identifier: ServiceIdentifier) -> bool:
+        service_type = service_identifier.service_type
+
+        if service_identifier in self._descriptor_lookup:
+            return True
+
+        if (
+            service_identifier.service_key is not None
+            and ServiceIdentifier(
+                service_type=service_type, service_key=KeyedService.ANY_KEY
+            )
+            in self._descriptor_lookup
+        ):
+            return True
+
+        return (
+            service_type == TypedType.from_type(BaseServiceProvider)
+            or service_type == TypedType.from_type(ServiceProviderIsService)
+            or service_type == TypedType.from_type(ServiceProviderIsKeyedService)
+        )

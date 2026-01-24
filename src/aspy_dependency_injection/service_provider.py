@@ -9,6 +9,9 @@ from aspy_dependency_injection._async_concurrent_dictionary import (
 )
 from aspy_dependency_injection._service_lookup._call_site_chain import CallSiteChain
 from aspy_dependency_injection._service_lookup._call_site_factory import CallSiteFactory
+from aspy_dependency_injection._service_lookup._constant_call_site import (
+    ConstantCallSite,
+)
 from aspy_dependency_injection._service_lookup._runtime_service_provider_engine import (
     RuntimeServiceProviderEngine,
 )
@@ -27,6 +30,12 @@ from aspy_dependency_injection._service_lookup._service_provider_engine import (
 from aspy_dependency_injection._service_lookup._typed_type import TypedType
 from aspy_dependency_injection.abstractions.base_service_provider import (
     BaseServiceProvider,
+)
+from aspy_dependency_injection.abstractions.service_provider_is_keyed_service import (
+    ServiceProviderIsKeyedService,
+)
+from aspy_dependency_injection.abstractions.service_provider_is_service import (
+    ServiceProviderIsService,
 )
 from aspy_dependency_injection.abstractions.service_scope import (
     AbstractAsyncContextManager,
@@ -156,6 +165,23 @@ class ServiceProvider(
                 TypedType.from_type(BaseServiceProvider)
             ),
             ServiceProviderCallSite(),
+        )
+        await self._call_site_factory.add(
+            ServiceIdentifier.from_service_type(
+                TypedType.from_type(ServiceProviderIsService)
+            ),
+            ConstantCallSite(
+                TypedType.from_type(ServiceProviderIsService), self._call_site_factory
+            ),
+        )
+        await self._call_site_factory.add(
+            ServiceIdentifier.from_service_type(
+                TypedType.from_type(ServiceProviderIsKeyedService)
+            ),
+            ConstantCallSite(
+                TypedType.from_type(ServiceProviderIsKeyedService),
+                self._call_site_factory,
+            ),
         )
         return self
 
