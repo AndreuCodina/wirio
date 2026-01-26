@@ -1,6 +1,7 @@
 import asyncio
 from collections.abc import Generator
 from contextlib import contextmanager
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, ClassVar, Final, final, override
 
 from aspy_dependency_injection._async_concurrent_dictionary import (
@@ -92,6 +93,12 @@ class _ServiceDescriptorCacheItem:
         return new_cache_item
 
 
+@dataclass(frozen=True)
+class _ServiceOverride:
+    exists: bool
+    value: object | None = None
+
+
 @final
 class CallSiteFactory(ServiceProviderIsKeyedService, ServiceProviderIsService):
     _DEFAULT_SLOT: ClassVar[int] = 0
@@ -133,10 +140,10 @@ class CallSiteFactory(ServiceProviderIsKeyedService, ServiceProviderIsService):
     async def get_call_site(
         self, service_identifier: ServiceIdentifier, call_site_chain: CallSiteChain
     ) -> ServiceCallSite | None:
-        override_call_site = self._get_overriden_call_site(service_identifier)
+        overridden_call_site = self._get_overridden_call_site(service_identifier)
 
-        if override_call_site is not None:
-            return override_call_site
+        if overridden_call_site is not None:
+            return overridden_call_site
 
         service_cache_key = ServiceCacheKey(service_identifier, self._DEFAULT_SLOT)
         service_call_site = self._call_site_cache.get(service_cache_key)
@@ -170,7 +177,7 @@ class CallSiteFactory(ServiceProviderIsKeyedService, ServiceProviderIsService):
     def get_overridden_call_site(
         self, service_identifier: ServiceIdentifier
     ) -> ServiceCallSite | None:
-        return self._get_overriden_call_site(service_identifier)
+        return self._get_overridden_call_site(service_identifier)
 
     async def _create_call_site(
         self, service_identifier: ServiceIdentifier, call_site_chain: CallSiteChain
@@ -342,41 +349,41 @@ class CallSiteFactory(ServiceProviderIsKeyedService, ServiceProviderIsService):
         await self._call_site_cache.upsert(key=call_site_key, value=service_call_site)
         return service_call_site
 
-    def _get_overriden_call_site(
+    def _get_overridden_call_site(
         self, service_identifier: ServiceIdentifier
     ) -> ServiceCallSite | None:
-        override_instance = self._get_override_instance(service_identifier)
+        override = self._get_overridden_instance(service_identifier)
 
-        if override_instance is None:
+        if not override.exists:
             return None
 
         return ConstantCallSite(
             service_type=service_identifier.service_type,
-            default_value=override_instance,
+            default_value=override.value,
             service_key=service_identifier.service_key,
         )
 
-    def _get_override_instance(
+    def _get_overridden_instance(
         self, service_identifier: ServiceIdentifier
-    ) -> object | None:
+    ) -> _ServiceOverride:
         overrides = self._service_overrides.get(service_identifier)
 
         if overrides is not None and len(overrides) > 0:
-            return overrides[-1]
+            return _ServiceOverride(exists=True, value=overrides[-1])
 
         catch_all_identifier = self._get_catch_all_service_identifier(
             service_identifier
         )
 
         if catch_all_identifier is None:
-            return None
+            return _ServiceOverride(exists=False, value=None)
 
         overrides = self._service_overrides.get(catch_all_identifier)
 
         if overrides is not None and len(overrides) > 0:
-            return overrides[-1]
+            return _ServiceOverride(exists=True, value=overrides[-1])
 
-        return None
+        return _ServiceOverride(exists=False, value=None)
 
     def _get_catch_all_service_identifier(
         self, service_identifier: ServiceIdentifier
@@ -397,12 +404,6 @@ class CallSiteFactory(ServiceProviderIsKeyedService, ServiceProviderIsService):
         service_identifier: ServiceIdentifier,
         implementation_instance: object | None,
     ) -> None:
-        ConstantCallSite(
-            service_type=service_identifier.service_type,
-            default_value=implementation_instance,
-            service_key=service_identifier.service_key,
-        )
-
         overrides = self._service_overrides.setdefault(service_identifier, [])
         overrides.append(implementation_instance)
 
