@@ -1642,7 +1642,7 @@ class TestServiceCollection:
         self,
     ) -> None:
         services = ServiceCollection()
-        services.add_singleton(_inject_counter_service)
+        services.add_scoped(_inject_counter_service)
 
         async with services.build_service_provider() as service_provider:
             async with service_provider.create_scope() as service_scope:
@@ -1668,6 +1668,29 @@ class TestServiceCollection:
             assert len(unique_instances) == 1, (
                 f"Expected 1 scoped instance within same scope, got {len(unique_instances)}"
             )
+
+    async def test_return_different_scoped_instance_when_resolving_a_scoped_service_in_different_scopes(
+        self,
+    ) -> None:
+        services = ServiceCollection()
+        services.add_scoped(_inject_counter_service)
+
+        async with services.build_service_provider() as service_provider:
+            async with service_provider.create_scope() as service_scope_1:
+                resolved_service_1 = (
+                    await service_scope_1.service_provider.get_required_service(
+                        _CounterService
+                    )
+                )
+
+            async with service_provider.create_scope() as service_scope_2:
+                resolved_service_2 = (
+                    await service_scope_2.service_provider.get_required_service(
+                        _CounterService
+                    )
+                )
+
+            assert resolved_service_1 is not resolved_service_2
 
     async def test_return_same_singleton_instance_when_resolving_a_singleton_in_different_scopes(
         self,

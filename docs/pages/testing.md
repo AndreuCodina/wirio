@@ -65,6 +65,6 @@ async def service_provider(mocker: MockerFixture) -> AsyncGenerator[ServiceProvi
         yield service_provider
 ```
 
-Remember that if `EmailService` is already registered in `services`, adding it again will make that, when we get the service, we will get the last registered implementation.
+Remember that if `EmailService` is already registered, registering it again means the last registration will be used when resolving the service.
 
 **Note:** Another strategy could be not to register `EmailService` in local, and register it depending on the environment.

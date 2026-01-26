@@ -36,7 +36,7 @@ class TestServiceProvider:
             assert resolved_after_override is not overridden_instance
             assert isinstance(resolved_after_override, ServiceWithNoDependencies)
 
-    async def test_resolve_overrided_but_not_registered_service(self) -> None:
+    async def test_resolve_overridden_but_not_registered_service(self) -> None:
         services = ServiceCollection()
 
         async with services.build_service_provider() as service_provider:
@@ -51,7 +51,7 @@ class TestServiceProvider:
 
                 assert resolved_service is overridden_instance
 
-    async def test_resolve_overrided_keyed_service(self) -> None:
+    async def test_resolve_overridden_keyed_service(self) -> None:
         service_key = "key"
         services = ServiceCollection()
         services.add_keyed_transient(service_key, ServiceWithNoDependencies)
@@ -85,7 +85,7 @@ class TestServiceProvider:
             assert resolved_after_override is not overridden_instance
             assert isinstance(resolved_after_override, ServiceWithNoDependencies)
 
-    async def test_resolve_overrided_keyed_service_with_any_key(self) -> None:
+    async def test_resolve_overridden_keyed_service_with_any_key(self) -> None:
         service_key = KeyedService.ANY_KEY
         services = ServiceCollection()
         services.add_keyed_transient("actual_key", ServiceWithNoDependencies)
