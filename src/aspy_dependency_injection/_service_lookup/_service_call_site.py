@@ -32,7 +32,7 @@ class ServiceCallSite(ABC):
 
     @property
     def value(self) -> object | None:
-        return None
+        return self._value
 
     @value.setter
     def value(self, value: object | None) -> None:

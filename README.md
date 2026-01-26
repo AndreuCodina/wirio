@@ -20,7 +20,7 @@
 - **Centralized configuration**: Register all services in one place using a clean syntax, and without decorators.
 - **ty** and **Pyright** strict compliant.
 
-## Installation
+## 📦 Installation
 
 ```bash
 uv add aspy-dependency-injection

@@ -1,5 +1,6 @@
 import asyncio
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Generator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from types import TracebackType
 from typing import TYPE_CHECKING, Final, Self, final, override
@@ -125,10 +126,58 @@ class ServiceProvider(
         service_identifier: ServiceIdentifier,
         service_provider_engine_scope: ServiceProviderEngineScope,
     ) -> object | None:
+        override_call_site = self._call_site_factory.get_overridden_call_site(
+            service_identifier
+        )
+
+        if override_call_site is not None:
+            realized_override = self._engine.realize_service(override_call_site)
+            return await realized_override(service_provider_engine_scope)
+
         service_accessor = await self._service_accessors.get_or_add(
             key=service_identifier, value_factory=self._create_service_accessor
         )
         return await service_accessor.realized_service(service_provider_engine_scope)
+
+    @contextmanager
+    def override_service(
+        self, service_type: type, implementation_instance: object | None
+    ) -> Generator[None]:
+        """Override a service registration within the context manager scope.
+
+        It can be used to temporarily replace a service for testing specific scenarios. Don't use it in production.
+        """
+        service_identifier = ServiceIdentifier.from_service_type(
+            TypedType.from_type(service_type)
+        )
+
+        with self._call_site_factory.override_service(
+            service_identifier=service_identifier,
+            implementation_instance=implementation_instance,
+        ):
+            yield
+
+    @contextmanager
+    def override_keyed_service(
+        self,
+        service_key: object | None,
+        service_type: type,
+        implementation_instance: object | None,
+    ) -> Generator[None]:
+        """Override a keyed service registration within the context manager scope.
+
+        It can be used to temporarily replace a service for testing specific scenarios. Don't use it in production.
+        """
+        service_identifier = ServiceIdentifier.from_service_type(
+            service_type=TypedType.from_type(service_type),
+            service_key=service_key,
+        )
+
+        with self._call_site_factory.override_service(
+            service_identifier=service_identifier,
+            implementation_instance=implementation_instance,
+        ):
+            yield
 
     async def _create_service_accessor(
         self, service_identifier: ServiceIdentifier

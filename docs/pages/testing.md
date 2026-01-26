@@ -20,54 +20,39 @@ async def test_create_user(service_provider: ServiceProvider) -> None:
     await user_service.create_user()
 ```
 
-## Recommended setup
+## Override services
 
-We have a `services` singleton declared in `main.py` that is used to build the `ServiceProvider` for the application.
+`UserService` could have the dependency `EmailService`, that sends real emails. During testing, we want to replace it with a mock implementation that doesn't send real emails.
 
-```python
-services = ServiceCollection()
-```
-
-Depending on the complexity of our tests, we might want to alter the services before creating the service provider. Due to this, it's always a good idea to update `main.py` and create a function instead of having a singleton, so that each test can call it to get a fresh `ServiceCollection` instance.
+To replace a service during testing, we can use the `override_service` and `override_keyed_service` methods provided by `ServiceProvider`. This allows us to temporarily replace a service for the duration of context manager block.
 
 ```python
-def configure_services() -> ServiceCollection:
-    services = ServiceCollection()
-    return services
+async def test_create_user(service_provider: ServiceProvider, mocker: MockerFixture) -> None:
+    mail_service_mock = mocker.create_autospec(EmailService, instance=True)
+
+    with service_provider.override_service(EmailService, mail_service_mock):
+        user_service = await service_provider.get_required_service(UserService)
+
+        await user_service.create_user()
 ```
 
-In a real FastAPI application, it'd look like this:
+## Globally override services
 
-```python
-def configure_services() -> ServiceCollection:
-    services = ServiceCollection()
-    return services
-
-
-def create_app() -> FastAPI:
-    app = FastAPI()
-    return app
-
-
-app = create_app()
-services = configure_services()
-services.configure_fastapi(app)
-```
-
-And the fixture in `conftest.py`:
+We can also override a service for all tests by modifying the fixture that provides the `ServiceProvider` instance. This is useful when we want to use a mock for a service across multiple tests, or all tests.
 
 ```python
 @pytest.fixture
-async def service_provider() -> AsyncGenerator[ServiceProvider]:
-    services = configure_services()
+async def service_provider(mocker: MockerFixture) -> AsyncGenerator[ServiceProvider]:
+    email_service_mock = mocker.create_autospec(EmailService, instance=True)
 
     async with services.build_service_provider() as service_provider:
-        yield service_provider
+        with service_provider.override_service(EmailService, mail_service_mock):
+            yield service_provider
 ```
 
-## Globally override a service
+## ServiceCollection registration
 
-Imagine we have a service `EmailService` that sends real emails. During testing, we want to replace it with a mock implementation that doesn't send real emails.
+The context manager approach is straightforward, but if we want to test more complex scenarios, we can directly register the mock implementation in the `ServiceCollection` before building the `ServiceProvider`. This way, the mock will be used whenever `EmailService` is resolved.
 
 ```python
 @pytest.fixture
@@ -80,27 +65,6 @@ async def service_provider(mocker: MockerFixture) -> AsyncGenerator[ServiceProvi
         yield service_provider
 ```
 
-Remember that if `EmailService` is already registered in `services`, adding it again will override the previous registration.
-Now, when we resolve `EmailService` in our tests, we'll get the mock implementation instead of the real one.
+Remember that if `EmailService` is already registered, registering it again means the last registration will be used when resolving the service.
 
-**Note:** Another option would be not to register `EmailService` in local, and register it depending on the environment.
-
-## Override a service per test
-
-We can also override a service for a specific test case. This is useful when we want to test different behaviors of a service.
-
-```python
-@pytest.fixture
-def services() -> ServiceCollection:
-    return configure_services()
-
-
-async def test_create_user(services: ServiceCollection, mocker: MockerFixture) -> None:
-    email_service_mock = mocker.create_autospec(EmailService, instance=True)
-    services.add_singleton(EmailService, email_service_mock)
-
-    async with services.build_service_provider() as service_provider:
-        user_service = await service_provider.get_required_service(UserService)
-
-        await user_service.create_user()
-```
+**Note:** Another strategy could be not to register `EmailService` in local, and register it depending on the environment.
