@@ -675,9 +675,6 @@ class ServiceCollection:
                 service_type=typed_service_type, service_key_type=type(service_key)
             )
 
-        error_message = f"No singleton service of type {service_type} is registered."
-        raise ValueError(error_message)
-
     def build_service_provider(self) -> ServiceProvider:
         """Create a :class:`ServiceProvider` containing services from the provided :class:`ServiceCollection`."""
         return ServiceProvider(self)
