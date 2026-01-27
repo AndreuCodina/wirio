@@ -1,7 +1,7 @@
 import inspect
 import typing
 from collections.abc import Awaitable, Callable
-from typing import Final, overload
+from typing import Final, cast, overload
 
 from fastapi import FastAPI
 
@@ -720,9 +720,12 @@ class ServiceCollection:
             is not None
         ):
             if callable(
-                implementation_factory_or_implementation_type_or_implementation_instance_or_none,
+                implementation_factory_or_implementation_type_or_implementation_instance_or_none
             ):
-                implementation_factory_to_add = implementation_factory_or_implementation_type_or_implementation_instance_or_none  # pyright: ignore[reportAssignmentType]
+                implementation_factory_to_add = cast(
+                    "Callable[..., Awaitable[TService]] | Callable[..., TService]",
+                    implementation_factory_or_implementation_type_or_implementation_instance_or_none,
+                )
             else:
                 implementation_instance_to_add = implementation_factory_or_implementation_type_or_implementation_instance_or_none
         elif (
