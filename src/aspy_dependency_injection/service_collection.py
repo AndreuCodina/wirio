@@ -636,7 +636,7 @@ class ServiceCollection:
 
         An auto-activated singleton service is instantiated when the service provider is built (eagerly), rather than when it's first requested (lazily).
         """
-        typed_service_type = TypedType(service_type)
+        typed_service_type = TypedType.from_type(service_type)
         is_descriptor_found = False
 
         for descriptor in self._descriptors:
@@ -657,7 +657,7 @@ class ServiceCollection:
 
         An auto-activated keyed singleton service is instantiated when the service provider is built (eagerly), rather than when it's first requested (lazily).
         """
-        typed_service_type = TypedType(service_type)
+        typed_service_type = TypedType.from_type(service_type)
         is_descriptor_found = False
 
         for descriptor in self._descriptors:
