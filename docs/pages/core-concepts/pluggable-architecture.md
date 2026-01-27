@@ -1,5 +1,7 @@
 # Pluggable architecture
 
+## Overview
+
 **Aspy Dependency Injection** follows the same extension-friendly design that ASP.NET Core popularized. Rather than hiding registrations behind a monolithic container, the library exposes the `ServiceCollection` and encourages features to be layered through small, self-contained modules. This lets applications opt into only the capabilities they need while keeping configurations declarative and easy to reason about.
 
 ## ServiceCollection as the Composition Root
@@ -80,7 +82,7 @@ As a note, if we created our own `add_sqlmodel` extension, the code would be eve
 def add_sqlmodel(services: ServiceCollection) -> None:
     def inject_async_engine(application_settings: ApplicationSettings) -> AsyncEngine:
         return create_async_engine(application_settings.postgresql_connection_string)
-    
+
     ...
 
 

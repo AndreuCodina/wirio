@@ -52,7 +52,7 @@ async def service_provider(mocker: MockerFixture) -> AsyncGenerator[ServiceProvi
 
 ## ServiceCollection registration
 
-The context manager approach is straightforward, but if we want to test more complex scenarios, we can directly register the mock implementation in the `ServiceCollection` before building the `ServiceProvider`. This way, the mock will be used whenever `EmailService` is resolved.
+The context manager approach is straightforward, but if we want to test a more complex scenario, we can directly register the mock implementation in the `ServiceCollection` before building the `ServiceProvider`. This way, the mock will be used whenever `EmailService` is resolved.
 
 ```python
 @pytest.fixture

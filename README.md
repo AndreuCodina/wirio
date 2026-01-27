@@ -217,6 +217,14 @@ services.add_keyed_transient("email", NotificationService, EmailService)
 services.add_keyed_transient("push", NotificationService, PushNotificationService)
 ```
 
+## 📝 Auto-activated services
+
+We can register a service as auto-activated. This is useful when we want to ensure our FastAPI application doesn't start to serve requests until certain services are fully initialized (e.g., machine learning models, database connection pools and caches).
+
+```python
+services.add_auto_activated_singleton(MachineLearningModel)
+```
+
 ## 📚 Documentation
 
 For more information, [check out the documentation](https://AndreuCodina.github.io/aspy-dependency-injection).

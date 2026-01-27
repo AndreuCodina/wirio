@@ -26,7 +26,9 @@ from aspy_dependency_injection.exceptions import (
     InvalidServiceKeyTypeError,
     KeyedServiceAnyKeyUsedToResolveServiceError,
     NoKeyedServiceRegisteredError,
+    NoKeyedSingletonServiceRegisteredError,
     NoServiceRegisteredError,
+    NoSingletonServiceRegisteredError,
 )
 from aspy_dependency_injection.service_collection import ServiceCollection
 from aspy_dependency_injection.service_lifetime import ServiceLifetime
@@ -1737,3 +1739,63 @@ class TestServiceCollection:
                 )
 
             assert resolved_service_1 is not resolved_service_2
+
+    @pytest.mark.parametrize(
+        argnames=("is_keyed_service"),
+        argvalues=[
+            True,
+            False,
+        ],
+    )
+    async def test_enable_auto_activation_of_registered_singleton_service(
+        self, is_keyed_service: bool
+    ) -> None:
+        expected_instances = 1
+        created_instances: list[object] = []
+        service_key = "key"
+
+        class Service:
+            def __init__(self) -> None:
+                created_instances.append(self)
+
+        services = ServiceCollection()
+
+        if is_keyed_service:
+            services.add_keyed_singleton(service_key, Service)
+            services.enable_keyed_singleton_auto_activation(service_key, Service)
+        else:
+            services.add_singleton(Service)
+            services.enable_singleton_auto_activation(Service)
+
+        async with services.build_service_provider() as service_provider:
+            assert len(created_instances) == expected_instances
+
+            if is_keyed_service:
+                resolved_service = await service_provider.get_required_keyed_service(
+                    service_key, Service
+                )
+            else:
+                resolved_service = await service_provider.get_required_service(Service)
+
+            assert len(created_instances) == expected_instances
+            assert resolved_service is created_instances[0]
+
+    @pytest.mark.parametrize(
+        argnames=("is_keyed_service", "exception_type"),
+        argvalues=[
+            (True, NoKeyedSingletonServiceRegisteredError),
+            (False, NoSingletonServiceRegisteredError),
+        ],
+    )
+    async def test_fail_when_enabling_auto_activation_of_unregistered_singleton_service(
+        self, is_keyed_service: bool, exception_type: type[BaseException]
+    ) -> None:
+        services = ServiceCollection()
+
+        with pytest.raises(exception_type):  # noqa: PT012
+            if is_keyed_service:
+                services.enable_keyed_singleton_auto_activation(
+                    "key", ServiceWithNoDependencies
+                )
+            else:
+                services.enable_singleton_auto_activation(ServiceWithNoDependencies)

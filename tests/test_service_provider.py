@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from aspy_dependency_injection.abstractions.keyed_service import KeyedService
-from aspy_dependency_injection.annotations import FromKeyedServices
+from aspy_dependency_injection.annotations import FromKeyedServices, ServiceKey
 from aspy_dependency_injection.service_collection import ServiceCollection
 from tests.utils.services import ServiceWithDependencies, ServiceWithNoDependencies
 
@@ -240,3 +240,77 @@ class TestServiceProvider:
                 )
 
                 assert resolved_service is overridden_instance
+
+    async def test_activate_eagerly_auto_activated_singleton_service(
+        self,
+    ) -> None:
+        expected_instances = 1
+        constructed_instances: list[object] = []
+
+        class AutoActivatedService:
+            def __init__(self) -> None:
+                constructed_instances.append(self)
+
+        services = ServiceCollection()
+        services.add_auto_activated_singleton(AutoActivatedService)
+
+        async with services.build_service_provider() as service_provider:
+            assert len(constructed_instances) == expected_instances
+
+            resolved_service = await service_provider.get_required_service(
+                AutoActivatedService
+            )
+
+            assert len(constructed_instances) == expected_instances
+            assert resolved_service is constructed_instances[0]
+
+    async def test_activate_auto_activated_keyed_singleton_service(
+        self,
+    ) -> None:
+        captured_keys: list[str] = []
+
+        class AutoActivatedKeyedService:
+            def __init__(self, service_key: Annotated[str, ServiceKey()]) -> None:
+                assert service_key is not None
+                captured_keys.append(service_key)
+
+        service_key = "key"
+        services = ServiceCollection()
+        services.add_auto_activated_keyed_singleton(
+            service_key, AutoActivatedKeyedService
+        )
+
+        async with services.build_service_provider() as service_provider:
+            assert captured_keys == [service_key]
+            resolved_service = await service_provider.get_required_keyed_service(
+                service_key,
+                AutoActivatedKeyedService,
+            )
+
+            assert isinstance(resolved_service, AutoActivatedKeyedService)
+            assert captured_keys == [service_key]
+
+    async def test_not_activate_eagerly_non_auto_activated_services(
+        self,
+    ) -> None:
+        constructed_instances: list[object] = []
+
+        class SingletonService:
+            def __init__(self) -> None:
+                constructed_instances.append(self)
+
+        class ScopedService:
+            def __init__(self) -> None:
+                constructed_instances.append(self)
+
+        class TransientService:
+            def __init__(self) -> None:
+                constructed_instances.append(self)
+
+        services = ServiceCollection()
+        services.add_singleton(SingletonService)
+        services.add_scoped(ScopedService)
+        services.add_transient(TransientService)
+
+        async with services.build_service_provider():
+            assert len(constructed_instances) == 0

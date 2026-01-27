@@ -2,17 +2,20 @@ import typing
 from collections.abc import (
     Hashable,
 )
-from typing import Final, final, override
+from typing import Any, Final, final, override
 
 
 @final
 class TypedType(Hashable):
     """Version of :class:`type` that takes into account generic parameters."""
 
-    _origin: Final[type]
-    _args: Final[tuple[type, ...]]
+    _origin: Final[Any]
+    _args: Final[tuple[Any, ...]]
 
-    def __init__(self, type_: type) -> None:
+    def __init__(
+        self,
+        type_: Any,  # noqa: ANN401
+    ) -> None:
         origin = typing.get_origin(type_)
         has_no_generics = origin is None
 
@@ -59,7 +62,11 @@ class TypedType(Hashable):
     def __repr__(self) -> str:
         return self.create_representation(self._origin, self._args)
 
-    def create_representation(self, origin: type, args: tuple[type, ...]) -> str:
+    def create_representation(
+        self,
+        origin: Any,  # noqa: ANN401
+        args: tuple[Any, ...],
+    ) -> str:
         args_representation = ""
 
         if len(args) > 0:

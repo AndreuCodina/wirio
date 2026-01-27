@@ -17,13 +17,19 @@ class ServiceDescriptor:
     _sync_implementation_factory: Callable[..., object] | None
     _async_implementation_factory: Callable[..., Awaitable[object]] | None
     _service_key: object | None
+    _auto_activate: bool
 
     def __init__(
-        self, service_type: type, service_key: object | None, lifetime: ServiceLifetime
+        self,
+        service_type: type,
+        service_key: object | None,
+        lifetime: ServiceLifetime,
+        auto_activate: bool,
     ) -> None:
         self._service_type = TypedType.from_type(service_type)
         self._service_key = service_key
         self._lifetime = lifetime
+        self._auto_activate = auto_activate
         self._implementation_type = None
         self._implementation_instance = None
         self._sync_implementation_factory = None
@@ -36,9 +42,13 @@ class ServiceDescriptor:
         implementation_type: type,
         service_key: object | None,
         lifetime: ServiceLifetime,
+        auto_activate: bool,
     ) -> Self:
         self = cls(
-            service_type=service_type, service_key=service_key, lifetime=lifetime
+            service_type=service_type,
+            service_key=service_key,
+            lifetime=lifetime,
+            auto_activate=auto_activate,
         )
         self._implementation_type = TypedType.from_type(implementation_type)
         return self
@@ -50,9 +60,13 @@ class ServiceDescriptor:
         implementation_instance: object,
         service_key: object | None,
         lifetime: ServiceLifetime,
+        auto_activate: bool,
     ) -> Self:
         self = cls(
-            service_type=service_type, service_key=service_key, lifetime=lifetime
+            service_type=service_type,
+            service_key=service_key,
+            lifetime=lifetime,
+            auto_activate=auto_activate,
         )
         self._implementation_instance = implementation_instance
         return self
@@ -63,8 +77,14 @@ class ServiceDescriptor:
         service_type: type,
         implementation_factory: Callable[..., object],
         lifetime: ServiceLifetime,
+        auto_activate: bool,
     ) -> Self:
-        self = cls(service_type=service_type, service_key=None, lifetime=lifetime)
+        self = cls(
+            service_type=service_type,
+            service_key=None,
+            lifetime=lifetime,
+            auto_activate=auto_activate,
+        )
         self._sync_implementation_factory = implementation_factory
         return self
 
@@ -75,9 +95,13 @@ class ServiceDescriptor:
         implementation_factory: Callable[..., object],
         service_key: object | None,
         lifetime: ServiceLifetime,
+        auto_activate: bool,
     ) -> Self:
         self = cls(
-            service_type=service_type, service_key=service_key, lifetime=lifetime
+            service_type=service_type,
+            service_key=service_key,
+            lifetime=lifetime,
+            auto_activate=auto_activate,
         )
 
         if service_key is None:
@@ -94,8 +118,14 @@ class ServiceDescriptor:
         service_type: type,
         implementation_factory: Callable[..., Awaitable[object]],
         lifetime: ServiceLifetime,
+        auto_activate: bool,
     ) -> Self:
-        self = cls(service_type=service_type, service_key=None, lifetime=lifetime)
+        self = cls(
+            service_type=service_type,
+            service_key=None,
+            lifetime=lifetime,
+            auto_activate=auto_activate,
+        )
         self._async_implementation_factory = implementation_factory
         return self
 
@@ -106,9 +136,13 @@ class ServiceDescriptor:
         implementation_factory: Callable[..., Awaitable[object]],
         service_key: object | None,
         lifetime: ServiceLifetime,
+        auto_activate: bool,
     ) -> Self:
         self = cls(
-            service_type=service_type, service_key=service_key, lifetime=lifetime
+            service_type=service_type,
+            service_key=service_key,
+            lifetime=lifetime,
+            auto_activate=auto_activate,
         )
 
         if service_key is None:
@@ -130,6 +164,14 @@ class ServiceDescriptor:
     @property
     def lifetime(self) -> ServiceLifetime:
         return self._lifetime
+
+    @property
+    def auto_activate(self) -> bool:
+        return self._auto_activate
+
+    @auto_activate.setter
+    def auto_activate(self, value: bool) -> None:
+        self._auto_activate = value
 
     @property
     def implementation_type(self) -> TypedType | None:

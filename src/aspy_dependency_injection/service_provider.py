@@ -206,9 +206,8 @@ class ServiceProvider(
     def _get_engine(self) -> ServiceProviderEngine:
         return RuntimeServiceProviderEngine.INSTANCE
 
-    @override
-    async def __aenter__(self) -> Self:
-        # Add built-in services that aren't part of the list of service descriptors
+    async def _add_built_in_services(self) -> None:
+        """Add built-in services that aren't part of the list of service descriptors."""
         await self._call_site_factory.add(
             ServiceIdentifier.from_service_type(
                 TypedType.from_type(BaseServiceProvider)
@@ -232,6 +231,24 @@ class ServiceProvider(
                 self._call_site_factory,
             ),
         )
+
+    async def _activate_auto_activated_singletons(self) -> None:
+        """Activate all singletons registered with auto_activate=True."""
+        for service_descriptor in self._services.descriptors:
+            if not service_descriptor.auto_activate:
+                continue
+
+            await self.get_service_from_service_identifier(
+                service_identifier=ServiceIdentifier.from_descriptor(
+                    service_descriptor
+                ),
+                service_provider_engine_scope=self._root,
+            )
+
+    @override
+    async def __aenter__(self) -> Self:
+        await self._add_built_in_services()
+        await self._activate_auto_activated_singletons()
         return self
 
     @override
