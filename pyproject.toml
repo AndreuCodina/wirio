@@ -1,6 +1,6 @@
 [project]
 name = "aspy-dependency-injection"
-version = "0.5.0"
+version = "0.6.0"
 description = "Powerful Dependency Injection with Python"
 authors = [
     { name = "Andreu Codina", email = "30506301+AndreuCodina@users.noreply.github.com" },
