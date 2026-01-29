@@ -10,5 +10,5 @@ class ServiceScopeFactory(ABC):
 
     @abstractmethod
     def create_scope(self) -> "ServiceScope":
-        """Create a :class:`ServiceScope` that contains a :class:`ServiceProvider` used to resolve dependencies from a newly created scope."""
+        """Create a :class:`ServiceScope` that contains a :class:`ServiceContainer` used to resolve dependencies from a newly created scope."""
         ...

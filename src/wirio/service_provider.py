@@ -29,9 +29,6 @@ from wirio._service_lookup._service_provider_engine import (
     ServiceProviderEngine,
 )
 from wirio._service_lookup._typed_type import TypedType
-from wirio.abstractions.base_service_provider import (
-    BaseServiceProvider,
-)
 from wirio.abstractions.service_container_is_keyed_service import (
     ServiceContainerIsKeyedService,
 )
@@ -63,7 +60,7 @@ class _ServiceAccessor:
 
 @final
 class ServiceProvider(
-    BaseServiceProvider, AbstractAsyncContextManager["ServiceProvider"]
+    BaseServiceContainer, AbstractAsyncContextManager["ServiceProvider"]
 ):
     """Provider that resolves services."""
 

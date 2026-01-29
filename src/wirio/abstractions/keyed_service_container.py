@@ -5,7 +5,7 @@ from wirio._service_lookup._typed_type import (
 )
 
 
-class KeyedServiceProvider(ABC):
+class KeyedServiceContainer(ABC):
     """Retrieve services using a key and a type."""
 
     @abstractmethod

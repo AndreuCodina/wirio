@@ -3,8 +3,8 @@ from typing import cast
 
 from wirio._service_lookup._typed_type import TypedType
 from wirio.abstractions.keyed_service import KeyedService
-from wirio.abstractions.keyed_service_provider import (
-    KeyedServiceProvider,
+from wirio.abstractions.keyed_service_container import (
+    KeyedServiceContainer,
 )
 from wirio.abstractions.service_scope_factory import (
     ServiceScopeFactory,
@@ -16,7 +16,7 @@ from wirio.exceptions import (
 )
 
 
-class BaseServiceContainer(KeyedServiceProvider, ServiceScopeFactory, ABC):
+class BaseServiceContainer(KeyedServiceContainer, ServiceScopeFactory, ABC):
     """Define a mechanism for retrieving a service object; that is, an object that provides custom support to other objects."""
 
     @abstractmethod
