@@ -12,7 +12,7 @@ from wirio.base_service_container import BaseServiceContainer
 from wirio.service_container import ServiceContainer
 
 
-class TestServiceProviderIsService:
+class TestServiceContainerIsService:
     async def test_resolve_service_container_is_service(self) -> None:
         services = ServiceContainer()
 

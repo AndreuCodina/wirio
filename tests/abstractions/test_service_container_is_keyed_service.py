@@ -4,7 +4,7 @@ from wirio.abstractions.service_container_is_keyed_service import (
 from wirio.service_container import ServiceContainer
 
 
-class TestServiceProviderIsKeyedService:
+class TestServiceContainerIsKeyedService:
     async def test_resolve_service_container_is_keyed_service(self) -> None:
         services = ServiceContainer()
 

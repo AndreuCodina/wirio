@@ -39,6 +39,8 @@ from wirio.exceptions import (
     NoKeyedSingletonServiceRegisteredError,
     NoServiceRegisteredError,
     NoSingletonServiceRegisteredError,
+    ServiceContainerAlreadyBuiltError,
+    ServiceContainerNotBuiltError,
 )
 from wirio.service_container import ServiceContainer
 from wirio.service_lifetime import ServiceLifetime
@@ -1724,3 +1726,22 @@ class TestServiceContainer:
             assert isinstance(resolved_service_2, ServiceWithNoDependencies)
 
         assert resolved_service_1 is not resolved_service_2
+
+    async def test_fail_when_creating_scope_when_container_is_not_built(
+        self,
+    ) -> None:
+        services = ServiceContainer()
+
+        with pytest.raises(ServiceContainerNotBuiltError):
+            async with services.create_scope():
+                pass
+
+    async def test_fail_when_registering_services_after_container_is_built(
+        self,
+    ) -> None:
+        services = ServiceContainer()
+        services.add_scoped(ServiceWithNoDependencies)
+
+        async with services:
+            with pytest.raises(ServiceContainerAlreadyBuiltError):
+                services.add_scoped(ServiceWithNoDependencies)
