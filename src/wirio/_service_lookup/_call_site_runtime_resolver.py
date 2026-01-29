@@ -43,8 +43,8 @@ from wirio.annotations import FromKeyedServicesInjectable
 from wirio.exceptions import (
     CannotResolveParameterServiceFromImplementationFactoryError,
 )
-from wirio.service_container_engine_scope import (
-    ServiceContainerEngineScope,
+from wirio.service_provider_engine_scope import (
+    ServiceProviderEngineScope,
 )
 
 
@@ -56,7 +56,7 @@ class _RuntimeResolverLock(Flag):
 
 @dataclass(frozen=True)
 class RuntimeResolverContext:
-    scope: ServiceContainerEngineScope
+    scope: ServiceProviderEngineScope
     acquired_locks: _RuntimeResolverLock
 
 
@@ -65,7 +65,7 @@ class CallSiteRuntimeResolver(CallSiteVisitor[RuntimeResolverContext, object | N
     INSTANCE: ClassVar["CallSiteRuntimeResolver"]
 
     async def resolve(
-        self, call_site: ServiceCallSite, scope: ServiceContainerEngineScope
+        self, call_site: ServiceCallSite, scope: ServiceProviderEngineScope
     ) -> object | None:
         # Fast path to avoid virtual calls if we already have the cached value in the root scope
         if scope.is_root_scope and call_site.value is not None:
@@ -122,7 +122,7 @@ class CallSiteRuntimeResolver(CallSiteVisitor[RuntimeResolverContext, object | N
         self,
         call_site: ServiceCallSite,
         argument: RuntimeResolverContext,
-        service_provider_engine_scope: ServiceContainerEngineScope,
+        service_provider_engine_scope: ServiceProviderEngineScope,
         lock_type: _RuntimeResolverLock,
     ) -> object | None:
         is_lock_taken = False
@@ -272,7 +272,7 @@ class CallSiteRuntimeResolver(CallSiteVisitor[RuntimeResolverContext, object | N
         self,
         implementation_factory: Callable[..., Awaitable[object]]
         | Callable[..., object],
-        scope: ServiceContainerEngineScope,
+        scope: ServiceProviderEngineScope,
     ) -> list[object | None]:
         parameter_services: list[object | None] = []
         signature = inspect.signature(implementation_factory)

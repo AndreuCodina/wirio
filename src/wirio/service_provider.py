@@ -45,8 +45,8 @@ from wirio.abstractions.service_scope_factory import (
 )
 from wirio.base_service_container import BaseServiceContainer
 from wirio.exceptions import ObjectDisposedError
-from wirio.service_container_engine_scope import (
-    ServiceContainerEngineScope,
+from wirio.service_provider_engine_scope import (
+    ServiceProviderEngineScope,
 )
 
 if TYPE_CHECKING:
@@ -56,7 +56,7 @@ if TYPE_CHECKING:
 @dataclass(frozen=True)
 class _ServiceAccessor:
     call_site: ServiceCallSite | None
-    realized_service: Callable[[ServiceContainerEngineScope], Awaitable[object | None]]
+    realized_service: Callable[[ServiceProviderEngineScope], Awaitable[object | None]]
 
 
 @final
@@ -66,7 +66,7 @@ class ServiceProvider(
     """Provider that resolves services."""
 
     _descriptors: Final[list["ServiceDescriptor"]]
-    _root: Final[ServiceContainerEngineScope]
+    _root: Final[ServiceProviderEngineScope]
     _engine: Final[ServiceProviderEngine]
     _service_accessors: Final[
         AsyncConcurrentDictionary[ServiceIdentifier, _ServiceAccessor]
@@ -76,7 +76,7 @@ class ServiceProvider(
 
     def __init__(self, descriptors: list["ServiceDescriptor"]) -> None:
         self._descriptors = descriptors
-        self._root = ServiceContainerEngineScope(
+        self._root = ServiceProviderEngineScope(
             service_provider=self, is_root_scope=True
         )
         self._engine = self._get_engine()
@@ -85,7 +85,7 @@ class ServiceProvider(
         self._call_site_factory = CallSiteFactory(descriptors)
 
     @property
-    def root(self) -> ServiceContainerEngineScope:
+    def root(self) -> ServiceProviderEngineScope:
         return self._root
 
     @property
@@ -121,12 +121,12 @@ class ServiceProvider(
         if self._is_disposed:
             raise ObjectDisposedError
 
-        return ServiceContainerEngineScope(service_provider=self, is_root_scope=False)
+        return ServiceProviderEngineScope(service_provider=self, is_root_scope=False)
 
     async def get_service_from_service_identifier(
         self,
         service_identifier: ServiceIdentifier,
-        service_provider_engine_scope: ServiceContainerEngineScope,
+        service_provider_engine_scope: ServiceProviderEngineScope,
     ) -> object | None:
         override_call_site = self._call_site_factory.get_overridden_call_site(
             service_identifier
@@ -185,7 +185,7 @@ class ServiceProvider(
         self, service_identifier: ServiceIdentifier
     ) -> _ServiceAccessor:
         def realized_service_returning_none(
-            _: ServiceContainerEngineScope,
+            _: ServiceProviderEngineScope,
         ) -> Awaitable[object | None]:
             future = asyncio.Future[None]()
             future.set_result(None)

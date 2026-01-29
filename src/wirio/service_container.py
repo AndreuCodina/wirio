@@ -3,7 +3,7 @@ import typing
 from collections.abc import Awaitable, Callable, Generator
 from contextlib import AbstractAsyncContextManager, contextmanager
 from types import TracebackType
-from typing import Final, Self, cast, overload, override
+from typing import Final, Self, cast, final, overload, override
 
 from fastapi import FastAPI
 
@@ -25,10 +25,11 @@ from wirio.service_lifetime import ServiceLifetime
 from wirio.service_provider import ServiceProvider
 
 
+@final
 class ServiceContainer(
     BaseServiceContainer, AbstractAsyncContextManager["ServiceContainer"]
 ):
-    """Container of services provided during configuration."""
+    """Container to register and resolve services."""
 
     _descriptors: Final[list[ServiceDescriptor]]
     _service_provider: ServiceProvider | None = None
@@ -95,10 +96,6 @@ class ServiceContainer(
 
         self._service_provider = None
 
-    def build_service_provider(self) -> ServiceProvider:
-        """Create a :class:`ServiceProvider` containing services from the provided :class:`ServiceContainer`."""
-        return ServiceProvider(self._descriptors)
-
     @contextmanager
     def override(
         self, service_type: type, implementation_instance: object | None
@@ -139,9 +136,14 @@ class ServiceContainer(
 
     async def _get_service_provider(self) -> ServiceProvider:
         if self._service_provider is None:
-            self._service_provider = self.build_service_provider()
+            self._service_provider = self._build_service_provider()
             await self._service_provider.__aenter__()
 
+        return self._service_provider
+
+    def _build_service_provider(self) -> ServiceProvider:
+        """Create a :class:`ServiceProvider` containing services from the provided :class:`ServiceContainer`."""
+        self._service_provider = ServiceProvider(self._descriptors)
         return self._service_provider
 
     @overload

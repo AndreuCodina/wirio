@@ -34,25 +34,26 @@ current_request: ContextVar[Request | WebSocket] = ContextVar("wirio_starlette_r
 @final
 class FastApiDependencyInjection:
     @classmethod
-    def setup(cls, app: FastAPI, services: "ServiceContainer") -> None:
-        service_provider = services.build_service_provider()
-        app.state.wirio_service_provider = service_provider
+    def setup(cls, app: FastAPI, service_container: "ServiceContainer") -> None:
+        app.state.wirio_service_container = service_container
         app.add_middleware(_WirioAsgiMiddleware)
-        cls._update_lifespan(app, service_provider)
+        cls._update_lifespan(app, service_container)
         cls._inject_routes(app.routes)
 
     @classmethod
-    def _update_lifespan(cls, app: FastAPI, service_provider: ServiceProvider) -> None:
+    def _update_lifespan(
+        cls, app: FastAPI, service_container: "ServiceContainer"
+    ) -> None:
         old_lifespan = app.router.lifespan_context
 
         @asynccontextmanager
         async def new_lifespan(app: FastAPI) -> AsyncGenerator[Any]:
-            await service_provider.__aenter__()
+            await service_container.__aenter__()
 
             async with old_lifespan(app) as state:
                 yield state
 
-            await service_provider.__aexit__(None, None, None)
+            await service_container.__aexit__(None, None, None)
 
         app.router.lifespan_context = new_lifespan
 
@@ -200,7 +201,9 @@ class _WirioAsgiMiddleware:
                 await self.app(scope, receive, send)
                 return None
 
-            service_provider: ServiceProvider = request.app.state.wirio_service_provider
+            service_provider: ServiceProvider = (
+                request.app.state.wirio_service_container
+            )
 
             async with service_provider.create_scope() as service_scope:
                 request.state.wirio_service_scope = service_scope

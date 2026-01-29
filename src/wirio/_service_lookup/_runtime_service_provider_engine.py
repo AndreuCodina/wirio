@@ -10,8 +10,8 @@ from wirio._service_lookup._service_call_site import (
 from wirio._service_lookup._service_provider_engine import (
     ServiceProviderEngine,
 )
-from wirio.service_container_engine_scope import (
-    ServiceContainerEngineScope,
+from wirio.service_provider_engine_scope import (
+    ServiceProviderEngineScope,
 )
 
 
@@ -22,9 +22,9 @@ class RuntimeServiceProviderEngine(ServiceProviderEngine):
     @override
     def realize_service(
         self, call_site: ServiceCallSite
-    ) -> Callable[[ServiceContainerEngineScope], Awaitable[object | None]]:
+    ) -> Callable[[ServiceProviderEngineScope], Awaitable[object | None]]:
         def _create_realize_service(
-            scope: ServiceContainerEngineScope,
+            scope: ServiceProviderEngineScope,
         ) -> Awaitable[object | None]:
             return CallSiteRuntimeResolver.INSTANCE.resolve(call_site, scope)
 

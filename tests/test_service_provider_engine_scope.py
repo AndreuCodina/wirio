@@ -3,8 +3,8 @@ from tests.utils.services import (
     ServiceWithSyncContextManagerAndNoDependencies,
 )
 from wirio.service_container import ServiceContainer
-from wirio.service_container_engine_scope import (
-    ServiceContainerEngineScope,
+from wirio.service_provider_engine_scope import (
+    ServiceProviderEngineScope,
 )
 
 
@@ -19,7 +19,7 @@ class TestServiceProviderEngineScope:
             service_container,
             service_container.create_scope() as service_scope,
         ):
-            assert isinstance(service_scope, ServiceContainerEngineScope)
+            assert isinstance(service_scope, ServiceProviderEngineScope)
 
             resolved_service = await service_scope.get(
                 ServiceWithSyncContextManagerAndNoDependencies
@@ -39,7 +39,7 @@ class TestServiceProviderEngineScope:
             service_container,
             service_container.create_scope() as service_scope,
         ):
-            assert isinstance(service_scope, ServiceContainerEngineScope)
+            assert isinstance(service_scope, ServiceProviderEngineScope)
 
             resolved_service = await service_scope.get(
                 ServiceWithAsyncContextManagerAndNoDependencies
