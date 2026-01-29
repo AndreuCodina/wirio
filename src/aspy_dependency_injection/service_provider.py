@@ -42,6 +42,9 @@ from aspy_dependency_injection.abstractions.service_scope import (
     AbstractAsyncContextManager,
     ServiceScope,
 )
+from aspy_dependency_injection.abstractions.service_scope_factory import (
+    ServiceScopeFactory,
+)
 from aspy_dependency_injection.exceptions import ObjectDisposedError
 from aspy_dependency_injection.service_provider_engine_scope import (
     ServiceProviderEngineScope,
@@ -114,6 +117,7 @@ class ServiceProvider(
             service_provider_engine_scope=self._root,
         )
 
+    # Check against public static IServiceScope CreateScope(this IServiceProvider provider)      ... return provider.GetRequiredService<IServiceScopeFactory>().CreateScope();
     def create_scope(self) -> ServiceScope:
         """Create a new :class:`ServiceScope` that can be used to resolve scoped services."""
         if self._is_disposed:
@@ -213,6 +217,15 @@ class ServiceProvider(
                 TypedType.from_type(BaseServiceProvider)
             ),
             ServiceProviderCallSite(),
+        )
+        await self._call_site_factory.add(
+            ServiceIdentifier.from_service_type(
+                TypedType.from_type(ServiceScopeFactory)
+            ),
+            ConstantCallSite(
+                TypedType.from_type(ServiceScopeFactory),
+                self._root,
+            ),
         )
         await self._call_site_factory.add(
             ServiceIdentifier.from_service_type(

@@ -3,7 +3,7 @@ from abc import ABC
 from contextlib import AbstractAsyncContextManager, AbstractContextManager
 from dataclasses import dataclass
 from types import TracebackType
-from typing import Annotated, Self, override
+from typing import Annotated, Self, final, override
 
 import pytest
 
@@ -46,8 +46,20 @@ from tests.utils.services import (
 )
 
 
-class _CounterService:
-    pass
+@final
+class _CounterService(AbstractContextManager["_CounterService"]):
+    @override
+    def __enter__(self) -> Self:
+        return self
+
+    @override
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> bool | None:
+        return None
 
 
 async def _inject_counter_service() -> _CounterService:

@@ -68,10 +68,11 @@ nav:
       - Auto-activated services: advanced-features/auto-activated-services.md
   - API reference:
       - ServiceCollection: api-reference/service-collection.md
-      - BaseServiceProvider: api-reference/base-service-provider.md
       - ServiceProvider: api-reference/service-provider.md
       - ServiceScope: api-reference/service-scope.md
       - KeyedService: api-reference/keyed-service.md
+      - BaseServiceProvider: api-reference/base-service-provider.md
+      - ServiceScopeFactory: api-reference/service-scope-factory.md
       - ServiceProviderIsService: api-reference/service-provider-is-service.md
       - ServiceProviderIsKeyedService: api-reference/service-provider-is-keyed-service.md
       - Exceptions: api-reference/exceptions.md

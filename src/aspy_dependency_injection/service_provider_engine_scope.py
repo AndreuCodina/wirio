@@ -1,7 +1,9 @@
-import asyncio
 from types import TracebackType
 from typing import TYPE_CHECKING, Final, Self, final, override
 
+from aspy_dependency_injection._service_lookup._asyncio_reentrant_lock import (
+    AsyncioReentrantLock,
+)
 from aspy_dependency_injection._service_lookup._service_identifier import (
     ServiceIdentifier,
 )
@@ -17,9 +19,6 @@ from aspy_dependency_injection.abstractions.base_service_provider import (
     BaseServiceProvider,
 )
 from aspy_dependency_injection.abstractions.service_scope import ServiceScope
-from aspy_dependency_injection.abstractions.service_scope_factory import (
-    ServiceScopeFactory,
-)
 from aspy_dependency_injection.exceptions import ObjectDisposedError
 
 if TYPE_CHECKING:
@@ -27,9 +26,7 @@ if TYPE_CHECKING:
 
 
 @final
-class ServiceProviderEngineScope(
-    ServiceScope, BaseServiceProvider, ServiceScopeFactory
-):
+class ServiceProviderEngineScope(ServiceScope, BaseServiceProvider):
     """Container resolving services with scope."""
 
     _root_provider: Final["ServiceProvider"]
@@ -37,7 +34,9 @@ class ServiceProviderEngineScope(
     _is_disposed: bool
     _disposables: list[object] | None
     _resolved_services: Final[dict[ServiceCacheKey, object | None]]
-    _resolved_services_lock: Final[asyncio.Lock]
+
+    # A reentrant lock is needed when the lifetime is scoped and a service has a context manager
+    _resolved_services_lock: Final[AsyncioReentrantLock]
 
     def __init__(
         self, service_provider: "ServiceProvider", is_root_scope: bool
@@ -47,7 +46,7 @@ class ServiceProviderEngineScope(
         self._is_disposed = False
         self._disposables = None
         self._resolved_services = {}
-        self._resolved_services_lock = asyncio.Lock()
+        self._resolved_services_lock = AsyncioReentrantLock()
 
     @property
     def root_provider(self) -> "ServiceProvider":
@@ -62,7 +61,7 @@ class ServiceProviderEngineScope(
         return self._resolved_services
 
     @property
-    def resolved_services_lock(self) -> asyncio.Lock:
+    def resolved_services_lock(self) -> AsyncioReentrantLock:
         """Protect the state on the scope.
 
         In particular, for the root scope, it protects the list of disposable entries only, since :attr:`resolved_services` are cached on :class:`CallSites`.
