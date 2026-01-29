@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 
 
 @final
-class ServiceProviderEngineScope(ServiceScope, BaseServiceProvider):
+class ServiceProviderEngineScope(BaseServiceProvider, ServiceScope):
     """Container resolving services with scope."""
 
     _root_provider: Final["ServiceProvider"]
@@ -101,6 +101,30 @@ class ServiceProviderEngineScope(ServiceScope, BaseServiceProvider):
                 service_type=service_type, service_key=service_key
             ),
             service_provider_engine_scope=self,
+        )
+
+    async def try_get[TService](self, service_type: type[TService]) -> TService | None:
+        """Get service of type `TService` or return `None`."""
+        return await super().try_get(service_type)
+
+    async def get[TService](self, service_type: type[TService]) -> TService:
+        """Get service of type `TService` or raise :class:`NoServiceRegisteredError`."""
+        return await super().get(service_type)
+
+    async def try_get_keyed[TService](
+        self, service_key: object | None, service_type: type[TService]
+    ) -> TService | None:
+        """Get service of type `TService` or return `None`."""
+        return await super().try_get_keyed(
+            service_key=service_key, service_type=service_type
+        )
+
+    async def get_keyed[TService](
+        self, service_key: object | None, service_type: type[TService]
+    ) -> TService:
+        """Get service of type `TService` or raise an error."""
+        return await super().get_keyed(
+            service_key=service_key, service_type=service_type
         )
 
     async def capture_disposable(self, service: object | None) -> object | None:

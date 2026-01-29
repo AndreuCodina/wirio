@@ -13,6 +13,7 @@ from wirio._integrations._fastapi_dependency_injection import (
 from wirio._service_lookup._typed_type import TypedType
 from wirio._wirio_undefined import WirioUndefined
 from wirio.abstractions.service_scope import ServiceScope
+from wirio.base_service_container import BaseServiceContainer
 from wirio.exceptions import (
     NoKeyedSingletonServiceRegisteredError,
     NoSingletonServiceRegisteredError,
@@ -24,7 +25,9 @@ from wirio.service_lifetime import ServiceLifetime
 from wirio.service_provider import ServiceProvider
 
 
-class ServiceCollection(AbstractAsyncContextManager["ServiceCollection"]):
+class ServiceCollection(
+    BaseServiceContainer, AbstractAsyncContextManager["ServiceCollection"]
+):
     """Container of services provided during configuration."""
 
     _descriptors: Final[list[ServiceDescriptor]]
@@ -38,14 +41,31 @@ class ServiceCollection(AbstractAsyncContextManager["ServiceCollection"]):
     def descriptors(self) -> list[ServiceDescriptor]:
         return self._descriptors
 
+    @override
+    async def get_object(self, service_type: TypedType) -> object | None:
+        service_provider = await self._get_service_provider()
+        return await service_provider.get_object(service_type)
+
+    @override
+    async def get_keyed_object(
+        self, service_key: object | None, service_type: TypedType
+    ) -> object | None:
+        service_provider = await self._get_service_provider()
+        return await service_provider.get_keyed_object(
+            service_key=service_key, service_type=service_type
+        )
+
+    @override
     async def get[TService](self, service_type: type[TService]) -> TService:
         service_provider = await self._get_service_provider()
         return await service_provider.get(service_type)
 
+    @override
     async def try_get[TService](self, service_type: type[TService]) -> TService | None:
         service_provider = await self._get_service_provider()
         return await service_provider.try_get(service_type)
 
+    @override
     async def get_keyed[TService](
         self, service_key: object | None, service_type: type[TService]
     ) -> TService:
@@ -54,6 +74,7 @@ class ServiceCollection(AbstractAsyncContextManager["ServiceCollection"]):
             service_key=service_key, service_type=service_type
         )
 
+    @override
     async def try_get_keyed[TService](
         self, service_key: object | None, service_type: type[TService]
     ) -> TService | None:
@@ -68,6 +89,7 @@ class ServiceCollection(AbstractAsyncContextManager["ServiceCollection"]):
 
         self._service_provider = None
 
+    @override
     def create_scope(self) -> ServiceScope:
         self._ensure_service_container_is_built()
         assert self._service_provider is not None

@@ -94,33 +94,31 @@ class TestServiceCollection:
 
             assert isinstance(resolved_service, ServiceWithNoDependencies)
 
-    # @pytest.mark.parametrize(
-    #     argnames=("service_lifetime"),
-    #     argvalues=[
-    #         ServiceLifetime.SINGLETON,
-    #         ServiceLifetime.SCOPED,
-    #         ServiceLifetime.TRANSIENT,
-    #     ],
-    # )
-    # async def test_resolve_service_using_scope(
-    #     self, service_lifetime: ServiceLifetime
-    # ) -> None:
-    #     service_container = ServiceContainer()
+    @pytest.mark.parametrize(
+        argnames=("service_lifetime"),
+        argvalues=[
+            ServiceLifetime.SINGLETON,
+            ServiceLifetime.SCOPED,
+            ServiceLifetime.TRANSIENT,
+        ],
+    )
+    async def test_resolve_service_using_scope(
+        self, service_lifetime: ServiceLifetime
+    ) -> None:
+        service_container = ServiceContainer()
 
-    #     match service_lifetime:
-    #         case ServiceLifetime.SINGLETON:
-    #             service_container.add_singleton(ServiceWithNoDependencies)
-    #         case ServiceLifetime.SCOPED:
-    #             service_container.add_scoped(ServiceWithNoDependencies)
-    #         case ServiceLifetime.TRANSIENT:
-    #             service_container.add_transient(ServiceWithNoDependencies)
+        match service_lifetime:
+            case ServiceLifetime.SINGLETON:
+                service_container.add_singleton(ServiceWithNoDependencies)
+            case ServiceLifetime.SCOPED:
+                service_container.add_scoped(ServiceWithNoDependencies)
+            case ServiceLifetime.TRANSIENT:
+                service_container.add_transient(ServiceWithNoDependencies)
 
-    #     async with service_container, service_container.create_scope() as service_scope:
-    #         resolved_service = await service_scope.service_container.get(
-    #             ServiceWithNoDependencies
-    #         )
+        async with service_container, service_container.create_scope() as service_scope:
+            resolved_service = await service_scope.get(ServiceWithNoDependencies)
 
-    #         assert isinstance(resolved_service, ServiceWithNoDependencies)
+            assert isinstance(resolved_service, ServiceWithNoDependencies)
 
     @pytest.mark.parametrize(
         argnames=("service_lifetime", "is_async_implementation_factory"),
@@ -400,20 +398,20 @@ class TestServiceCollection:
 
             assert resolved_service is None
 
-    # async def test_get_service_with_built_in_service_provider(self) -> None:
-    #     service_container = ServiceContainer()
-    #     service_container.add_transient(ServiceWithNoDependencies)
+    async def test_get_service_with_built_in_service_provider(self) -> None:
+        service_container = ServiceContainer()
+        service_container.add_transient(ServiceWithNoDependencies)
 
-    #     async with service_container:
-    #         resolved_service_provider = await service_container.get(BaseServiceProvider)
+        async with service_container:
+            resolved_service_provider = await service_container.get(BaseServiceProvider)
 
-    #         assert isinstance(resolved_service_provider, BaseServiceProvider)
+            assert isinstance(resolved_service_provider, BaseServiceProvider)
 
-    #         resolved_service = await resolved_service_provider.get(
-    #             ServiceWithNoDependencies
-    #         )
+            resolved_service = await resolved_service_provider.get(
+                ServiceWithNoDependencies
+            )
 
-    #         assert isinstance(resolved_service, ServiceWithNoDependencies)
+            assert isinstance(resolved_service, ServiceWithNoDependencies)
 
     @pytest.mark.parametrize(
         argnames=("service_lifetime"),
@@ -1635,83 +1633,71 @@ class TestServiceCollection:
                 f"Expected 1 singleton instance, got {len(unique_instances)}"
             )
 
-    # async def test_return_same_singleton_instance_when_resolving_a_singleton_using_a_scope(
-    #     self,
-    # ) -> None:
-    #     service_container = ServiceContainer()
-    #     service_container.add_scoped(_inject_counter_service)
+    async def test_return_same_singleton_instance_when_resolving_a_singleton_using_a_scope(
+        self,
+    ) -> None:
+        service_container = ServiceContainer()
+        service_container.add_scoped(_inject_counter_service)
 
-    #     async with service_container:
-    #         async with service_container.create_scope() as service_scope:
-    #             resolved_services = await asyncio.gather(
-    #                 service_scope.service_provider.get(_CounterService),
-    #                 service_scope.service_provider.get(_CounterService),
-    #                 service_scope.service_provider.get(_CounterService),
-    #                 service_scope.service_provider.get(_CounterService),
-    #                 service_scope.service_provider.get(_CounterService),
-    #             )
+        async with service_container:
+            async with service_container.create_scope() as service_scope:
+                resolved_services = await asyncio.gather(
+                    service_scope.get(_CounterService),
+                    service_scope.get(_CounterService),
+                    service_scope.get(_CounterService),
+                    service_scope.get(_CounterService),
+                    service_scope.get(_CounterService),
+                )
 
-    #         unique_instances = set(resolved_services)
-    #         assert len(unique_instances) == 1, (
-    #             f"Expected 1 scoped instance within same scope, got {len(unique_instances)}"
-    #         )
+            unique_instances = set(resolved_services)
+            assert len(unique_instances) == 1, (
+                f"Expected 1 scoped instance within same scope, got {len(unique_instances)}"
+            )
 
-    # async def test_return_different_scoped_instance_when_resolving_a_scoped_service_in_different_scopes(
-    #     self,
-    # ) -> None:
-    #     service_container = ServiceContainer()
-    #     service_container.add_scoped(_inject_counter_service)
+    async def test_return_different_scoped_instance_when_resolving_a_scoped_service_in_different_scopes(
+        self,
+    ) -> None:
+        service_container = ServiceContainer()
+        service_container.add_scoped(_inject_counter_service)
 
-    #     async with service_container:
-    #         async with service_provider.create_scope() as service_scope_1:
-    #             resolved_service_1 = await service_scope_1.service_container.get(
-    #                 _CounterService
-    #             )
+        async with service_container:
+            async with service_container.create_scope() as service_scope_1:
+                resolved_service_1 = await service_scope_1.get(_CounterService)
 
-    #         async with service_provider.create_scope() as service_scope_2:
-    #             resolved_service_2 = await service_scope_2.service_container.get(
-    #                 _CounterService
-    #             )
+            async with service_container.create_scope() as service_scope_2:
+                resolved_service_2 = await service_scope_2.get(_CounterService)
 
-    #         assert resolved_service_1 is not resolved_service_2
+            assert resolved_service_1 is not resolved_service_2
 
-    # async def test_return_same_singleton_instance_when_resolving_a_singleton_in_different_scopes(
-    #     self,
-    # ) -> None:
-    #     service_container = ServiceContainer()
-    #     service_container.add_singleton(_inject_counter_service)
+    async def test_return_same_singleton_instance_when_resolving_a_singleton_in_different_scopes(
+        self,
+    ) -> None:
+        service_container = ServiceContainer()
+        service_container.add_singleton(_inject_counter_service)
 
-    #     async with service_container:
-    #         async with service_provider.create_scope() as service_scope_1:
-    #             resolved_service_1 = await service_scope_1.service_container.get(
-    #                 _CounterService
-    #             )
+        async with service_container:
+            async with service_container.create_scope() as service_scope_1:
+                resolved_service_1 = await service_scope_1.get(_CounterService)
 
-    #         async with service_provider.create_scope() as service_scope_2:
-    #             resolved_service_2 = await service_scope_2.service_container.get(
-    #                 _CounterService
-    #             )
+            async with service_container.create_scope() as service_scope_2:
+                resolved_service_2 = await service_scope_2.get(_CounterService)
 
-    #         assert resolved_service_1 is resolved_service_2
+            assert resolved_service_1 is resolved_service_2
 
-    # async def test_return_different_scoped_instances_when_resolving_a_scoped_service_in_different_scopes(
-    #     self,
-    # ) -> None:
-    #     service_container = ServiceContainer()
-    #     service_container.add_scoped(_inject_counter_service)
+    async def test_return_different_scoped_instances_when_resolving_a_scoped_service_in_different_scopes(
+        self,
+    ) -> None:
+        service_container = ServiceContainer()
+        service_container.add_scoped(_inject_counter_service)
 
-    #     async with service_container:
-    #         async with service_container.create_scope() as service_scope_1:
-    #             resolved_service_1 = await service_scope_1.service_container.get(
-    #                 _CounterService
-    #             )
+        async with service_container:
+            async with service_container.create_scope() as service_scope_1:
+                resolved_service_1 = await service_scope_1.get(_CounterService)
 
-    #         async with service_provider.create_scope() as service_scope_2:
-    #             resolved_service_2 = await service_scope_2.service_container.get(
-    #                 _CounterService
-    #             )
+            async with service_container.create_scope() as service_scope_2:
+                resolved_service_2 = await service_scope_2.get(_CounterService)
 
-    #         assert resolved_service_1 is not resolved_service_2
+            assert resolved_service_1 is not resolved_service_2
 
     @pytest.mark.parametrize(
         argnames=("is_keyed_service"),
