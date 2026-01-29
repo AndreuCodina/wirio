@@ -1,4 +1,4 @@
-from aspy_dependency_injection.abstractions.keyed_service import KeyedService
+from wirio.abstractions.keyed_service import KeyedService
 
 
 class TestKeyedService:

@@ -2,7 +2,7 @@ import sys
 
 import pytest
 
-from aspy_dependency_injection._service_lookup._typed_type import TypedType
+from wirio._service_lookup._typed_type import TypedType
 
 
 class CustomClass:

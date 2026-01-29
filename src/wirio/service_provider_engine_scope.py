@@ -1,0 +1,199 @@
+from types import TracebackType
+from typing import TYPE_CHECKING, Final, Self, final, override
+
+from wirio._service_lookup._asyncio_reentrant_lock import (
+    AsyncioReentrantLock,
+)
+from wirio._service_lookup._service_identifier import (
+    ServiceIdentifier,
+)
+from wirio._service_lookup._supports_async_context_manager import (
+    SupportsAsyncContextManager,
+)
+from wirio._service_lookup._supports_context_manager import (
+    SupportsContextManager,
+)
+from wirio._service_lookup._typed_type import TypedType
+from wirio._service_lookup.service_cache_key import ServiceCacheKey
+from wirio.abstractions.service_scope import ServiceScope
+from wirio.base_service_container import BaseServiceContainer
+from wirio.exceptions import ObjectDisposedError
+
+if TYPE_CHECKING:
+    from wirio.service_provider import ServiceProvider
+
+
+@final
+class ServiceProviderEngineScope(BaseServiceContainer, ServiceScope):
+    """Container resolving services with scope."""
+
+    _root_provider: Final["ServiceProvider"]
+    _is_root_scope: Final[bool]
+    _is_disposed: bool
+    _disposables: list[object] | None
+    _resolved_services: Final[dict[ServiceCacheKey, object | None]]
+
+    # A reentrant lock is needed when the lifetime is scoped and a service has a context manager
+    _resolved_services_lock: Final[AsyncioReentrantLock]
+
+    def __init__(
+        self, service_provider: "ServiceProvider", is_root_scope: bool
+    ) -> None:
+        self._root_provider = service_provider
+        self._is_root_scope = is_root_scope
+        self._is_disposed = False
+        self._disposables = None
+        self._resolved_services = {}
+        self._resolved_services_lock = AsyncioReentrantLock()
+
+    @property
+    def root_provider(self) -> "ServiceProvider":
+        return self._root_provider
+
+    @property
+    def is_root_scope(self) -> bool:
+        return self._is_root_scope
+
+    @property
+    def resolved_services(self) -> dict[ServiceCacheKey, object | None]:
+        return self._resolved_services
+
+    @property
+    def resolved_services_lock(self) -> AsyncioReentrantLock:
+        """Protect the state on the scope.
+
+        In particular, for the root scope, it protects the list of disposable entries only, since :attr:`resolved_services` are cached on :class:`CallSites`.
+
+        For other scopes, it protects :attr:`resolved_services` and the list of disposables.
+        """
+        return self._resolved_services_lock
+
+    @property
+    @override
+    def services(self) -> BaseServiceContainer:
+        return self
+
+    @override
+    def create_scope(self) -> ServiceScope:
+        return self._root_provider.create_scope()
+
+    @override
+    async def get_object(self, service_type: TypedType) -> object | None:
+        if self._is_disposed:
+            raise ObjectDisposedError
+
+        return await self._root_provider.get_service_from_service_identifier(
+            service_identifier=ServiceIdentifier.from_service_type(service_type),
+            service_provider_engine_scope=self,
+        )
+
+    @override
+    async def get_keyed_object(
+        self, service_key: object | None, service_type: TypedType
+    ) -> object | None:
+        if self._is_disposed:
+            raise ObjectDisposedError
+
+        return await self._root_provider.get_service_from_service_identifier(
+            service_identifier=ServiceIdentifier.from_service_type(
+                service_type=service_type, service_key=service_key
+            ),
+            service_provider_engine_scope=self,
+        )
+
+    async def try_get[TService](self, service_type: type[TService]) -> TService | None:
+        """Get service of type `TService` or return `None`."""
+        return await super().try_get(service_type)
+
+    async def get[TService](self, service_type: type[TService]) -> TService:
+        """Get service of type `TService` or raise :class:`NoServiceRegisteredError`."""
+        return await super().get(service_type)
+
+    async def try_get_keyed[TService](
+        self, service_key: object | None, service_type: type[TService]
+    ) -> TService | None:
+        """Get service of type `TService` or return `None`."""
+        return await super().try_get_keyed(
+            service_key=service_key, service_type=service_type
+        )
+
+    async def get_keyed[TService](
+        self, service_key: object | None, service_type: type[TService]
+    ) -> TService:
+        """Get service of type `TService` or raise an error."""
+        return await super().get_keyed(
+            service_key=service_key, service_type=service_type
+        )
+
+    async def capture_disposable(self, service: object | None) -> object | None:
+        if service is self or not (
+            isinstance(service, (SupportsAsyncContextManager, SupportsContextManager))
+        ):
+            return service
+
+        is_disposed = False
+
+        async with self._resolved_services_lock:
+            if self._is_disposed:
+                is_disposed = True
+            else:
+                if self._disposables is None:
+                    self._disposables = []
+
+                self._disposables.append(service)
+
+        # Don't run customer code under the lock
+        if is_disposed:
+            if isinstance(service, SupportsAsyncContextManager):
+                await service.__aexit__(None, None, None)
+            else:
+                service.__exit__(None, None, None)
+
+            raise ObjectDisposedError
+
+        return service
+
+    async def _begin_dispose(self) -> list[object] | None:
+        async with self._resolved_services_lock:
+            if self._is_disposed:
+                return None
+
+            # We've transitioned to the disposed state, so future calls to
+            # :meth:`capture_disposable` will immediately dispose the object.
+            # No further changes to disposables are allowed.
+            self._is_disposed = True
+
+        if self._is_root_scope and not self._root_provider.is_disposed:
+            # If this :class:`ServiceProviderEngineScope` instance is a root scope, disposing this instance will need to dispose the :attr:`root_provider` too.
+            # Otherwise the :attr:`root_provider` will never get disposed and will leak.
+            # Note, if the :attr:`root_provider` gets disposed first, it will automatically dispose all attached :class:`ServiceProviderEngineScope` objects.
+            await self._root_provider.__aexit__(None, None, None)
+
+        # :attr:`_resolved_services` is never cleared for singletons because there might be a compilation running in background
+        # trying to get a cached singleton service. If it doesn't find it
+        # it will try to create a new one which will result in an :class:`ObjectDisposedError`.
+        return self._disposables
+
+    @override
+    async def __aenter__(self) -> Self:
+        return self
+
+    @override
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> bool | None:
+        to_dispose = await self._begin_dispose()
+
+        if to_dispose is None:
+            return None
+
+        for i in range(len(to_dispose) - 1, -1, -1):
+            service = to_dispose[i]
+
+            if isinstance(service, SupportsAsyncContextManager):
+                await service.__aexit__(None, None, None)
+            elif isinstance(service, SupportsContextManager):
+                service.__exit__(None, None, None)

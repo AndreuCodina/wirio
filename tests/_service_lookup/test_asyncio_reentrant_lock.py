@@ -23,6 +23,7 @@
 # https://github.com/Joshuaalbert/FairAsyncRLock
 
 import asyncio
+import os
 import random
 import re
 from asyncio import CancelledError, Event, Task
@@ -32,11 +33,15 @@ from typing import Any, NoReturn, override
 
 import pytest
 
-from aspy_dependency_injection._service_lookup._asyncio_reentrant_lock import (
+from wirio._service_lookup._asyncio_reentrant_lock import (
     AsyncioReentrantLock,
 )
 
 
+@pytest.mark.skipif(
+    os.environ.get("CI") is None,
+    reason="Slow tests",
+)
 class TestAsyncioReentrantLock:
     async def test_reentrant(self) -> None:
         lock = AsyncioReentrantLock()

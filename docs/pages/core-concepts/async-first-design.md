@@ -20,6 +20,6 @@ At the end, if a dependency injection library is not async-first, in order to su
 
 So, if we want a dependency injection library that works well with async code and can resolve both synchronous and asynchronous, it must be designed with async in mind from the beginning.
 
-## Aspy Dependency Injection's async-first design
+## Wirio's async-first design
 
-`Aspy Dependency Injection` is designed to be async-first, meaning that it can handle both synchronous and asynchronous services seamlessly.
+`Wirio` is designed to be async-first, meaning that it can handle both synchronous and asynchronous services seamlessly.

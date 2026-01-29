@@ -64,7 +64,7 @@ jobs:
         continue-on-error: true
 
       - name: Test
-        run: uv run -- pytest --cov=aspy_dependency_injection --cov-branch --cov-report=xml tests
+        run: uv run -- pytest --cov=wirio --cov-branch --cov-report=xml tests
         shell: bash
 
       - name: Publish coverage

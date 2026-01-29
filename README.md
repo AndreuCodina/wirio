@@ -1,12 +1,12 @@
 <div align="center">
-<img alt="Logo" src="https://raw.githubusercontent.com/AndreuCodina/aspy-dependency-injection/refs/heads/main/docs/logo.png" width="522" height="348">
+<img alt="Logo" src="https://raw.githubusercontent.com/AndreuCodina/wirio/refs/heads/main/docs/logo.png" width="522" height="348">
 
-[![CI](https://img.shields.io/github/actions/workflow/status/AndreuCodina/aspy-dependency-injection/main.yaml?branch=main&logo=github&label=CI)](https://github.com/AndreuCodina/aspy-dependency-injection/actions/workflows/main.yaml)
-[![Coverage status](https://coveralls.io/repos/github/AndreuCodina/aspy-dependency-injection/badge.svg?branch=main)](https://coveralls.io/github/AndreuCodina/aspy-dependency-injection?branch=main)
-[![PyPI - version](https://img.shields.io/pypi/v/aspy-dependency-injection?color=blue&label=pypi)](https://pypi.org/project/aspy-dependency-injection/)
-[![Python - versions](https://img.shields.io/pypi/pyversions/aspy-dependency-injection.svg)](https://github.com/AndreuCodina/aspy-dependency-injection)
-[![License](https://img.shields.io/github/license/AndreuCodina/aspy-dependency-injection.svg)](https://github.com/AndreuCodina/aspy-dependency-injection/blob/main/LICENSE)
-[![Documentation](https://img.shields.io/badge/📚_documentation-3D9970)](https://andreucodina.github.io/aspy-dependency-injection)
+[![CI](https://img.shields.io/github/actions/workflow/status/AndreuCodina/wirio/main.yaml?branch=main&logo=github&label=CI)](https://github.com/AndreuCodina/wirio/actions/workflows/main.yaml)
+[![Coverage status](https://coveralls.io/repos/github/AndreuCodina/wirio/badge.svg?branch=main)](https://coveralls.io/github/AndreuCodina/wirio?branch=main)
+[![PyPI - version](https://img.shields.io/pypi/v/wirio?color=blue&label=pypi)](https://pypi.org/project/wirio/)
+[![Python - versions](https://img.shields.io/pypi/pyversions/wirio.svg)](https://github.com/AndreuCodina/wirio)
+[![License](https://img.shields.io/github/license/AndreuCodina/wirio.svg)](https://github.com/AndreuCodina/wirio/blob/main/LICENSE)
+[![Documentation](https://img.shields.io/badge/📚_documentation-3D9970)](https://andreucodina.github.io/wirio)
 
 </div>
 
@@ -23,7 +23,7 @@
 ## 📦 Installation
 
 ```bash
-uv add aspy-dependency-injection
+uv add wirio
 ```
 
 ## ✨ Quickstart with FastAPI
@@ -46,7 +46,7 @@ app = FastAPI()
 async def create_user(user_service: Annotated[UserService, FromServices()]) -> None:
     ...
 
-services = ServiceCollection()
+services = ServiceContainer()
 services.add_transient(EmailService)
 services.add_transient(UserService)
 services.configure_fastapi(app)
@@ -54,7 +54,7 @@ services.configure_fastapi(app)
 
 ## ✨ Quickstart without FastAPI
 
-Define services and create a service provider.
+Register services and resolve them.
 
 ```python
 class EmailService:
@@ -66,19 +66,18 @@ class UserService:
         self.email_service = email_service
 
 
-services = ServiceCollection()
+services = ServiceContainer()
 services.add_transient(EmailService)
 services.add_transient(UserService)
 
-async with services.build_service_provider() as service_provider:
-    user_service = await service_provider.get_required_service(UserService)
+user_service = await services.get(UserService)
 ```
 
 If we want a scope per operation (e.g., per HTTP request or message from a queue), we can create a scope from the service provider:
 
 ```python
-async with service_provider.create_scope() as service_scope:
-    user_service = await service_scope.get_required_service(UserService)
+async with services.create_scope() as service_scope:
+    user_service = await service_scope.get(UserService)
 ```
 
 ## 🔄 Lifetimes
@@ -133,20 +132,11 @@ The factories can take as parameters other services registered. In this case, `i
 
 ## 🧪 Simplified testing
 
-We can create a fixture in `conftest.py` that provides a `ServiceProvider` instance:
+We can substitute dependencies on the fly meanwhile the context manager is active.
 
 ```python
-@pytest.fixture
-async def service_provider() -> AsyncGenerator[ServiceProvider]:
-    async with services.build_service_provider() as service_provider:
-        yield service_provider
-```
-
-And then we can inject it into our tests and resolve the services.
-
-```python
-async def test_create_user(service_provider: ServiceProvider) -> None:
-    user_service = await service_provider.get_required_service(UserService)
+with services.override(EmailService, email_service_mock):
+    user_service = await services.get(UserService)
 ```
 
 ## 📝 Interfaces & abstract classes
@@ -227,4 +217,4 @@ services.add_auto_activated_singleton(MachineLearningModel)
 
 ## 📚 Documentation
 
-For more information, [check out the documentation](https://AndreuCodina.github.io/aspy-dependency-injection).
+For more information, [check out the documentation](https://AndreuCodina.github.io/wirio).

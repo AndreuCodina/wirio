@@ -1,7 +1,7 @@
-from aspy_dependency_injection._service_lookup._service_identifier import (
+from wirio._service_lookup._service_identifier import (
     ServiceIdentifier,
 )
-from aspy_dependency_injection._service_lookup._typed_type import TypedType
+from wirio._service_lookup._typed_type import TypedType
 
 
 class TestServiceIdentifier:

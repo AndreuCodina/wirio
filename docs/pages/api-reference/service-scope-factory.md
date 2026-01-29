@@ -1,3 +1,3 @@
 # ServiceScopeFactory
 
-::: aspy_dependency_injection.abstractions.service_scope_factory.ServiceScopeFactory
+::: wirio.abstractions.service_scope_factory.ServiceScopeFactory

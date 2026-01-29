@@ -3,10 +3,10 @@ from typing import Annotated, Optional, Union
 
 import pytest
 
-from aspy_dependency_injection._service_lookup._parameter_information import (
+from wirio._service_lookup._parameter_information import (
     ParameterInformation,
 )
-from aspy_dependency_injection.annotations import FromServices
+from wirio.annotations import FromServices
 
 
 class TestParameterInformation:

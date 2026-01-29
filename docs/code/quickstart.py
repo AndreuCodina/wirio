@@ -1,6 +1,6 @@
 import asyncio
 
-from aspy_dependency_injection.service_collection import ServiceCollection
+from wirio.service_container import ServiceContainer
 
 
 class EmailService:
@@ -15,14 +15,14 @@ class UserService:
         pass
 
 
-services = ServiceCollection()
+services = ServiceContainer()
 services.add_transient(EmailService)
 services.add_transient(UserService)
 
 
 async def main() -> None:
-    async with services.build_service_provider() as service_provider:
-        user_service = await service_provider.get_required_service(UserService)
+    async with services:
+        user_service = await services.get(UserService)
         await user_service.create_user()
 
 

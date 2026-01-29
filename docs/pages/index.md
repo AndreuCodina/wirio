@@ -1,12 +1,12 @@
 # Introduction
 
 <div align="center">
-<img alt="Logo" src="https://raw.githubusercontent.com/AndreuCodina/aspy-dependency-injection/refs/heads/main/docs/logo.png" width="522" height="348">
+<img alt="Logo" src="https://raw.githubusercontent.com/AndreuCodina/wirio/refs/heads/main/docs/logo.png" width="522" height="348">
 </div>
 
 ## What is Dependency Injection
 
-**Dependency Injection (DI)** is a design pattern where a class receives the objects it depends on from the outside, instead of creating them itself. This separates *object construction* from *object usage*, making code easier to test and change.
+**Dependency Injection (DI)** is a design pattern where a class receives the objects it depends on from the outside, instead of creating them itself. This separates _object construction_ from _object usage_, making code easier to test and change.
 
 ### Benefits of Dependency Injection
 
@@ -15,7 +15,7 @@
     Easily extend or change the functionality of a system by combining the components in a different way.
 
 - **Improved testability**
-  
+
     Dependencies can be replaced with mocks, stubs, or simple test doubles, enabling fast and isolated unit tests.
 
 - **Better maintainability**
@@ -32,7 +32,7 @@
 
 In short, DI does not magically decouple behavior, but it **decouples construction**, which already brings significant practical benefits in Python.
 
-## Features of Aspy Dependency Injection
+## Features of Wirio
 
 - **Use it everywhere:** Use dependency injection in web servers, background tasks, console applications, Jupyter notebooks, tests, etc.
 - **Lifetimes**: `Singleton` (same instance per application), `Scoped` (same instance per HTTP request scope) and `Transient` (different instance per resolution).

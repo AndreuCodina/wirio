@@ -2,7 +2,7 @@ import asyncio
 
 import pytest
 
-from aspy_dependency_injection._async_concurrent_dictionary import (
+from wirio._async_concurrent_dictionary import (
     AsyncConcurrentDictionary,
 )
 

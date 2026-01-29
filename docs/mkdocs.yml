@@ -1,6 +1,6 @@
-site_name: Aspy Dependency Injection
-repo_url: https://github.com/AndreuCodina/aspy-dependency-injection
-repo_name: AndreuCodina/aspy-dependency-injection
+site_name: Wirio
+repo_url: https://github.com/AndreuCodina/wirio
+repo_name: AndreuCodina/wirio
 docs_dir: pages
 watch:
   - code
@@ -23,6 +23,7 @@ theme:
     - navigation.path
     - toc.follow
     - content.code.copy
+    - content.code.annotate
 markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
@@ -31,6 +32,11 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.superfences
+  - pymdownx.tabbed:
+      slugify: !!python/object/apply:pymdownx.slugs.slugify
+        kwds:
+          case: lower
+      alternate_style: true
 plugins:
   - search
   - mkdocstrings:
@@ -67,14 +73,13 @@ nav:
       - Keyed services: advanced-features/keyed-services.md
       - Auto-activated services: advanced-features/auto-activated-services.md
   - API reference:
-      - ServiceCollection: api-reference/service-collection.md
-      - ServiceProvider: api-reference/service-provider.md
+      - ServiceContainer: api-reference/service-container.md
+      - BaseServiceContainer: api-reference/base-service-container.md
       - ServiceScope: api-reference/service-scope.md
       - KeyedService: api-reference/keyed-service.md
-      - BaseServiceProvider: api-reference/base-service-provider.md
       - ServiceScopeFactory: api-reference/service-scope-factory.md
-      - ServiceProviderIsService: api-reference/service-provider-is-service.md
-      - ServiceProviderIsKeyedService: api-reference/service-provider-is-keyed-service.md
+      - ServiceContainerIsService: api-reference/service-container-is-service.md
+      - ServiceContainerIsKeyedService: api-reference/service-container-is-keyed-service.md
       - Exceptions: api-reference/exceptions.md
   - Other:
       - Changelogs: other/changelogs.md

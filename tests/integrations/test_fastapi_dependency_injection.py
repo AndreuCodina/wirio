@@ -6,10 +6,10 @@ import pytest
 from fastapi import APIRouter, Depends, FastAPI
 from fastapi.testclient import TestClient
 
-from aspy_dependency_injection.annotations import FromKeyedServices, FromServices
-from aspy_dependency_injection.exceptions import CannotResolveServiceFromEndpointError
-from aspy_dependency_injection.service_collection import ServiceCollection
 from tests.utils.services import ServiceWithNoDependencies
+from wirio.annotations import FromKeyedServices, FromServices
+from wirio.exceptions import CannotResolveServiceFromEndpointError
+from wirio.service_container import ServiceContainer
 
 
 @pytest.fixture
@@ -31,7 +31,7 @@ def app() -> FastAPI:
         pass
 
     app.include_router(router)
-    services = ServiceCollection()
+    services = ServiceContainer()
     services.add_transient(ServiceWithNoDependencies)
     services.configure_fastapi(app)
     return app
@@ -66,7 +66,7 @@ class TestFastApi:
             assert some_parameter == expected_test_value
 
         app.include_router(router)
-        services = ServiceCollection()
+        services = ServiceContainer()
         services.configure_fastapi(app)
 
         with TestClient(app) as test_client:
@@ -92,7 +92,7 @@ class TestFastApi:
             assert test_dependency == expected_test_value
 
         app.include_router(router)
-        services = ServiceCollection()
+        services = ServiceContainer()
         services.configure_fastapi(app)
 
         with TestClient(app) as test_client:
@@ -111,7 +111,7 @@ class TestFastApi:
         ) -> None:
             assert isinstance(service_with_no_dependencies, ServiceWithNoDependencies)
 
-        services = ServiceCollection()
+        services = ServiceContainer()
         services.add_transient(ServiceWithNoDependencies)
         services.configure_fastapi(app)
 
@@ -131,7 +131,7 @@ class TestFastApi:
         ) -> None:
             assert service_with_no_dependencies is None
 
-        services = ServiceCollection()
+        services = ServiceContainer()
         services.configure_fastapi(app)
 
         with TestClient(app) as test_client:
@@ -150,17 +150,19 @@ class TestFastApi:
         ) -> None:
             pass
 
-        services = ServiceCollection()
+        services = ServiceContainer()
         services.configure_fastapi(app)
 
         with TestClient(app) as test_client:  # noqa: SIM117
             with pytest.raises(CannotResolveServiceFromEndpointError):
                 test_client.get("/non-optional-dependency")
 
-    async def test_combine_request_types_fastapi_depends_and_aspy_inject(self) -> None:
+    async def test_combine_request_types_fastapi_depends_and_wirio_injection(
+        self,
+    ) -> None:
         expected_request_parameter = "test-value1"
         expected_fastapi_depends = "test-value2"
-        expected_aspy_inject = "test-value3"
+        expected_wirio_injection = "test-value3"
         app = FastAPI()
         router = APIRouter()
 
@@ -171,15 +173,15 @@ class TestFastApi:
         async def fastapi_depends_endpoint(  # pyright: ignore[reportUnusedFunction]
             request_parameter: str,
             fastapi_depends: Annotated[str, Depends(test_dependency)],
-            aspy_inject: Annotated[str, FromServices()],
+            wirio_inject: Annotated[str, FromServices()],
         ) -> None:
             assert request_parameter == expected_request_parameter
             assert fastapi_depends == expected_fastapi_depends
-            assert aspy_inject == expected_aspy_inject
+            assert wirio_inject == expected_wirio_injection
 
         app.include_router(router)
-        services = ServiceCollection()
-        services.add_singleton(str, expected_aspy_inject)
+        services = ServiceContainer()
+        services.add_singleton(str, expected_wirio_injection)
         services.configure_fastapi(app)
 
         with TestClient(app) as test_client:
@@ -203,7 +205,7 @@ class TestFastApi:
             assert isinstance(service, ServiceWithNoDependencies)
 
         app.include_router(router)
-        services = ServiceCollection()
+        services = ServiceContainer()
         services.add_keyed_transient(service_key, ServiceWithNoDependencies)
         services.configure_fastapi(app)
 

@@ -1,3 +1,3 @@
 # Changelogs
 
-Available [here](https://github.com/AndreuCodina/aspy-dependency-injection/releases).
+Available [here](https://github.com/AndreuCodina/wirio/releases).

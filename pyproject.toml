@@ -1,10 +1,8 @@
 [project]
-name = "aspy-dependency-injection"
-version = "0.6.0"
+name = "wirio"
+version = "0.7.0"
 description = "Powerful Dependency Injection with Python"
-authors = [
-    { name = "Andreu Codina", email = "30506301+AndreuCodina@users.noreply.github.com" },
-]
+authors = [{ name = "Andreu Codina" }]
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
@@ -25,10 +23,10 @@ requires-python = ">=3.13"
 dependencies = ["fastapi[standard-no-fastapi-cloud-cli]>=0.118.0"]
 
 [project.urls]
-Homepage = "https://github.com/AndreuCodina/aspy-dependency-injection"
-Repository = "https://github.com/AndreuCodina/aspy-dependency-injection"
-Documentation = "https://github.com/AndreuCodina/aspy-dependency-injection"
-Changelog = "https://github.com/AndreuCodina/aspy-dependency-injection/releases"
+Homepage = "https://github.com/AndreuCodina/wirio"
+Repository = "https://github.com/AndreuCodina/wirio"
+Documentation = "https://github.com/AndreuCodina/wirio"
+Changelog = "https://github.com/AndreuCodina/wirio/releases"
 
 [dependency-groups]
 dev = [
@@ -75,6 +73,11 @@ ignore = [
     "TRY003", # raise-vanilla-args
     "FBT001", # boolean-type-hint-positional-argument
     "FBT002", # boolean-default-value-positional-argument
+]
+
+[tool.ruff.lint.per-file-ignores]
+"docs/**" = [
+    "F841", # unused-variable
 ]
 
 
