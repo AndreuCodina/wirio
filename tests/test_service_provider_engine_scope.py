@@ -9,7 +9,7 @@ from tests.utils.services import (
 
 
 class TestServiceProviderEngineScope:
-    async def test_resolve_scoped_sync_context_manager_service_raises_runtime_error(
+    async def test_resolve_scoped_sync_context_manager_service(
         self,
     ) -> None:
         services = ServiceCollection()
@@ -29,7 +29,7 @@ class TestServiceProviderEngineScope:
                 resolved_service, ServiceWithSyncContextManagerAndNoDependencies
             )
 
-    async def test_resolve_scoped_async_context_manager_service_raises_runtime_error(
+    async def test_resolve_scoped_async_context_manager_service(
         self,
     ) -> None:
         services = ServiceCollection()
