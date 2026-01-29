@@ -70,7 +70,7 @@ class ServiceProviderEngineScope(BaseServiceContainer, ServiceScope):
 
     @property
     @override
-    def service_container(self) -> BaseServiceContainer:
+    def services(self) -> BaseServiceContainer:
         return self
 
     @override

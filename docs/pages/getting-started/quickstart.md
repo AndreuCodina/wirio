@@ -18,9 +18,9 @@ The next step is to create a container and register the dependencies we just def
 ```python title="main.py" hl_lines="4-5"
 from wirio.service_container import ServiceContainer
 
-service_container = ServiceContainer()
-service_container.add_transient(EmailService)  # (1)!
-service_container.add_transient(UserService)
+services = ServiceContainer()
+services.add_transient(EmailService)  # (1)!
+services.add_transient(UserService)
 ```
 
 1. Both services are registered as transient, meaning a new instance will be created each time it's requested.
@@ -36,7 +36,7 @@ Finally, we convert the service collection into a service provider, which will v
     To fetch dependencies from the container, we call `.get` on the container instance with the type we want to retrieve.
 
     ```python title="main.py"
-    user_service = await service_container.get(UserService)
+    user_service = await services.get(UserService)
     ```
 
 === "Jupyter notebook"
@@ -44,7 +44,7 @@ Finally, we convert the service collection into a service provider, which will v
     To fetch dependencies from the container, we call `.get` on the container instance with the type we want to retrieve.
 
     ```python title="notebook.py"
-    user_service = await service_container.get(UserService)
+    user_service = await services.get(UserService)
     ```
 
 === "FastAPI"
@@ -66,8 +66,8 @@ Finally, we convert the service collection into a service provider, which will v
 We can substitute dependencies on the fly meanwhile the context manager is active.
 
 ```python
-with service_container.override_service(EmailService, email_service_mock):
-    user_service = await service_container.get(UserService)
+with services.override_service(EmailService, email_service_mock):
+    user_service = await services.get(UserService)
 ```
 
 ## Full code
@@ -90,12 +90,12 @@ with service_container.override_service(EmailService, email_service_mock):
                     pass
 
         async def main() -> None:
-        service_container = ServiceContainer()
-        service_container.add_transient(EmailService)
-        service_container.add_transient(UserService)
+        services = ServiceContainer()
+        services.add_transient(EmailService)
+        services.add_transient(UserService)
 
-        async with service_container:  # (1)!
-            user_service = await service_container.get(UserService)
+        async with services:  # (1)!
+            user_service = await services.get(UserService)
 
         if __name__ == "**main**":
             asyncio.run(main())
@@ -106,9 +106,9 @@ with service_container.override_service(EmailService, email_service_mock):
 === "Jupyter notebook"
 
     ```python hl_lines="1"
-    from main import service_container  # (1)!
+    from main import services  # (1)!
 
-    user_service = await service_container.get(UserService)
+    user_service = await services.get(UserService)
     ```
 
     1. Jupyter works with async by default, so we can directly call `await` in the cells

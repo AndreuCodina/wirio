@@ -46,10 +46,10 @@ app = FastAPI()
 async def create_user(user_service: Annotated[UserService, FromServices()]) -> None:
     ...
 
-service_container = ServiceContainer()
-service_container.add_transient(EmailService)
-service_container.add_transient(UserService)
-service_container.configure_fastapi(app)
+services = ServiceContainer()
+services.add_transient(EmailService)
+services.add_transient(UserService)
+services.configure_fastapi(app)
 ```
 
 ## ✨ Quickstart without FastAPI
@@ -66,17 +66,17 @@ class UserService:
         self.email_service = email_service
 
 
-service_container = ServiceContainer()
-service_container.add_transient(EmailService)
-service_container.add_transient(UserService)
+services = ServiceContainer()
+services.add_transient(EmailService)
+services.add_transient(UserService)
 
-user_service = await service_provider.get(UserService)
+user_service = await services.get(UserService)
 ```
 
 If we want a scope per operation (e.g., per HTTP request or message from a queue), we can create a scope from the service provider:
 
 ```python
-async with service_container.create_scope() as service_scope:
+async with services.create_scope() as service_scope:
     user_service = await service_scope.get(UserService)
 ```
 
@@ -135,8 +135,8 @@ The factories can take as parameters other services registered. In this case, `i
 We can substitute dependencies on the fly meanwhile the context manager is active.
 
 ```python
-with service_container.override(EmailService, email_service_mock):
-    user_service = await service_container.get(UserService)
+with services.override(EmailService, email_service_mock):
+    user_service = await services.get(UserService)
 ```
 
 ## 📝 Interfaces & abstract classes

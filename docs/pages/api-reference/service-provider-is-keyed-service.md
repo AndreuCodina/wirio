@@ -1,3 +1,0 @@
-# ServiceProviderIsKeyedService
-
-::: wirio.abstractions.service_provider_is_keyed_service.ServiceProviderIsKeyedService

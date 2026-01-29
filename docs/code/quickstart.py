@@ -15,14 +15,14 @@ class UserService:
         pass
 
 
-service_container = ServiceContainer()
-service_container.add_transient(EmailService)
-service_container.add_transient(UserService)
+services = ServiceContainer()
+services.add_transient(EmailService)
+services.add_transient(UserService)
 
 
 async def main() -> None:
-    async with service_container:
-        user_service = await service_container.get(UserService)
+    async with services:
+        user_service = await services.get(UserService)
         await user_service.create_user()
 
 

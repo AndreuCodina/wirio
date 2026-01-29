@@ -28,7 +28,7 @@ async def create_user(
     pass
 
 
-service_container = ServiceContainer()
-service_container.add_transient(EmailService)
-service_container.add_transient(UserService)
-service_container.configure_fastapi(app)  # (1)!
+services = ServiceContainer()
+services.add_transient(EmailService)
+services.add_transient(UserService)
+services.configure_fastapi(app)  # (1)!

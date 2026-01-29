@@ -4,9 +4,9 @@ from wirio.service_container import ServiceContainer
 
 class TestBaseServiceContainer:
     async def test_resolve_base_service_container(self) -> None:
-        service_container = ServiceContainer()
+        services = ServiceContainer()
 
-        async with service_container:
-            base_service_container = await service_container.get(BaseServiceContainer)
+        async with services:
+            base_service_container = await services.get(BaseServiceContainer)
 
             assert isinstance(base_service_container, BaseServiceContainer)

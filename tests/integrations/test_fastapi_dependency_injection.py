@@ -31,9 +31,9 @@ def app() -> FastAPI:
         pass
 
     app.include_router(router)
-    service_container = ServiceContainer()
-    service_container.add_transient(ServiceWithNoDependencies)
-    service_container.configure_fastapi(app)
+    services = ServiceContainer()
+    services.add_transient(ServiceWithNoDependencies)
+    services.configure_fastapi(app)
     return app
 
 
@@ -66,8 +66,8 @@ class TestFastApi:
             assert some_parameter == expected_test_value
 
         app.include_router(router)
-        service_container = ServiceContainer()
-        service_container.configure_fastapi(app)
+        services = ServiceContainer()
+        services.configure_fastapi(app)
 
         with TestClient(app) as test_client:
             response = test_client.get(
@@ -92,8 +92,8 @@ class TestFastApi:
             assert test_dependency == expected_test_value
 
         app.include_router(router)
-        service_container = ServiceContainer()
-        service_container.configure_fastapi(app)
+        services = ServiceContainer()
+        services.configure_fastapi(app)
 
         with TestClient(app) as test_client:
             response = test_client.get("/fastapi-depends")
@@ -111,9 +111,9 @@ class TestFastApi:
         ) -> None:
             assert isinstance(service_with_no_dependencies, ServiceWithNoDependencies)
 
-        service_container = ServiceContainer()
-        service_container.add_transient(ServiceWithNoDependencies)
-        service_container.configure_fastapi(app)
+        services = ServiceContainer()
+        services.add_transient(ServiceWithNoDependencies)
+        services.configure_fastapi(app)
 
         with TestClient(app) as test_client:
             response = test_client.get("/optional-dependency")
@@ -131,8 +131,8 @@ class TestFastApi:
         ) -> None:
             assert service_with_no_dependencies is None
 
-        service_container = ServiceContainer()
-        service_container.configure_fastapi(app)
+        services = ServiceContainer()
+        services.configure_fastapi(app)
 
         with TestClient(app) as test_client:
             response = test_client.get("/optional-dependency")
@@ -150,8 +150,8 @@ class TestFastApi:
         ) -> None:
             pass
 
-        service_container = ServiceContainer()
-        service_container.configure_fastapi(app)
+        services = ServiceContainer()
+        services.configure_fastapi(app)
 
         with TestClient(app) as test_client:  # noqa: SIM117
             with pytest.raises(CannotResolveServiceFromEndpointError):
@@ -180,9 +180,9 @@ class TestFastApi:
             assert wirio_inject == expected_wirio_injection
 
         app.include_router(router)
-        service_container = ServiceContainer()
-        service_container.add_singleton(str, expected_wirio_injection)
-        service_container.configure_fastapi(app)
+        services = ServiceContainer()
+        services.add_singleton(str, expected_wirio_injection)
+        services.configure_fastapi(app)
 
         with TestClient(app) as test_client:
             response = test_client.get(
@@ -205,9 +205,9 @@ class TestFastApi:
             assert isinstance(service, ServiceWithNoDependencies)
 
         app.include_router(router)
-        service_container = ServiceContainer()
-        service_container.add_keyed_transient(service_key, ServiceWithNoDependencies)
-        service_container.configure_fastapi(app)
+        services = ServiceContainer()
+        services.add_keyed_transient(service_key, ServiceWithNoDependencies)
+        services.configure_fastapi(app)
 
         with TestClient(app) as test_client:
             response = test_client.get("/endpoint")

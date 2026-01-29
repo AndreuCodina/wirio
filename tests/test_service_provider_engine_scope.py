@@ -12,12 +12,12 @@ class TestServiceProviderEngineScope:
     async def test_resolve_scoped_sync_context_manager_service(
         self,
     ) -> None:
-        service_container = ServiceContainer()
-        service_container.add_scoped(ServiceWithSyncContextManagerAndNoDependencies)
+        services = ServiceContainer()
+        services.add_scoped(ServiceWithSyncContextManagerAndNoDependencies)
 
         async with (
-            service_container,
-            service_container.create_scope() as service_scope,
+            services,
+            services.create_scope() as service_scope,
         ):
             assert isinstance(service_scope, ServiceProviderEngineScope)
 
@@ -32,12 +32,12 @@ class TestServiceProviderEngineScope:
     async def test_resolve_scoped_async_context_manager_service(
         self,
     ) -> None:
-        service_container = ServiceContainer()
-        service_container.add_scoped(ServiceWithAsyncContextManagerAndNoDependencies)
+        services = ServiceContainer()
+        services.add_scoped(ServiceWithAsyncContextManagerAndNoDependencies)
 
         async with (
-            service_container,
-            service_container.create_scope() as service_scope,
+            services,
+            services.create_scope() as service_scope,
         ):
             assert isinstance(service_scope, ServiceProviderEngineScope)
 
