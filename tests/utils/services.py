@@ -3,8 +3,21 @@ from types import TracebackType
 from typing import Self, override
 
 
-class ServiceWithNoDependencies:
-    pass
+class ServiceWithNoDependencies(
+    AbstractAsyncContextManager["ServiceWithNoDependencies"]
+):
+    @override
+    async def __aenter__(self) -> Self:
+        return self
+
+    @override
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> bool | None:
+        return None
 
 
 class ServiceWithDependencies:

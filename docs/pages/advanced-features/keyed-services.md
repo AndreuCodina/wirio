@@ -97,8 +97,8 @@ services.add_keyed_singleton("principal", inject_principal_postgres_client)
 services.add_keyed_singleton("secondary", inject_secondary_postgres_client)
 services.add_keyed_singleton(KeyedService.ANY_KEY, inject_tenant_postgres_client)
 
-async with services.build_service_provider() as provider:
-    postgres_client = await provider.get_required_keyed_service(
+async with services.build_service_provider() as service_provider:
+    postgres_client = await service_provider.get_required_keyed_service(
         "principal", PostgresClient
     )
 ```

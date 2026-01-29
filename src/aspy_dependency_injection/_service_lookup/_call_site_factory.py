@@ -48,6 +48,9 @@ from aspy_dependency_injection.abstractions.service_provider_is_keyed_service im
 from aspy_dependency_injection.abstractions.service_provider_is_service import (
     ServiceProviderIsService,
 )
+from aspy_dependency_injection.abstractions.service_scope_factory import (
+    ServiceScopeFactory,
+)
 from aspy_dependency_injection.annotations import (
     FromKeyedServicesInjectable,
     ServiceKeyInjectable,
@@ -546,6 +549,7 @@ class CallSiteFactory(ServiceProviderIsKeyedService, ServiceProviderIsService):
 
         return (
             service_type == TypedType.from_type(BaseServiceProvider)
+            or service_type == TypedType.from_type(ServiceScopeFactory)
             or service_type == TypedType.from_type(ServiceProviderIsService)
             or service_type == TypedType.from_type(ServiceProviderIsKeyedService)
         )

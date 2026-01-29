@@ -6,6 +6,9 @@ from aspy_dependency_injection.abstractions.keyed_service import KeyedService
 from aspy_dependency_injection.abstractions.keyed_service_provider import (
     KeyedServiceProvider,
 )
+from aspy_dependency_injection.abstractions.service_scope_factory import (
+    ServiceScopeFactory,
+)
 from aspy_dependency_injection.exceptions import (
     KeyedServiceAnyKeyUsedToResolveServiceError,
     NoKeyedServiceRegisteredError,
@@ -13,7 +16,7 @@ from aspy_dependency_injection.exceptions import (
 )
 
 
-class BaseServiceProvider(KeyedServiceProvider, ABC):
+class BaseServiceProvider(KeyedServiceProvider, ServiceScopeFactory, ABC):
     """Define a mechanism for retrieving a service object; that is, an object that provides custom support to other objects."""
 
     @abstractmethod
