@@ -54,17 +54,17 @@ class OrderService:
     def __init__(
         self,
         feature_manager: FeatureManager,
-        services: BaseServiceContainer
+        service_provider: BaseServiceProvider
     ) -> None:
         self.feature_manager = feature_manager
-        self.services = services
+        self.service_provider = service_provider
 
 
     async def calculate_price(self, product: Product) -> Decimal:
         pricing_service = (
-            await self.services.get_keyed("new", PricingService)
+            await self.service_provider.get_required_keyed_service("new", PricingService)
             if await self.feature_manager.is_enabled("NewPricing")
-            else await self.services.get_keyed("legacy", PricingService)
+            else await self.service_provider.get_required_keyed_service("legacy", PricingService)
         )
         return pricing_service.calculate_price(product)
 
@@ -92,13 +92,13 @@ def inject_tenant_postgres_client(tenant_id: str | None) -> PostgresClient:
     return PostgresClient(f"postgresql://{tenant_id}.example/db")
 
 
-services = ServiceContainer()
+services = ServiceCollection()
 services.add_keyed_singleton("principal", inject_principal_postgres_client)
 services.add_keyed_singleton("secondary", inject_secondary_postgres_client)
 services.add_keyed_singleton(KeyedService.ANY_KEY, inject_tenant_postgres_client)
 
-async with services:
-    postgres_client = await services.get_keyed(
+async with services.build_service_provider() as service_provider:
+    postgres_client = await service_provider.get_required_keyed_service(
         "principal", PostgresClient
     )
 ```
@@ -107,7 +107,7 @@ The `ANY_KEY` registration works as a fallback: any lookup that does not find a 
 
 Passing `None` as the key resolves services that were explicitly registered with `None`, but it also falls back to the unkeyed registration of the same service type when no keyed entry exists. This makes it easy to gradually adopt keyed services without duplicating registrations.
 
-We can query registrations programmatically through `ServiceContainerIsKeyedService.is_keyed_service(key, service_type)` to decide when to fall back to defaults.
+We can query registrations programmatically through `ServiceProviderIsKeyedService.is_keyed_service(key, service_type)` to decide when to fall back to defaults.
 
 ## Composing services with `FromKeyedServices`
 
@@ -148,11 +148,11 @@ This works only when the service is itself resolved via a key (explicitly or thr
 
 - `KeyedService.ANY_KEY` lets us register a catch-all implementation but **cannot** be used when resolving services. Attempting to resolve with that sentinel value raises `KeyedServiceAnyKeyUsedToResolveServiceError`.
 - Factories registered under `ANY_KEY` receive the requested key so they can still personalize the instance.
-- Register with `None` when we want a dedicated "default" slot that can still be requested explicitly via `get_required_keyed_service(None, ServiceType)` or `FromKeyedServices(None)`.
+- Register with `None` when we want a dedicated "default" slot that can still be requested explicitly via `get_required_keyed_service(None, service_type)` or `FromKeyedServices(None)`.
 
 ## Best practices
 
 - Pick a stable key type (string tenant IDs, enums, UUIDs) and reuse it consistently.
 - Prefer inherited keys (`FromKeyedServices()`) for chains of dependent services so they all operate within the same tenant context.
-- Use `ServiceContainerIsKeyedService` to guard features that require a keyed registration and to emit helpful errors during startup.
+- Use `ServiceProviderIsKeyedService` to guard features that require a keyed registration and to emit helpful errors during startup.
 - Fall back to `KeyedService.ANY_KEY` or `None` to provide safe defaults, but keep the wildcard work lightweight to avoid becoming a hotspot.

@@ -15,8 +15,8 @@ from wirio._service_lookup._supports_context_manager import (
 )
 from wirio._service_lookup._typed_type import TypedType
 from wirio._service_lookup.service_cache_key import ServiceCacheKey
+from wirio.abstractions.base_service_provider import BaseServiceProvider
 from wirio.abstractions.service_scope import ServiceScope
-from wirio.base_service_container import BaseServiceContainer
 from wirio.exceptions import ObjectDisposedError
 
 if TYPE_CHECKING:
@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
 
 @final
-class ServiceProviderEngineScope(BaseServiceContainer, ServiceScope):
+class ServiceProviderEngineScope(BaseServiceProvider, ServiceScope):
     """Container resolving services with scope."""
 
     _root_provider: Final["ServiceProvider"]
@@ -70,7 +70,7 @@ class ServiceProviderEngineScope(BaseServiceContainer, ServiceScope):
 
     @property
     @override
-    def services(self) -> BaseServiceContainer:
+    def service_provider(self) -> BaseServiceProvider:
         return self
 
     @override
@@ -78,7 +78,7 @@ class ServiceProviderEngineScope(BaseServiceContainer, ServiceScope):
         return self._root_provider.create_scope()
 
     @override
-    async def get_object(self, service_type: TypedType) -> object | None:
+    async def get_service_object(self, service_type: TypedType) -> object | None:
         if self._is_disposed:
             raise ObjectDisposedError
 
@@ -88,7 +88,7 @@ class ServiceProviderEngineScope(BaseServiceContainer, ServiceScope):
         )
 
     @override
-    async def get_keyed_object(
+    async def get_keyed_service_object(
         self, service_key: object | None, service_type: TypedType
     ) -> object | None:
         if self._is_disposed:
@@ -101,27 +101,31 @@ class ServiceProviderEngineScope(BaseServiceContainer, ServiceScope):
             service_provider_engine_scope=self,
         )
 
-    async def try_get[TService](self, service_type: type[TService]) -> TService | None:
+    async def get_service[TService](
+        self, service_type: type[TService]
+    ) -> TService | None:
         """Get service of type `TService` or return `None`."""
-        return await super().try_get(service_type)
+        return await super().get_service(service_type)
 
-    async def get[TService](self, service_type: type[TService]) -> TService:
+    async def get_required_service[TService](
+        self, service_type: type[TService]
+    ) -> TService:
         """Get service of type `TService` or raise :class:`NoServiceRegisteredError`."""
-        return await super().get(service_type)
+        return await super().get_required_service(service_type)
 
-    async def try_get_keyed[TService](
+    async def get_keyed_service[TService](
         self, service_key: object | None, service_type: type[TService]
     ) -> TService | None:
         """Get service of type `TService` or return `None`."""
-        return await super().try_get_keyed(
+        return await super().get_keyed_service(
             service_key=service_key, service_type=service_type
         )
 
-    async def get_keyed[TService](
+    async def get_required_keyed_service[TService](
         self, service_key: object | None, service_type: type[TService]
     ) -> TService:
         """Get service of type `TService` or raise an error."""
-        return await super().get_keyed(
+        return await super().get_required_keyed_service(
             service_key=service_key, service_type=service_type
         )
 

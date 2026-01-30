@@ -38,7 +38,6 @@ from wirio._service_lookup._sync_factory_call_site import (
     SyncFactoryCallSite,
 )
 from wirio._service_lookup._typed_type import TypedType
-from wirio._wirio_undefined import WirioUndefined
 from wirio.annotations import FromKeyedServicesInjectable
 from wirio.exceptions import (
     CannotResolveParameterServiceFromImplementationFactoryError,
@@ -46,6 +45,7 @@ from wirio.exceptions import (
 from wirio.service_provider_engine_scope import (
     ServiceProviderEngineScope,
 )
+from wirio.wirio_undefined import WirioUndefined
 
 
 class _RuntimeResolverLock(Flag):
@@ -284,12 +284,12 @@ class CallSiteRuntimeResolver(CallSiteVisitor[RuntimeResolverContext, object | N
             if isinstance(
                 parameter_information.injectable_dependency, FromKeyedServicesInjectable
             ):
-                parameter_service = await scope.get_keyed_object(
+                parameter_service = await scope.get_keyed_service_object(
                     parameter_information.injectable_dependency.key,
                     parameter_information.parameter_type,
                 )
             else:
-                parameter_service = await scope.get_object(
+                parameter_service = await scope.get_service_object(
                     parameter_information.parameter_type
                 )
 

@@ -73,13 +73,13 @@ nav:
       - Keyed services: advanced-features/keyed-services.md
       - Auto-activated services: advanced-features/auto-activated-services.md
   - API reference:
-      - ServiceContainer: api-reference/service-container.md
-      - BaseServiceContainer: api-reference/base-service-container.md
+      - ServiceCollection: api-reference/service-collection.md
       - ServiceScope: api-reference/service-scope.md
       - KeyedService: api-reference/keyed-service.md
+      - BaseServiceProvider: api-reference/base-service-provider.md
       - ServiceScopeFactory: api-reference/service-scope-factory.md
-      - ServiceContainerIsService: api-reference/service-container-is-service.md
-      - ServiceContainerIsKeyedService: api-reference/service-container-is-keyed-service.md
+      - ServiceProviderIsService: api-reference/service-provider-is-service.md
+      - ServiceProviderIsKeyedService: api-reference/service-provider-is-keyed-service.md
       - Exceptions: api-reference/exceptions.md
   - Other:
       - Changelogs: other/changelogs.md

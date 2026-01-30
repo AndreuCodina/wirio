@@ -1,6 +1,6 @@
 [project]
 name = "wirio"
-version = "0.7.0"
+version = "0.8.0"
 description = "Powerful Dependency Injection with Python"
 authors = [{ name = "Andreu Codina" }]
 readme = "README.md"
@@ -74,12 +74,6 @@ ignore = [
     "FBT001", # boolean-type-hint-positional-argument
     "FBT002", # boolean-default-value-positional-argument
 ]
-
-[tool.ruff.lint.per-file-ignores]
-"docs/**" = [
-    "F841", # unused-variable
-]
-
 
 [tool.pytest]
 strict = true

@@ -1,12 +1,11 @@
 import asyncio
-import typing
 from collections.abc import Awaitable, Callable, Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from types import TracebackType
 from typing import TYPE_CHECKING, Final, Self, final, override
 
-from wirio._async_concurrent_dictionary import (
+from wirio._service_lookup._async_concurrent_dictionary import (
     AsyncConcurrentDictionary,
 )
 from wirio._service_lookup._call_site_chain import CallSiteChain
@@ -30,11 +29,12 @@ from wirio._service_lookup._service_provider_engine import (
     ServiceProviderEngine,
 )
 from wirio._service_lookup._typed_type import TypedType
-from wirio.abstractions.service_container_is_keyed_service import (
-    ServiceContainerIsKeyedService,
+from wirio.abstractions.base_service_provider import BaseServiceProvider
+from wirio.abstractions.service_provider_is_keyed_service import (
+    ServiceProviderIsKeyedService,
 )
-from wirio.abstractions.service_container_is_service import (
-    ServiceContainerIsService,
+from wirio.abstractions.service_provider_is_service import (
+    ServiceProviderIsService,
 )
 from wirio.abstractions.service_scope import (
     AbstractAsyncContextManager,
@@ -43,8 +43,10 @@ from wirio.abstractions.service_scope import (
 from wirio.abstractions.service_scope_factory import (
     ServiceScopeFactory,
 )
-from wirio.base_service_container import BaseServiceContainer
-from wirio.exceptions import ObjectDisposedError
+from wirio.exceptions import (
+    ObjectDisposedError,
+    ServiceProviderNotFullyInitializedError,
+)
 from wirio.service_provider_engine_scope import (
     ServiceProviderEngineScope,
 )
@@ -61,7 +63,7 @@ class _ServiceAccessor:
 
 @final
 class ServiceProvider(
-    BaseServiceContainer, AbstractAsyncContextManager["ServiceProvider"]
+    BaseServiceProvider, AbstractAsyncContextManager["ServiceProvider"]
 ):
     """Provider that resolves services."""
 
@@ -73,6 +75,7 @@ class ServiceProvider(
     ]
     _is_disposed: bool
     _call_site_factory: Final[CallSiteFactory]
+    _is_fully_initialized: bool
 
     def __init__(self, descriptors: list["ServiceDescriptor"]) -> None:
         self._descriptors = descriptors
@@ -83,6 +86,7 @@ class ServiceProvider(
         self._service_accessors = AsyncConcurrentDictionary()
         self._is_disposed = False
         self._call_site_factory = CallSiteFactory(descriptors)
+        self._is_fully_initialized = False
 
     @property
     def root(self) -> ServiceProviderEngineScope:
@@ -92,23 +96,29 @@ class ServiceProvider(
     def is_disposed(self) -> bool:
         return self._is_disposed
 
+    @property
+    def is_fully_initialized(self) -> bool:
+        return self._is_fully_initialized
+
     @override
-    async def get_object(self, service_type: TypedType) -> object | None:
+    async def get_service_object(self, service_type: TypedType) -> object | None:
         if self._is_disposed:
             raise ObjectDisposedError
 
+        await self._fully_initialize_if_not_fully_initialized()
         return await self.get_service_from_service_identifier(
             service_identifier=ServiceIdentifier.from_service_type(service_type),
             service_provider_engine_scope=self._root,
         )
 
     @override
-    async def get_keyed_object(
+    async def get_keyed_service_object(
         self, service_key: object | None, service_type: TypedType
     ) -> object | None:
         if self._is_disposed:
             raise ObjectDisposedError
 
+        await self._fully_initialize_if_not_fully_initialized()
         return await self.get_service_from_service_identifier(
             service_identifier=ServiceIdentifier.from_service_type(
                 service_type=service_type, service_key=service_key
@@ -121,7 +131,12 @@ class ServiceProvider(
         if self._is_disposed:
             raise ObjectDisposedError
 
+        self._ensure_is_fully_initialized(self.create_scope.__name__)
         return ServiceProviderEngineScope(service_provider=self, is_root_scope=False)
+
+    async def aclose(self) -> None:
+        """Dispose the service provider and release all resources."""
+        await self.__aexit__(None, None, None)
 
     async def get_service_from_service_identifier(
         self,
@@ -142,13 +157,14 @@ class ServiceProvider(
         return await service_accessor.realized_service(service_provider_engine_scope)
 
     @contextmanager
-    def override(
+    def override_service(
         self, service_type: type, implementation_instance: object | None
     ) -> Generator[None]:
         """Override a service registration within the context manager scope.
 
         It can be used to temporarily replace a service for testing specific scenarios. Don't use it in production.
         """
+        self._ensure_is_fully_initialized(self.override_service.__name__)
         service_identifier = ServiceIdentifier.from_service_type(
             TypedType.from_type(service_type)
         )
@@ -160,7 +176,7 @@ class ServiceProvider(
             yield
 
     @contextmanager
-    def override_keyed(
+    def override_keyed_service(
         self,
         service_key: object | None,
         service_type: type,
@@ -170,6 +186,7 @@ class ServiceProvider(
 
         It can be used to temporarily replace a service for testing specific scenarios. Don't use it in production.
         """
+        self._ensure_is_fully_initialized(self.override_keyed_service.__name__)
         service_identifier = ServiceIdentifier.from_service_type(
             service_type=TypedType.from_type(service_type),
             service_key=service_key,
@@ -212,7 +229,7 @@ class ServiceProvider(
         """Add built-in services that aren't part of the list of service descriptors."""
         await self._call_site_factory.add(
             ServiceIdentifier.from_service_type(
-                TypedType.from_type(BaseServiceContainer)
+                TypedType.from_type(BaseServiceProvider)
             ),
             ServiceProviderCallSite(),
         )
@@ -227,18 +244,18 @@ class ServiceProvider(
         )
         await self._call_site_factory.add(
             ServiceIdentifier.from_service_type(
-                TypedType.from_type(ServiceContainerIsService)
+                TypedType.from_type(ServiceProviderIsService)
             ),
             ConstantCallSite(
-                TypedType.from_type(ServiceContainerIsService), self._call_site_factory
+                TypedType.from_type(ServiceProviderIsService), self._call_site_factory
             ),
         )
         await self._call_site_factory.add(
             ServiceIdentifier.from_service_type(
-                TypedType.from_type(ServiceContainerIsKeyedService)
+                TypedType.from_type(ServiceProviderIsKeyedService)
             ),
             ConstantCallSite(
-                TypedType.from_type(ServiceContainerIsKeyedService),
+                TypedType.from_type(ServiceProviderIsKeyedService),
                 self._call_site_factory,
             ),
         )
@@ -256,13 +273,22 @@ class ServiceProvider(
                 service_provider_engine_scope=self._root,
             )
 
-    @typing.override
+    async def _fully_initialize_if_not_fully_initialized(self) -> None:
+        if not self._is_fully_initialized:
+            await self.__aenter__()
+
+    def _ensure_is_fully_initialized(self, method_name: str) -> None:
+        if not self._is_fully_initialized:
+            raise ServiceProviderNotFullyInitializedError(method_name)
+
+    @override
     async def __aenter__(self) -> Self:
         await self._add_built_in_services()
         await self._activate_auto_activated_singletons()
+        self._is_fully_initialized = True
         return self
 
-    @typing.override
+    @override
     async def __aexit__(
         self,
         exc_type: type[BaseException] | None,

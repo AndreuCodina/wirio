@@ -6,7 +6,7 @@ from wirio._service_lookup._call_site_kind import CallSiteKind
 from wirio._service_lookup._result_cache import ResultCache
 from wirio._service_lookup._service_call_site import ServiceCallSite
 from wirio._service_lookup._typed_type import TypedType
-from wirio._wirio_undefined import WirioUndefined
+from wirio.wirio_undefined import WirioUndefined
 
 
 @final
