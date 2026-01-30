@@ -12,7 +12,7 @@ class ObjectDisposedError(WirioError):
     """The exception that is thrown when an operation is performed on a disposed object."""
 
     def __init__(self) -> None:
-        super().__init__("BaseServiceContainer")
+        super().__init__("BaseServiceProvider")
 
 
 @final
@@ -122,22 +122,4 @@ class NoKeyedSingletonServiceRegisteredError(WirioError):
 
     def __init__(self, service_type: TypedType, service_key_type: type) -> None:
         message = f"No keyed singleton service for type '{service_type}' using key type '{service_key_type}' has been registered"
-        super().__init__(message)
-
-
-@final
-class ServiceContainerAlreadyBuiltError(WirioError):
-    """The exception that is thrown when trying to modify the ServiceContainer after it has been built."""
-
-    def __init__(self) -> None:
-        message = "Operation not allowed after building the ServiceContainer"
-        super().__init__(message)
-
-
-@final
-class ServiceContainerNotBuiltError(WirioError):
-    """The exception that is thrown when trying to modify the ServiceContainer before it has been built."""
-
-    def __init__(self) -> None:
-        message = "Operation not allowed before building the ServiceContainer"
         super().__init__(message)

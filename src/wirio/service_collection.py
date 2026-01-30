@@ -1,9 +1,7 @@
 import inspect
 import typing
-from collections.abc import Awaitable, Callable, Generator
-from contextlib import AbstractAsyncContextManager, contextmanager
-from types import TracebackType
-from typing import Final, Self, cast, final, overload, override
+from collections.abc import Awaitable, Callable
+from typing import Final, cast, overload
 
 from fastapi import FastAPI
 
@@ -12,24 +10,17 @@ from wirio._integrations._fastapi_dependency_injection import (
 )
 from wirio._service_lookup._typed_type import TypedType
 from wirio._wirio_undefined import WirioUndefined
-from wirio.abstractions.service_scope import ServiceScope
-from wirio.base_service_container import BaseServiceContainer
 from wirio.exceptions import (
     NoKeyedSingletonServiceRegisteredError,
     NoSingletonServiceRegisteredError,
-    ServiceContainerAlreadyBuiltError,
-    ServiceContainerNotBuiltError,
 )
 from wirio.service_descriptor import ServiceDescriptor
 from wirio.service_lifetime import ServiceLifetime
 from wirio.service_provider import ServiceProvider
 
 
-@final
-class ServiceContainer(
-    BaseServiceContainer, AbstractAsyncContextManager["ServiceContainer"]
-):
-    """Container to register and resolve services."""
+class ServiceCollection:
+    """Collection of service descriptors provided during configuration."""
 
     _descriptors: Final[list[ServiceDescriptor]]
     _service_provider: ServiceProvider | None = None
@@ -38,111 +29,8 @@ class ServiceContainer(
         self._descriptors = []
         self._service_provider = None
 
-    @property
-    def descriptors(self) -> list[ServiceDescriptor]:
-        return self._descriptors
-
-    @override
-    async def get_object(self, service_type: TypedType) -> object | None:
-        service_provider = await self._get_service_provider()
-        return await service_provider.get_object(service_type)
-
-    @override
-    async def get_keyed_object(
-        self, service_key: object | None, service_type: TypedType
-    ) -> object | None:
-        service_provider = await self._get_service_provider()
-        return await service_provider.get_keyed_object(
-            service_key=service_key, service_type=service_type
-        )
-
-    @override
-    async def get[TService](self, service_type: type[TService]) -> TService:
-        service_provider = await self._get_service_provider()
-        return await service_provider.get(service_type)
-
-    @override
-    async def try_get[TService](self, service_type: type[TService]) -> TService | None:
-        service_provider = await self._get_service_provider()
-        return await service_provider.try_get(service_type)
-
-    @override
-    async def get_keyed[TService](
-        self, service_key: object | None, service_type: type[TService]
-    ) -> TService:
-        service_provider = await self._get_service_provider()
-        return await service_provider.get_keyed(
-            service_key=service_key, service_type=service_type
-        )
-
-    @override
-    async def try_get_keyed[TService](
-        self, service_key: object | None, service_type: type[TService]
-    ) -> TService | None:
-        service_provider = await self._get_service_provider()
-        return await service_provider.try_get_keyed(
-            service_key=service_key, service_type=service_type
-        )
-
-    @override
-    def create_scope(self) -> ServiceScope:
-        self._ensure_service_container_is_built()
-        assert self._service_provider is not None
-        return self._service_provider.create_scope()
-
-    async def close(self) -> None:
-        if self._service_provider is not None:
-            await self._service_provider.__aexit__(None, None, None)
-
-        self._service_provider = None
-
-    @contextmanager
-    def override(
-        self, service_type: type, implementation_instance: object | None
-    ) -> Generator[None]:
-        """Override a service registration within the context manager scope.
-
-        It can be used to temporarily replace a service for testing specific scenarios. Don't use it in production.
-        """
-        self._ensure_service_container_is_built()
-        assert self._service_provider is not None
-
-        with self._service_provider.override(
-            service_type=service_type,
-            implementation_instance=implementation_instance,
-        ):
-            yield
-
-    @contextmanager
-    def override_keyed(
-        self,
-        service_key: object | None,
-        service_type: type,
-        implementation_instance: object | None,
-    ) -> Generator[None]:
-        """Override a keyed service registration within the context manager scope.
-
-        It can be used to temporarily replace a service for testing specific scenarios. Don't use it in production.
-        """
-        self._ensure_service_container_is_built()
-        assert self._service_provider is not None
-
-        with self._service_provider.override_keyed(
-            service_key=service_key,
-            service_type=service_type,
-            implementation_instance=implementation_instance,
-        ):
-            yield
-
-    async def _get_service_provider(self) -> ServiceProvider:
-        if self._service_provider is None:
-            self._service_provider = self._build_service_provider()
-            await self._service_provider.__aenter__()
-
-        return self._service_provider
-
-    def _build_service_provider(self) -> ServiceProvider:
-        """Create a :class:`ServiceProvider` containing services from the provided :class:`ServiceContainer`."""
+    def build_service_provider(self) -> ServiceProvider:
+        """Create a :class:`ServiceProvider` containing services from the provided :class:`ServiceCollection`."""
         self._service_provider = ServiceProvider(self._descriptors)
         return self._service_provider
 
@@ -868,7 +756,6 @@ class ServiceContainer(
         service_key: object | None,
         auto_activate: bool,
     ) -> None:
-        self._ensure_service_container_is_not_built()
         provided_service_type = self._get_provided_service_type(
             service_type, implementation_factory
         )
@@ -968,27 +855,3 @@ class ServiceContainer(
             raise ValueError(error_message)
 
         return return_type
-
-    def _ensure_service_container_is_built(self) -> None:
-        if self._service_provider is None:
-            raise ServiceContainerNotBuiltError
-
-    def _ensure_service_container_is_not_built(self) -> None:
-        if self._service_provider is not None:
-            raise ServiceContainerAlreadyBuiltError
-
-    @typing.override
-    async def __aenter__(self) -> Self:
-        await self._get_service_provider()
-        return self
-
-    @typing.override
-    async def __aexit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: TracebackType | None,
-    ) -> bool | None:
-        assert self._service_provider is not None
-        await self._service_provider.__aexit__(exc_type, exc_val, exc_tb)
-        self._service_provider = None

@@ -11,14 +11,14 @@ To showcase the basics of Wirio, we will create a container able to resolve the 
 --8<-- "docs/code/getting_started/quickstart/define_dependencies.py"
 ```
 
-## Create the container
+## Register services
 
 The next step is to create a container and register the dependencies we just defined.
 
 ```python title="main.py" hl_lines="4-5"
-from wirio.service_container import ServiceContainer
+from wirio.service_collection import ServiceCollection
 
-services = ServiceContainer()
+services = ServiceCollection()
 services.add_transient(EmailService)  # (1)!
 services.add_transient(UserService)
 ```
@@ -33,18 +33,21 @@ Finally, we convert the service collection into a service provider, which will v
 
 === "Console application"
 
-    To fetch dependencies from the container, we call `.get` on the container instance with the type we want to retrieve.
+    To resolve dependencies from the service provider, we call `get_required_service` with the type we want to retrieve.
 
-    ```python title="main.py"
-    user_service = await services.get(UserService)
+    ```python title="main.py" hl_lines="2"
+
+    async with services.build_service_provider() as service_provider:
+        user_service = await services.get_required_service(UserService)
     ```
 
 === "Jupyter notebook"
 
-    To fetch dependencies from the container, we call `.get` on the container instance with the type we want to retrieve.
+    To resolve dependencies from the service provider, we call `get_required_service` with the type we want to retrieve.
 
-    ```python title="notebook.ipynb"
-    user_service = await services.get(UserService)
+    ```python title="notebook.ipynb" hl_lines="2"
+    service_provider = services.build_service_provider()
+    user_service = await service_provider.get_required_service(UserService)
     ```
 
 === "FastAPI"
@@ -65,19 +68,19 @@ Finally, we convert the service collection into a service provider, which will v
 
 We can substitute dependencies on the fly meanwhile the context manager is active.
 
-```python
-with services.override(EmailService, email_service_mock):
-    user_service = await services.get(UserService)
+```python hl_lines="1"
+with service_provider.override(EmailService, email_service_mock):
+    user_service = await services.get_required_service(UserService)
 ```
 
 ## Full code
 
 === "Console application"
 
-    ```python hl_lines="20"
+    ```python
     import asyncio
 
-    from wirio.service_container import ServiceContainer
+    from wirio.service_collection import ServiceCollection
 
     class EmailService:
         pass
@@ -91,25 +94,24 @@ with services.override(EmailService, email_service_mock):
 
 
     async def main() -> None:
-        services = ServiceContainer()
+        services = ServiceCollection()
         services.add_transient(EmailService)
         services.add_transient(UserService)
 
-        async with services:  # (1)!
-            user_service = await services.get(UserService)
+        async with services.build_service_provider() as service_provider:
+            user_service = await service_provider.get_required_service(UserService)
 
     if __name__ == "__main__":
         asyncio.run(main())
     ```
-
-    1. We recommended calling `.close` or using a context manager to ensure a proper disposal of resources when the application ends
 
 === "Jupyter notebook"
 
     ```python hl_lines="1"
     from main import services  # (1)!
 
-    user_service = await services.get(UserService)
+    service_provider = services.build_service_provider()
+    user_service = await service_provider.get_required_service(UserService)
     ```
 
     1. Jupyter works with async by default, so we can directly call `await` in the cells

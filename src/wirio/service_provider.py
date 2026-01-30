@@ -1,5 +1,4 @@
 import asyncio
-import typing
 from collections.abc import Awaitable, Callable, Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -30,11 +29,11 @@ from wirio._service_lookup._service_provider_engine import (
     ServiceProviderEngine,
 )
 from wirio._service_lookup._typed_type import TypedType
-from wirio.abstractions.service_container_is_keyed_service import (
-    ServiceContainerIsKeyedService,
+from wirio.abstractions.service_provider_is_keyed_service import (
+    ServiceProviderIsKeyedService,
 )
-from wirio.abstractions.service_container_is_service import (
-    ServiceContainerIsService,
+from wirio.abstractions.service_provider_is_service import (
+    ServiceProviderIsService,
 )
 from wirio.abstractions.service_scope import (
     AbstractAsyncContextManager,
@@ -43,7 +42,7 @@ from wirio.abstractions.service_scope import (
 from wirio.abstractions.service_scope_factory import (
     ServiceScopeFactory,
 )
-from wirio.base_service_container import BaseServiceContainer
+from wirio.base_service_provider import BaseServiceProvider
 from wirio.exceptions import ObjectDisposedError
 from wirio.service_provider_engine_scope import (
     ServiceProviderEngineScope,
@@ -61,7 +60,7 @@ class _ServiceAccessor:
 
 @final
 class ServiceProvider(
-    BaseServiceContainer, AbstractAsyncContextManager["ServiceProvider"]
+    BaseServiceProvider, AbstractAsyncContextManager["ServiceProvider"]
 ):
     """Provider that resolves services."""
 
@@ -93,7 +92,7 @@ class ServiceProvider(
         return self._is_disposed
 
     @override
-    async def get_object(self, service_type: TypedType) -> object | None:
+    async def get_service_object(self, service_type: TypedType) -> object | None:
         if self._is_disposed:
             raise ObjectDisposedError
 
@@ -103,7 +102,7 @@ class ServiceProvider(
         )
 
     @override
-    async def get_keyed_object(
+    async def get_keyed_service_object(
         self, service_key: object | None, service_type: TypedType
     ) -> object | None:
         if self._is_disposed:
@@ -142,7 +141,7 @@ class ServiceProvider(
         return await service_accessor.realized_service(service_provider_engine_scope)
 
     @contextmanager
-    def override(
+    def override_service(
         self, service_type: type, implementation_instance: object | None
     ) -> Generator[None]:
         """Override a service registration within the context manager scope.
@@ -160,7 +159,7 @@ class ServiceProvider(
             yield
 
     @contextmanager
-    def override_keyed(
+    def override_keyed_service(
         self,
         service_key: object | None,
         service_type: type,
@@ -212,7 +211,7 @@ class ServiceProvider(
         """Add built-in services that aren't part of the list of service descriptors."""
         await self._call_site_factory.add(
             ServiceIdentifier.from_service_type(
-                TypedType.from_type(BaseServiceContainer)
+                TypedType.from_type(BaseServiceProvider)
             ),
             ServiceProviderCallSite(),
         )
@@ -227,18 +226,18 @@ class ServiceProvider(
         )
         await self._call_site_factory.add(
             ServiceIdentifier.from_service_type(
-                TypedType.from_type(ServiceContainerIsService)
+                TypedType.from_type(ServiceProviderIsService)
             ),
             ConstantCallSite(
-                TypedType.from_type(ServiceContainerIsService), self._call_site_factory
+                TypedType.from_type(ServiceProviderIsService), self._call_site_factory
             ),
         )
         await self._call_site_factory.add(
             ServiceIdentifier.from_service_type(
-                TypedType.from_type(ServiceContainerIsKeyedService)
+                TypedType.from_type(ServiceProviderIsKeyedService)
             ),
             ConstantCallSite(
-                TypedType.from_type(ServiceContainerIsKeyedService),
+                TypedType.from_type(ServiceProviderIsKeyedService),
                 self._call_site_factory,
             ),
         )
@@ -256,13 +255,13 @@ class ServiceProvider(
                 service_provider_engine_scope=self._root,
             )
 
-    @typing.override
+    @override
     async def __aenter__(self) -> Self:
         await self._add_built_in_services()
         await self._activate_auto_activated_singletons()
         return self
 
-    @typing.override
+    @override
     async def __aexit__(
         self,
         exc_type: type[BaseException] | None,

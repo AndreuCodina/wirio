@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 from tests.utils.services import ServiceWithNoDependencies
 from wirio.annotations import FromKeyedServices, FromServices
 from wirio.exceptions import CannotResolveServiceFromEndpointError
-from wirio.service_container import ServiceContainer
+from wirio.service_collection import ServiceCollection
 
 
 @pytest.fixture
@@ -31,7 +31,7 @@ def app() -> FastAPI:
         pass
 
     app.include_router(router)
-    services = ServiceContainer()
+    services = ServiceCollection()
     services.add_transient(ServiceWithNoDependencies)
     services.configure_fastapi(app)
     return app
@@ -66,7 +66,7 @@ class TestFastApi:
             assert some_parameter == expected_test_value
 
         app.include_router(router)
-        services = ServiceContainer()
+        services = ServiceCollection()
         services.configure_fastapi(app)
 
         with TestClient(app) as test_client:
@@ -92,7 +92,7 @@ class TestFastApi:
             assert test_dependency == expected_test_value
 
         app.include_router(router)
-        services = ServiceContainer()
+        services = ServiceCollection()
         services.configure_fastapi(app)
 
         with TestClient(app) as test_client:
@@ -111,7 +111,7 @@ class TestFastApi:
         ) -> None:
             assert isinstance(service_with_no_dependencies, ServiceWithNoDependencies)
 
-        services = ServiceContainer()
+        services = ServiceCollection()
         services.add_transient(ServiceWithNoDependencies)
         services.configure_fastapi(app)
 
@@ -131,7 +131,7 @@ class TestFastApi:
         ) -> None:
             assert service_with_no_dependencies is None
 
-        services = ServiceContainer()
+        services = ServiceCollection()
         services.configure_fastapi(app)
 
         with TestClient(app) as test_client:
@@ -150,7 +150,7 @@ class TestFastApi:
         ) -> None:
             pass
 
-        services = ServiceContainer()
+        services = ServiceCollection()
         services.configure_fastapi(app)
 
         with TestClient(app) as test_client:  # noqa: SIM117
@@ -180,7 +180,7 @@ class TestFastApi:
             assert wirio_inject == expected_wirio_injection
 
         app.include_router(router)
-        services = ServiceContainer()
+        services = ServiceCollection()
         services.add_singleton(str, expected_wirio_injection)
         services.configure_fastapi(app)
 
@@ -205,7 +205,7 @@ class TestFastApi:
             assert isinstance(service, ServiceWithNoDependencies)
 
         app.include_router(router)
-        services = ServiceContainer()
+        services = ServiceCollection()
         services.add_keyed_transient(service_key, ServiceWithNoDependencies)
         services.configure_fastapi(app)
 

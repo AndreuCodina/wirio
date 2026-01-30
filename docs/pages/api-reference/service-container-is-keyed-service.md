@@ -1,3 +1,0 @@
-# ServiceContainerIsKeyedService
-
-::: wirio.abstractions.service_container_is_keyed_service.ServiceContainerIsKeyedService

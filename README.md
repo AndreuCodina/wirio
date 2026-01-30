@@ -46,7 +46,7 @@ app = FastAPI()
 async def create_user(user_service: Annotated[UserService, FromServices()]) -> None:
     ...
 
-services = ServiceContainer()
+services = ServiceCollection()
 services.add_transient(EmailService)
 services.add_transient(UserService)
 services.configure_fastapi(app)
@@ -54,7 +54,7 @@ services.configure_fastapi(app)
 
 ## ✨ Quickstart without FastAPI
 
-Register services and resolve them.
+Register services and create a service provider.
 
 ```python
 class EmailService:
@@ -66,18 +66,19 @@ class UserService:
         self.email_service = email_service
 
 
-services = ServiceContainer()
+services = ServiceCollection()
 services.add_transient(EmailService)
 services.add_transient(UserService)
 
-user_service = await services.get(UserService)
+async with services.build_service_provider() as service_provider:
+    user_service = await service_provider.get_required_service(UserService)
 ```
 
 If we want a scope per operation (e.g., per HTTP request or message from a queue), we can create a scope from the service provider:
 
 ```python
-async with services.create_scope() as service_scope:
-    user_service = await service_scope.get(UserService)
+async with service_provider.create_scope() as service_scope:
+    user_service = await service_scope.get_required_service(UserService)
 ```
 
 ## 🔄 Lifetimes
@@ -135,8 +136,8 @@ The factories can take as parameters other services registered. In this case, `i
 We can substitute dependencies on the fly meanwhile the context manager is active.
 
 ```python
-with services.override(EmailService, email_service_mock):
-    user_service = await services.get(UserService)
+with service_provider.override_service(EmailService, email_service_mock):
+    user_service = await services.get_required_service(UserService)
 ```
 
 ## 📝 Interfaces & abstract classes

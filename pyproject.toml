@@ -75,12 +75,6 @@ ignore = [
     "FBT002", # boolean-default-value-positional-argument
 ]
 
-[tool.ruff.lint.per-file-ignores]
-"docs/**" = [
-    "F841", # unused-variable
-]
-
-
 [tool.pytest]
 strict = true
 asyncio_mode = "auto"

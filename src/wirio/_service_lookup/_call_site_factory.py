@@ -36,14 +36,14 @@ from wirio._service_lookup._sync_factory_call_site import (
 from wirio._service_lookup._typed_type import TypedType
 from wirio._service_lookup.service_cache_key import ServiceCacheKey
 from wirio.abstractions.keyed_service import KeyedService
-from wirio.abstractions.service_container_is_keyed_service import (
-    ServiceContainerIsKeyedService,
-)
-from wirio.abstractions.service_container_is_service import (
-    ServiceContainerIsService,
-)
 from wirio.abstractions.service_key_lookup_mode import (
     ServiceKeyLookupMode,
+)
+from wirio.abstractions.service_provider_is_keyed_service import (
+    ServiceProviderIsKeyedService,
+)
+from wirio.abstractions.service_provider_is_service import (
+    ServiceProviderIsService,
 )
 from wirio.abstractions.service_scope_factory import (
     ServiceScopeFactory,
@@ -52,7 +52,7 @@ from wirio.annotations import (
     FromKeyedServicesInjectable,
     ServiceKeyInjectable,
 )
-from wirio.base_service_container import BaseServiceContainer
+from wirio.base_service_provider import BaseServiceProvider
 from wirio.exceptions import (
     CannotResolveServiceError,
     InvalidServiceDescriptorError,
@@ -98,7 +98,7 @@ class _ServiceOverride:
 
 
 @final
-class CallSiteFactory(ServiceContainerIsKeyedService, ServiceContainerIsService):
+class CallSiteFactory(ServiceProviderIsKeyedService, ServiceProviderIsService):
     _DEFAULT_SLOT: ClassVar[int] = 0
 
     _descriptors: Final[list[ServiceDescriptor]]
@@ -543,8 +543,8 @@ class CallSiteFactory(ServiceContainerIsKeyedService, ServiceContainerIsService)
             return True
 
         return (
-            service_type == TypedType.from_type(BaseServiceContainer)
+            service_type == TypedType.from_type(BaseServiceProvider)
             or service_type == TypedType.from_type(ServiceScopeFactory)
-            or service_type == TypedType.from_type(ServiceContainerIsService)
-            or service_type == TypedType.from_type(ServiceContainerIsKeyedService)
+            or service_type == TypedType.from_type(ServiceProviderIsService)
+            or service_type == TypedType.from_type(ServiceProviderIsKeyedService)
         )

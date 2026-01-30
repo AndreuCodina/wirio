@@ -284,12 +284,12 @@ class CallSiteRuntimeResolver(CallSiteVisitor[RuntimeResolverContext, object | N
             if isinstance(
                 parameter_information.injectable_dependency, FromKeyedServicesInjectable
             ):
-                parameter_service = await scope.get_keyed_object(
+                parameter_service = await scope.get_keyed_service_object(
                     parameter_information.injectable_dependency.key,
                     parameter_information.parameter_type,
                 )
             else:
-                parameter_service = await scope.get_object(
+                parameter_service = await scope.get_service_object(
                     parameter_information.parameter_type
                 )
 

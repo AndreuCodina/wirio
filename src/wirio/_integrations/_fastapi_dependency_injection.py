@@ -22,7 +22,8 @@ from wirio.annotations import FromKeyedServicesInjectable
 from wirio.exceptions import CannotResolveServiceFromEndpointError
 
 if TYPE_CHECKING:
-    from wirio.service_container import ServiceContainer
+    from wirio.service_collection import ServiceCollection
+    from wirio.service_provider import ServiceProvider
 
 
 current_request: ContextVar[Request | WebSocket] = ContextVar("wirio_starlette_request")
@@ -31,24 +32,27 @@ current_request: ContextVar[Request | WebSocket] = ContextVar("wirio_starlette_r
 @final
 class FastApiDependencyInjection:
     @classmethod
-    def setup(cls, app: FastAPI, services: "ServiceContainer") -> None:
-        app.state.wirio_services = services
+    def setup(cls, app: FastAPI, services: "ServiceCollection") -> None:
+        service_provider = services.build_service_provider()
+        app.state.wirio_service_provider = service_provider
         app.add_middleware(_WirioAsgiMiddleware)
-        cls._update_lifespan(app, services)
+        cls._update_lifespan(app, service_provider)
         cls._inject_routes(app.routes)
 
     @classmethod
-    def _update_lifespan(cls, app: FastAPI, services: "ServiceContainer") -> None:
+    def _update_lifespan(
+        cls, app: FastAPI, service_provider: "ServiceProvider"
+    ) -> None:
         old_lifespan = app.router.lifespan_context
 
         @asynccontextmanager
         async def new_lifespan(app: FastAPI) -> AsyncGenerator[Any]:
-            await services.__aenter__()
+            await service_provider.__aenter__()
 
             async with old_lifespan(app) as state:
                 yield state
 
-            await services.__aexit__(None, None, None)
+            await service_provider.__aexit__(None, None, None)
 
         app.router.lifespan_context = new_lifespan
 
@@ -138,15 +142,15 @@ class FastApiDependencyInjection:
         if isinstance(
             parameter_information.injectable_dependency, FromKeyedServicesInjectable
         ):
-            parameter_service = (
-                await cls._get_request_container().services.get_keyed_object(
-                    parameter_information.injectable_dependency.key,
-                    parameter_information.parameter_type,
-                )
+            parameter_service = await cls._get_request_container().service_provider.get_keyed_service_object(
+                parameter_information.injectable_dependency.key,
+                parameter_information.parameter_type,
             )
         else:
-            parameter_service = await cls._get_request_container().services.get_object(
-                parameter_information.parameter_type
+            parameter_service = (
+                await cls._get_request_container().service_provider.get_service_object(
+                    parameter_information.parameter_type
+                )
             )
 
         if parameter_service is None:
@@ -194,7 +198,7 @@ class _WirioAsgiMiddleware:
                 await self.app(scope, receive, send)
                 return None
 
-            services: ServiceContainer = request.app.state.wirio_services
+            services: ServiceProvider = request.app.state.wirio_service_provider
 
             async with services.create_scope() as service_scope:
                 request.state.wirio_service_scope = service_scope
