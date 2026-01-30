@@ -38,7 +38,7 @@ Finally, we convert the service collection into a service provider, which will v
     ```python title="main.py" hl_lines="2"
 
     async with services.build_service_provider() as service_provider:
-        user_service = await services.get_required_service(UserService)
+        user_service = await service_provider.get_required_service(UserService)
     ```
 
 === "Jupyter notebook"
@@ -69,8 +69,8 @@ Finally, we convert the service collection into a service provider, which will v
 We can substitute dependencies on the fly meanwhile the context manager is active.
 
 ```python hl_lines="1"
-with service_provider.override(EmailService, email_service_mock):
-    user_service = await services.get_required_service(UserService)
+with service_provider.override_service(EmailService, email_service_mock):
+    user_service = await service_provider.get_required_service(UserService)
 ```
 
 ## Full code
@@ -107,14 +107,12 @@ with service_provider.override(EmailService, email_service_mock):
 
 === "Jupyter notebook"
 
-    ```python hl_lines="1"
-    from main import services  # (1)!
+    ```python
+    from main import services
 
     service_provider = services.build_service_provider()
     user_service = await service_provider.get_required_service(UserService)
     ```
-
-    1. Jupyter works with async by default, so we can directly call `await` in the cells
 
 === "FastAPI"
 

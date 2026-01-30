@@ -137,7 +137,7 @@ We can substitute dependencies on the fly meanwhile the context manager is activ
 
 ```python
 with service_provider.override_service(EmailService, email_service_mock):
-    user_service = await services.get_required_service(UserService)
+    user_service = await service_provider.get_required_service(UserService)
 ```
 
 ## 📝 Interfaces & abstract classes

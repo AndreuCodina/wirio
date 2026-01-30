@@ -28,9 +28,9 @@ To replace a service during testing, we can use the `override_service` and `over
 
 ```python
 async def test_create_user(service_provider: ServiceProvider, mocker: MockerFixture) -> None:
-    mail_service_mock = mocker.create_autospec(EmailService, instance=True)
+    email_service_mock = mocker.create_autospec(EmailService, instance=True)
 
-    with service_provider.override_service(EmailService, mail_service_mock):
+    with service_provider.override_service(EmailService, email_service_mock):
         user_service = await service_provider.get_required_service(UserService)
 
         await user_service.create_user()

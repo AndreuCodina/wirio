@@ -57,7 +57,7 @@ class OrderService:
         service_provider: BaseServiceProvider
     ) -> None:
         self.feature_manager = feature_manager
-        self.service_provider = services
+        self.service_provider = service_provider
 
 
     async def calculate_price(self, product: Product) -> Decimal:
