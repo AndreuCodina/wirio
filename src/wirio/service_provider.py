@@ -43,7 +43,10 @@ from wirio.abstractions.service_scope_factory import (
     ServiceScopeFactory,
 )
 from wirio.base_service_provider import BaseServiceProvider
-from wirio.exceptions import ObjectDisposedError
+from wirio.exceptions import (
+    ObjectDisposedError,
+    ServiceProviderNotFullyInitializedError,
+)
 from wirio.service_provider_engine_scope import (
     ServiceProviderEngineScope,
 )
@@ -72,6 +75,7 @@ class ServiceProvider(
     ]
     _is_disposed: bool
     _call_site_factory: Final[CallSiteFactory]
+    _is_fully_initialized: bool
 
     def __init__(self, descriptors: list["ServiceDescriptor"]) -> None:
         self._descriptors = descriptors
@@ -82,6 +86,7 @@ class ServiceProvider(
         self._service_accessors = AsyncConcurrentDictionary()
         self._is_disposed = False
         self._call_site_factory = CallSiteFactory(descriptors)
+        self._is_fully_initialized = False
 
     @property
     def root(self) -> ServiceProviderEngineScope:
@@ -91,11 +96,16 @@ class ServiceProvider(
     def is_disposed(self) -> bool:
         return self._is_disposed
 
+    @property
+    def is_fully_initialized(self) -> bool:
+        return self._is_fully_initialized
+
     @override
     async def get_service_object(self, service_type: TypedType) -> object | None:
         if self._is_disposed:
             raise ObjectDisposedError
 
+        await self._fully_initialize_if_not_fully_initialized()
         return await self.get_service_from_service_identifier(
             service_identifier=ServiceIdentifier.from_service_type(service_type),
             service_provider_engine_scope=self._root,
@@ -108,6 +118,7 @@ class ServiceProvider(
         if self._is_disposed:
             raise ObjectDisposedError
 
+        await self._fully_initialize_if_not_fully_initialized()
         return await self.get_service_from_service_identifier(
             service_identifier=ServiceIdentifier.from_service_type(
                 service_type=service_type, service_key=service_key
@@ -120,7 +131,12 @@ class ServiceProvider(
         if self._is_disposed:
             raise ObjectDisposedError
 
+        self._ensure_is_fully_initialized(self.create_scope.__name__)
         return ServiceProviderEngineScope(service_provider=self, is_root_scope=False)
+
+    async def aclose(self) -> None:
+        """Dispose the service provider and release all resources."""
+        await self.__aexit__(None, None, None)
 
     async def get_service_from_service_identifier(
         self,
@@ -148,6 +164,7 @@ class ServiceProvider(
 
         It can be used to temporarily replace a service for testing specific scenarios. Don't use it in production.
         """
+        self._ensure_is_fully_initialized(self.override_service.__name__)
         service_identifier = ServiceIdentifier.from_service_type(
             TypedType.from_type(service_type)
         )
@@ -169,6 +186,7 @@ class ServiceProvider(
 
         It can be used to temporarily replace a service for testing specific scenarios. Don't use it in production.
         """
+        self._ensure_is_fully_initialized(self.override_keyed_service.__name__)
         service_identifier = ServiceIdentifier.from_service_type(
             service_type=TypedType.from_type(service_type),
             service_key=service_key,
@@ -255,10 +273,19 @@ class ServiceProvider(
                 service_provider_engine_scope=self._root,
             )
 
+    async def _fully_initialize_if_not_fully_initialized(self) -> None:
+        if not self._is_fully_initialized:
+            await self.__aenter__()
+
+    def _ensure_is_fully_initialized(self, method_name: str) -> None:
+        if not self._is_fully_initialized:
+            raise ServiceProviderNotFullyInitializedError(method_name)
+
     @override
     async def __aenter__(self) -> Self:
         await self._add_built_in_services()
         await self._activate_auto_activated_singletons()
+        self._is_fully_initialized = True
         return self
 
     @override

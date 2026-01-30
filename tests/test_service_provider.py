@@ -1,8 +1,11 @@
 from typing import Annotated
 
+import pytest
+
 from tests.utils.services import ServiceWithDependencies, ServiceWithNoDependencies
 from wirio.abstractions.keyed_service import KeyedService
 from wirio.annotations import FromKeyedServices, ServiceKey
+from wirio.exceptions import ServiceProviderNotFullyInitializedError
 from wirio.service_collection import ServiceCollection
 
 
@@ -314,3 +317,30 @@ class TestServiceProvider:
 
         async with services.build_service_provider():
             assert len(constructed_instances) == 0
+
+    async def test_fully_initialize_service_provider_if_not_called_with_context_manager(
+        self,
+    ) -> None:
+        services = ServiceCollection()
+        services.add_transient(ServiceWithNoDependencies)
+
+        service_provider = services.build_service_provider()
+
+        assert not service_provider.is_fully_initialized
+
+        await service_provider.get_required_service(ServiceWithNoDependencies)
+        assert service_provider.is_fully_initialized
+        await service_provider.aclose()
+
+    async def test_fail_when_calling_some_methods_before_fully_initialized(
+        self,
+    ) -> None:
+        services = ServiceCollection()
+        services.add_transient(ServiceWithNoDependencies)
+
+        service_provider = services.build_service_provider()
+
+        assert not service_provider.is_fully_initialized
+
+        with pytest.raises(ServiceProviderNotFullyInitializedError):
+            service_provider.create_scope()

@@ -123,3 +123,10 @@ class NoKeyedSingletonServiceRegisteredError(WirioError):
     def __init__(self, service_type: TypedType, service_key_type: type) -> None:
         message = f"No keyed singleton service for type '{service_type}' using key type '{service_key_type}' has been registered"
         super().__init__(message)
+
+
+@final
+class ServiceProviderNotFullyInitializedError(WirioError):
+    def __init__(self, method_name: str) -> None:
+        message = f"The service provider must be fully initialized before calling '{method_name}'. Use 'async with' or '__aenter__'"
+        super().__init__(message)
