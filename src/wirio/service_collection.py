@@ -9,7 +9,6 @@ from wirio._integrations._fastapi_dependency_injection import (
     FastApiDependencyInjection,
 )
 from wirio._service_lookup._typed_type import TypedType
-from wirio._wirio_undefined import WirioUndefined
 from wirio.exceptions import (
     NoKeyedSingletonServiceRegisteredError,
     NoSingletonServiceRegisteredError,
@@ -17,6 +16,7 @@ from wirio.exceptions import (
 from wirio.service_descriptor import ServiceDescriptor
 from wirio.service_lifetime import ServiceLifetime
 from wirio.service_provider import ServiceProvider
+from wirio.wirio_undefined import WirioUndefined
 
 
 class ServiceCollection:

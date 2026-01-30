@@ -20,6 +20,7 @@ from tests.utils.services import (
     ServiceWithSyncContextManagerAndNoDependencies,
 )
 from wirio._service_lookup._typed_type import TypedType
+from wirio.abstractions.base_service_provider import BaseServiceProvider
 from wirio.abstractions.keyed_service import KeyedService
 from wirio.abstractions.service_provider_is_keyed_service import (
     ServiceProviderIsKeyedService,
@@ -28,7 +29,6 @@ from wirio.abstractions.service_provider_is_service import (
     ServiceProviderIsService,
 )
 from wirio.annotations import FromKeyedServices, ServiceKey
-from wirio.base_service_provider import BaseServiceProvider
 from wirio.exceptions import (
     CannotResolveParameterServiceFromImplementationFactoryError,
     CannotResolveServiceError,

@@ -3,10 +3,10 @@ from typing import final, overload
 
 from fastapi import Depends
 
-from wirio._wirio_undefined import WirioUndefined
 from wirio.abstractions.service_key_lookup_mode import (
     ServiceKeyLookupMode,
 )
+from wirio.wirio_undefined import WirioUndefined
 
 
 class Injectable:

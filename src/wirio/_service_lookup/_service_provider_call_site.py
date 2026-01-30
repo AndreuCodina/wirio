@@ -4,7 +4,7 @@ from wirio._service_lookup._call_site_kind import CallSiteKind
 from wirio._service_lookup._result_cache import ResultCache
 from wirio._service_lookup._service_call_site import ServiceCallSite
 from wirio._service_lookup._typed_type import TypedType
-from wirio.base_service_provider import BaseServiceProvider
+from wirio.abstractions.base_service_provider import BaseServiceProvider
 
 
 @final

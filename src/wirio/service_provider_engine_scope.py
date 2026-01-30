@@ -15,8 +15,8 @@ from wirio._service_lookup._supports_context_manager import (
 )
 from wirio._service_lookup._typed_type import TypedType
 from wirio._service_lookup.service_cache_key import ServiceCacheKey
+from wirio.abstractions.base_service_provider import BaseServiceProvider
 from wirio.abstractions.service_scope import ServiceScope
-from wirio.base_service_provider import BaseServiceProvider
 from wirio.exceptions import ObjectDisposedError
 
 if TYPE_CHECKING:

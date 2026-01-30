@@ -1,3 +1,3 @@
 # BaseServiceProvider
 
-::: wirio.base_service_provider.BaseServiceProvider
+::: wirio.abstractions.base_service_provider.BaseServiceProvider

@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from types import TracebackType
 from typing import TYPE_CHECKING, Final, Self, final, override
 
-from wirio._async_concurrent_dictionary import (
+from wirio._service_lookup._async_concurrent_dictionary import (
     AsyncConcurrentDictionary,
 )
 from wirio._service_lookup._call_site_chain import CallSiteChain
@@ -29,6 +29,7 @@ from wirio._service_lookup._service_provider_engine import (
     ServiceProviderEngine,
 )
 from wirio._service_lookup._typed_type import TypedType
+from wirio.abstractions.base_service_provider import BaseServiceProvider
 from wirio.abstractions.service_provider_is_keyed_service import (
     ServiceProviderIsKeyedService,
 )
@@ -42,7 +43,6 @@ from wirio.abstractions.service_scope import (
 from wirio.abstractions.service_scope_factory import (
     ServiceScopeFactory,
 )
-from wirio.base_service_provider import BaseServiceProvider
 from wirio.exceptions import (
     ObjectDisposedError,
     ServiceProviderNotFullyInitializedError,

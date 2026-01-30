@@ -38,7 +38,6 @@ from wirio._service_lookup._sync_factory_call_site import (
     SyncFactoryCallSite,
 )
 from wirio._service_lookup._typed_type import TypedType
-from wirio._wirio_undefined import WirioUndefined
 from wirio.annotations import FromKeyedServicesInjectable
 from wirio.exceptions import (
     CannotResolveParameterServiceFromImplementationFactoryError,
@@ -46,6 +45,7 @@ from wirio.exceptions import (
 from wirio.service_provider_engine_scope import (
     ServiceProviderEngineScope,
 )
+from wirio.wirio_undefined import WirioUndefined
 
 
 class _RuntimeResolverLock(Flag):

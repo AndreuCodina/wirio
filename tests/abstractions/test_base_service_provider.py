@@ -1,4 +1,4 @@
-from wirio.base_service_provider import BaseServiceProvider
+from wirio.abstractions.base_service_provider import BaseServiceProvider
 from wirio.service_collection import ServiceCollection
 
 

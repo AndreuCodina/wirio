@@ -2,7 +2,7 @@ import asyncio
 
 import pytest
 
-from wirio._async_concurrent_dictionary import (
+from wirio._service_lookup._async_concurrent_dictionary import (
     AsyncConcurrentDictionary,
 )
 

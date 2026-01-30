@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import ClassVar, Final, final, override
 
-from wirio._async_concurrent_dictionary import (
+from wirio._service_lookup._async_concurrent_dictionary import (
     AsyncConcurrentDictionary,
 )
 from wirio._service_lookup._async_factory_call_site import (
@@ -35,6 +35,7 @@ from wirio._service_lookup._sync_factory_call_site import (
 )
 from wirio._service_lookup._typed_type import TypedType
 from wirio._service_lookup.service_cache_key import ServiceCacheKey
+from wirio.abstractions.base_service_provider import BaseServiceProvider
 from wirio.abstractions.keyed_service import KeyedService
 from wirio.abstractions.service_key_lookup_mode import (
     ServiceKeyLookupMode,
@@ -52,7 +53,6 @@ from wirio.annotations import (
     FromKeyedServicesInjectable,
     ServiceKeyInjectable,
 )
-from wirio.base_service_provider import BaseServiceProvider
 from wirio.exceptions import (
     CannotResolveServiceError,
     InvalidServiceDescriptorError,

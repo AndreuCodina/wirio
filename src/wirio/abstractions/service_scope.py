@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from contextlib import AbstractAsyncContextManager
 
-from wirio.base_service_provider import (
+from wirio.abstractions.base_service_provider import (
     BaseServiceProvider,
 )
 
