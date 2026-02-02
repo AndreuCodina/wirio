@@ -1,28 +1,36 @@
-from collections.abc import Generator
+from collections.abc import AsyncGenerator, Generator
+from contextlib import asynccontextmanager
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Annotated
 
 import pytest
+from pytest_mock import MockerFixture
 
 from tests.utils.services import ServiceWithNoDependencies
 from wirio._utils._extra_dependencies import ExtraDependencies
 from wirio.annotations import FromKeyedServices, FromServices
 from wirio.exceptions import CannotResolveServiceFromEndpointError
 from wirio.service_collection import ServiceCollection
+from wirio.service_provider import ServiceProvider
 
 if TYPE_CHECKING:
     from fastapi import APIRouter, Depends, FastAPI
     from fastapi.testclient import TestClient
+
+    from wirio.integrations.fastapi import get_service_provider
 else:
     APIRouter = None
     Depends = None
     FastAPI = None
     TestClient = None
+    get_service_provider = None
 
 try:
     ExtraDependencies.import_fastapi()
     from fastapi import APIRouter, Depends, FastAPI
     from fastapi.testclient import TestClient
+
+    from wirio.integrations.fastapi import get_service_provider
 except ImportError:
     pass
 
@@ -45,11 +53,6 @@ class TestFastApi:
         ) -> None:
             assert isinstance(service_with_no_dependencies, ServiceWithNoDependencies)
 
-        @router.get("/sync-endpoint")
-        async def sync_endpoint(  # pyright: ignore[reportUnusedFunction]
-        ) -> None:
-            pass
-
         app.include_router(router)
         services = ServiceCollection()
         services.add_transient(ServiceWithNoDependencies)
@@ -66,12 +69,39 @@ class TestFastApi:
 
         assert response.status_code == HTTPStatus.OK
 
-    def test_not_interfere_with_sync_endpoints(self, test_client: TestClient) -> None:
-        response = test_client.get("/sync-endpoint")
+    def test_not_interfere_with_sync_endpoints(self) -> None:
+        expected_name = "test-name"
+        app = FastAPI()
 
-        assert response.status_code == HTTPStatus.OK
+        def get_name() -> str:
+            return expected_name
 
-    async def test_not_interfere_with_non_annotated_parameters(self) -> None:
+        @app.get("/sync-endpoint")
+        def sync_endpoint(  # pyright: ignore[reportUnusedFunction]
+            name: Annotated[str, Depends(get_name)],
+        ) -> str:
+            return name
+
+        services = ServiceCollection()
+        services.configure_fastapi(app)
+
+        with TestClient(app) as test_client:
+            response = test_client.get("/sync-endpoint")
+
+            assert response.status_code == HTTPStatus.OK
+            assert response.json() == expected_name
+
+    def test_not_do_anything_when_route_is_not_matched(self) -> None:
+        app = FastAPI()
+        services = ServiceCollection()
+        services.configure_fastapi(app)
+
+        with TestClient(app) as test_client:
+            response = test_client.get("/not-matched-endpoint")
+
+            assert response.status_code == HTTPStatus.NOT_FOUND
+
+    def test_not_interfere_with_non_annotated_parameters(self) -> None:
         expected_test_value = "test-value"
         app = FastAPI()
         router = APIRouter()
@@ -94,7 +124,7 @@ class TestFastApi:
 
             assert response.status_code == HTTPStatus.OK
 
-    async def test_not_interfere_with_fastapi_depends(self) -> None:
+    def test_not_interfere_with_fastapi_depends(self) -> None:
         expected_test_value = "test-value"
         app = FastAPI()
         router = APIRouter()
@@ -156,7 +186,7 @@ class TestFastApi:
 
             assert response.status_code == HTTPStatus.OK
 
-    async def test_fail_when_non_optional_dependency_is_missing(self) -> None:
+    def test_fail_when_non_optional_dependency_is_missing(self) -> None:
         app = FastAPI()
 
         @app.get("/non-optional-dependency")
@@ -174,7 +204,7 @@ class TestFastApi:
             with pytest.raises(CannotResolveServiceFromEndpointError):
                 test_client.get("/non-optional-dependency")
 
-    async def test_combine_request_types_fastapi_depends_and_wirio_injection(
+    def test_combine_request_types_fastapi_depends_and_wirio_injection(
         self,
     ) -> None:
         expected_request_parameter = "test-value1"
@@ -208,7 +238,7 @@ class TestFastApi:
 
             assert response.status_code == HTTPStatus.OK
 
-    async def test_resolve_keyed_service(self) -> None:
+    def test_resolve_keyed_service(self) -> None:
         service_key = "key"
         app = FastAPI()
         router = APIRouter()
@@ -230,3 +260,46 @@ class TestFastApi:
             response = test_client.get("/endpoint")
 
             assert response.status_code == HTTPStatus.OK
+
+    def test_get_service_provider(self) -> None:
+        @asynccontextmanager
+        async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
+            service_provider = get_service_provider(app)
+            assert isinstance(service_provider, ServiceProvider)
+            assert service_provider.is_fully_initialized
+            yield
+
+        app = FastAPI(lifespan=lifespan)
+        services = ServiceCollection()
+        services.configure_fastapi(app)
+
+        with TestClient(app):
+            pass
+
+    async def test_override_service_of_fastapi_service_provider(
+        self, mocker: MockerFixture
+    ) -> None:
+        app = FastAPI()
+        services = ServiceCollection()
+        services.add_transient(ServiceWithNoDependencies)
+        services.configure_fastapi(app)
+        service_with_no_dependencies_mock = mocker.create_autospec(
+            ServiceWithNoDependencies, instance=True
+        )
+
+        with TestClient(app):
+            service_provider = get_service_provider(app)
+
+            with service_provider.override_service(
+                ServiceWithNoDependencies, service_with_no_dependencies_mock
+            ):
+                resolved_service = await service_provider.get_required_service(
+                    ServiceWithNoDependencies
+                )
+                assert resolved_service is service_with_no_dependencies_mock
+
+            resolved_service = await service_provider.get_required_service(
+                ServiceWithNoDependencies
+            )
+            assert resolved_service is not service_with_no_dependencies_mock
+            assert isinstance(resolved_service, ServiceWithNoDependencies)

@@ -17,7 +17,7 @@ from wirio.wirio_undefined import WirioUndefined
 if TYPE_CHECKING:
     from fastapi import FastAPI
 
-    from wirio._integrations._fastapi_dependency_injection import (
+    from wirio.integrations._fastapi_dependency_injection import (
         FastApiDependencyInjection,
     )
 else:
@@ -866,6 +866,6 @@ class ServiceCollection:
     def _import_fastapi(self) -> None:
         ExtraDependencies.import_fastapi()
         global FastApiDependencyInjection  # noqa: PLW0603
-        from wirio._integrations._fastapi_dependency_injection import (  # noqa: PLC0415
+        from wirio.integrations._fastapi_dependency_injection import (  # noqa: PLC0415
             FastApiDependencyInjection,
         )

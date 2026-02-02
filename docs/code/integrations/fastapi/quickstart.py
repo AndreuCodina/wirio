@@ -23,12 +23,12 @@ app = FastAPI()
 
 @app.post("/users")
 async def create_user(
-    user_service: Annotated[UserService, FromServices()],
+    user_service: Annotated[UserService, FromServices()],  # (1)!
 ) -> None:
-    await user_service.create_user()
+    pass
 
 
 services = ServiceCollection()
 services.add_transient(EmailService)
 services.add_transient(UserService)
-services.configure_fastapi(app)  # (1)!
+services.configure_fastapi(app)  # (2)!

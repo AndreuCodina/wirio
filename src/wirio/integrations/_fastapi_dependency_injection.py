@@ -26,33 +26,33 @@ if TYPE_CHECKING:
     from wirio.service_provider import ServiceProvider
 
 
-current_request: ContextVar[Request | WebSocket] = ContextVar("wirio_starlette_request")
+_current_request: ContextVar[Request | WebSocket] = ContextVar(
+    "wirio_starlette_request"
+)
 
 
 @final
 class FastApiDependencyInjection:
     @classmethod
     def setup(cls, app: FastAPI, services: "ServiceCollection") -> None:
-        service_provider = services.build_service_provider()
-        app.state.wirio_service_provider = service_provider
+        app.state.wirio_services = services
         app.add_middleware(_WirioAsgiMiddleware)
-        cls._update_lifespan(app, service_provider)
+        cls._update_lifespan(app)
         cls._inject_routes(app.routes)
 
     @classmethod
-    def _update_lifespan(
-        cls, app: FastAPI, service_provider: "ServiceProvider"
-    ) -> None:
+    def _update_lifespan(cls, app: FastAPI) -> None:
         old_lifespan = app.router.lifespan_context
 
         @asynccontextmanager
         async def new_lifespan(app: FastAPI) -> AsyncGenerator[Any]:
-            await service_provider.__aenter__()
+            services: ServiceCollection = app.state.wirio_services
 
-            async with old_lifespan(app) as state:
-                yield state
+            async with services.build_service_provider() as service_provider:
+                app.state.wirio_service_provider = service_provider
 
-            await service_provider.__aexit__(None, None, None)
+                async with old_lifespan(app) as state:
+                    yield state
 
         app.router.lifespan_context = new_lifespan
 
@@ -111,7 +111,7 @@ class FastApiDependencyInjection:
         This is what we almost always want. It has all the information the app container has in addition
         to data specific to the current request.
         """
-        return current_request.get().state.wirio_service_scope
+        return _current_request.get().state.wirio_service_scope
 
     @classmethod
     def _get_parameters_to_inject(
@@ -178,9 +178,10 @@ class _WirioAsgiMiddleware:
         else:
             request = WebSocket(scope, receive, send)
 
-        token = current_request.set(request)
+        token = _current_request.set(request)
 
         try:
+            is_endpoint_matched = False
             is_async_endpoint = False
 
             for route in scope["app"].routes:
@@ -188,15 +189,13 @@ class _WirioAsgiMiddleware:
                     isinstance(route, APIRoute)
                     and route.matches(scope)[0] == Match.FULL
                 ):
+                    is_endpoint_matched = True
                     original = inspect.unwrap(route.dependant.call)  # pyright: ignore[reportArgumentType]
                     is_async_endpoint = inspect.iscoroutinefunction(original)
+                    break
 
-                    if is_async_endpoint:
-                        break
-
-            if not is_async_endpoint:
-                await self.app(scope, receive, send)
-                return None
+            if not is_endpoint_matched or not is_async_endpoint:
+                return await self.app(scope, receive, send)
 
             services: ServiceProvider = request.app.state.wirio_service_provider
 
@@ -204,4 +203,4 @@ class _WirioAsgiMiddleware:
                 request.state.wirio_service_scope = service_scope
                 await self.app(scope, receive, send)
         finally:
-            current_request.reset(token)
+            _current_request.reset(token)

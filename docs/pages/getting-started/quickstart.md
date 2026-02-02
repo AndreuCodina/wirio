@@ -23,7 +23,7 @@ services.add_transient(EmailService)  # (1)!
 services.add_transient(UserService)
 ```
 
-1. Both services are registered as transient, meaning a new instance will be created each time it's requested.
+1. Both services are registered as transient, meaning a new instance will be created each time they're requested
 
 We'll use `.add_X` depending on the desired [lifetime](../core-concepts/lifetimes.md). For example: `.add_transient` for transient services, `.add_singleton` for singleton services and `.add_scoped` for scoped services.
 
@@ -31,30 +31,11 @@ We'll use `.add_X` depending on the desired [lifetime](../core-concepts/lifetime
 
 Finally, we convert the service collection into a service provider, which will validate and build the dependency graph, and we'll be able to request instances from it.
 
-=== "Console application"
-
-    To resolve dependencies from the service provider, we call `get_required_service` with the type we want to retrieve.
-
-    ```python title="main.py" hl_lines="2"
-
-    async with services.build_service_provider() as service_provider:
-        user_service = await service_provider.get_required_service(UserService)
-    ```
-
-=== "Jupyter notebook"
-
-    To resolve dependencies from the service provider, we call `get_required_service` with the type we want to retrieve.
-
-    ```python title="notebook.ipynb" hl_lines="2"
-    service_provider = services.build_service_provider()
-    user_service = await service_provider.get_required_service(UserService)
-    ```
-
 === "FastAPI"
 
-    We annotate the parameter with the dependency to retrieve.
+    To resolve dependencies from the service provider, we annotate the parameter with the type we want to resolve.
 
-    ```python title="main.py" hl_lines="5"
+    ```python title="main.py" hl_lines="5 9"
     from wirio.annotations import FromServices
 
     @app.post("/users")
@@ -62,18 +43,38 @@ Finally, we convert the service collection into a service provider, which will v
         user_service: Annotated[UserService, FromServices()],
     ) -> None:
         pass
+
+    services.configure_fastapi(app)  # (1)!
     ```
 
-## Test
+    1. This will configure FastAPI to use Wirio's dependency injection
 
-We can substitute dependencies on the fly meanwhile the context manager is active.
+=== "Console application"
 
-```python hl_lines="1"
-with service_provider.override_service(EmailService, email_service_mock):
+    To resolve dependencies from the service provider, we call `get_required_service` with the type we want to resolve.
+
+    ```python title="main.py"
+
+    async with services.build_service_provider() as service_provider:
+        user_service = await service_provider.get_required_service(UserService)
+    ```
+
+=== "Jupyter notebook"
+
+    To resolve dependencies from the service provider, we call `get_required_service` with the type we want to resolve.
+
+    ```python title="notebook.ipynb"
+    service_provider = services.build_service_provider()
     user_service = await service_provider.get_required_service(UserService)
-```
+    ```
 
 ## Full code
+
+=== "FastAPI"
+
+    ```python
+    --8<-- "docs/code/getting_started/quickstart/fastapi_full_code.py"
+    ```
 
 === "Console application"
 
@@ -114,10 +115,13 @@ with service_provider.override_service(EmailService, email_service_mock):
     user_service = await service_provider.get_required_service(UserService)
     ```
 
-=== "FastAPI"
+## Test
 
-    ```python hl_lines="34"
-    --8<-- "docs/code/getting_started/quickstart/fastapi_full_code.py"
-    ```
+We can substitute dependencies on the fly meanwhile the context manager is active.
 
-    1. This will configure FastAPI to use Wirio's dependency injection
+```python hl_lines="1"
+with service_provider.override_service(EmailService, email_service_mock):
+    user_service = await service_provider.get_required_service(UserService)
+```
+
+For more information, check the [testing documentation](../testing.md).

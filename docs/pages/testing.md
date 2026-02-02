@@ -2,14 +2,40 @@
 
 ## Quickstart
 
-We can create a fixture in `conftest.py` that provides a `ServiceProvider` instance:
+We have to use the service provider to resolve the services we want to test. The way to get it depends on the type of application we are testing.
 
-```python
-@pytest.fixture
-async def service_provider() -> AsyncGenerator[ServiceProvider]:
-    async with services.build_service_provider() as service_provider:
-        yield service_provider
-```
+=== "FastAPI"
+
+    The way FastAPI has to execute code before running the tests is different from a console application. It uses its own test client that creates an application instance for each test.
+
+    We have to import the services from the `app` singleton of `main.py`, and create a fixture to inject the service provider.
+
+    ```python
+    from main import app
+    from wirio.integrations.fastapi import get_service_provider
+
+    @pytest.fixture
+    def test_client() -> Generator[None]:
+        with TestClient(app):
+            yield
+
+    @pytest.fixture
+    def service_provider() -> ServiceProvider:
+        return get_service_provider(app)
+    ```
+
+=== "Console application"
+
+    We have to import the services from `main.py` and create a fixture to inject the service provider.
+
+    ```python
+    from main import services
+
+    @pytest.fixture
+    async def service_provider() -> AsyncGenerator[ServiceProvider]:
+        async with services.build_service_provider() as service_provider:
+            yield service_provider
+    ```
 
 And then we can inject it into our tests and resolve the services.
 
@@ -49,6 +75,28 @@ async def service_provider(mocker: MockerFixture) -> AsyncGenerator[ServiceProvi
         with service_provider.override_service(EmailService, mail_service_mock):
             yield service_provider
 ```
+
+=== "FastAPI"
+
+    ```python
+    @pytest.fixture
+    def service_provider(mocker: MockerFixture) -> Generator[ServiceProvider]:
+        service_provider = get_service_provider(app)
+        email_service_mock = mocker.create_autospec(EmailService, instance=True)
+
+        with service_provider.override_service(EmailService, email_service_mock):
+            yield service_provider
+    ```
+
+=== "Console application"
+
+    ```python
+    @pytest.fixture
+    async def service_provider(mocker: MockerFixture) -> AsyncGenerator[ServiceProvider]:
+        async with services.build_service_provider() as service_provider:
+            with service_provider.override_service(EmailService, email_service_mock):
+                yield service_provider
+    ```
 
 ## ServiceCollection registration
 

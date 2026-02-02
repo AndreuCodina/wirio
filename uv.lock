@@ -2410,6 +2410,7 @@ fastapi = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "coverage" },
     { name = "jupyter" },
     { name = "mkdocs-material" },
     { name = "mkdocstrings-python" },
@@ -2428,6 +2429,7 @@ provides-extras = ["fastapi"]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "coverage", specifier = ">=7.13.2" },
     { name = "jupyter", specifier = ">=1.1.1" },
     { name = "mkdocs-material", specifier = ">=9.7.1" },
     { name = "mkdocstrings-python", specifier = ">=2.0.1" },

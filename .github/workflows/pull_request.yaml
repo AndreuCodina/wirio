@@ -44,13 +44,13 @@ jobs:
     name: Test (Python=${{ matrix.python-version }}, Resolution=${{ matrix.resolution-strategy }}, Extra=${{ matrix.extra }})
     needs: check-code
     runs-on: ubuntu-24.04
-    permissions:
-      contents: write # Allow Coveralls to comment on the PR
     strategy:
       matrix:
         python-version: ["3.13", "3.14"]
         resolution-strategy: ["lowest-direct", "highest"]
         extra: ["no-extra", "fastapi"]
+    env:
+      COVERAGE_FILE: .coverage.python--${{ matrix.python-version }}.resolution--${{ matrix.resolution-strategy }}.extra--${{ matrix.extra }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
@@ -70,26 +70,56 @@ jobs:
         shell: bash
 
       - name: Test
-        run: uv run -- pytest --cov=wirio --cov-branch --cov-report=xml tests
+        run: |
+          uv run -- pytest --cov=wirio --cov-branch tests
         shell: bash
+        env:
+          COVERAGE_FILE: ${{ env.COVERAGE_FILE }}
 
-      - name: Publish coverage (partial)
-        uses: coverallsapp/github-action@5cbfd81b66ca5d10c19b062c04de0199c215fb6e # v2.3.7
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          file: ${{ github.workspace }}/coverage.xml
-          parallel: true
-          flag-name: ${{ matrix.python-version }}-${{ matrix.resolution-strategy }}-${{ matrix.extra }}
+          name: ${{ env.COVERAGE_FILE }}
+          path: ${{ env.COVERAGE_FILE }}
+          include-hidden-files: true
+          if-no-files-found: error
 
   publish-coverage:
-    name: Publish coverage (finish)
+    name: Publish coverage
     needs: test
     runs-on: ubuntu-24.04
     permissions:
       contents: write # Allow Coveralls to comment on the PR
     steps:
-      - name: Publish coverage (finish)
+      - name: Checkout repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@681c641aba71e4a1c380be3ab5e12ad51f415867 # v7.1.6
+        with:
+          version-file: pyproject.toml
+          resolution-strategy: lowest
+
+      - name: Install Python packages
+        run: uv sync --locked --all-extras
+        shell: bash
+
+      - name: Download coverage artifacts
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          path: coverage
+          merge-multiple: true
+
+      - name: Combine coverage
+        run: uv run -- coverage combine coverage
+        shell: bash
+
+      - name: Convert coverage to XML
+        run: uv run -- coverage xml --data-file=.coverage -o coverage.xml
+        shell: bash
+
+      - name: Publish coverage
         uses: coverallsapp/github-action@5cbfd81b66ca5d10c19b062c04de0199c215fb6e # v2.3.7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          parallel-finished: true
+          file: ${{ github.workspace }}/coverage.xml

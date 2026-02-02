@@ -61,7 +61,6 @@ nav:
   - Getting started:
       - Installation: getting-started/installation.md
       - Quickstart: getting-started/quickstart.md
-      - FastAPI integration: getting-started/fastapi-integration.md
   - Core concepts:
       - Service lifetimes: core-concepts/lifetimes.md
       - Factories: core-concepts/factories.md
@@ -72,6 +71,8 @@ nav:
       - Interfaces & abstract classes: advanced-features/interfaces-and-abstract-classes.md
       - Keyed services: advanced-features/keyed-services.md
       - Auto-activated services: advanced-features/auto-activated-services.md
+  - Integrations:
+      - FastAPI: integrations/fastapi.md
   - API reference:
       - ServiceCollection: api-reference/service-collection.md
       - ServiceScope: api-reference/service-scope.md

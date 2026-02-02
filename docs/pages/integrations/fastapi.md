@@ -8,12 +8,15 @@ While we can install `Wirio` with `uv add wirio`, it's recommended to add the `f
 uv add wirio[fastapi]
 ```
 
-## Usage
-
-Inject services into async endpoints using `Annotated[..., FromServices()]`.
+## Quickstart
 
 ```python hl_lines="26 34"
---8<-- "docs/code/getting_started/fastapi-integration/fastapi_integration.py"
+--8<-- "docs/code/integrations/fastapi/quickstart.py"
 ```
 
-1. This will configure FastAPI to use Wirio's dependency injection
+1. Annotate the parameter with the type to resolve
+2. This will configure FastAPI to use Wirio's dependency injection
+
+## Testing
+
+Information available [here](../testing.md).
