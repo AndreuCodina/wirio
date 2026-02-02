@@ -44,8 +44,6 @@ jobs:
     name: Test (Python=${{ matrix.python-version }}, Resolution=${{ matrix.resolution-strategy }}, Extra=${{ matrix.extra }})
     needs: check-code
     runs-on: ubuntu-24.04
-    permissions:
-      contents: write # Allow Coveralls to comment on the PR
     strategy:
       matrix:
         python-version: ["3.13", "3.14"]
