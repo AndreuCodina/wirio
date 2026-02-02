@@ -2,7 +2,7 @@
 
 ## Overview
 
-**Wirio** follows the same extension-friendly design that ASP.NET Core popularized. Rather than hiding registrations behind a monolithic container, the library exposes the `ServiceCollection` and encourages features to be layered through small, self-contained modules. This lets applications opt into only the capabilities they need while keeping configurations declarative and easy to reason about.
+`Wirio` follows the same extension-friendly design that ASP.NET Core popularized. Rather than hiding registrations behind a monolithic container, the library exposes the `ServiceCollection` and encourages features to be layered through small, self-contained modules. This lets applications opt into only the capabilities they need while keeping configurations declarative and easy to reason about.
 
 ## ServiceCollection as the Composition Root
 

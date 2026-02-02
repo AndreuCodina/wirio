@@ -20,13 +20,16 @@ keywords = [
     "fastapi",
 ]
 requires-python = ">=3.13"
-dependencies = ["fastapi[standard-no-fastapi-cloud-cli]>=0.118.0"]
+dependencies = []
 
 [project.urls]
 Homepage = "https://github.com/AndreuCodina/wirio"
 Repository = "https://github.com/AndreuCodina/wirio"
 Documentation = "https://github.com/AndreuCodina/wirio"
 Changelog = "https://github.com/AndreuCodina/wirio/releases"
+
+[project.optional-dependencies]
+fastapi = ["fastapi[standard-no-fastapi-cloud-cli]>=0.118.0"]
 
 [dependency-groups]
 dev = [

@@ -27,7 +27,7 @@ jobs:
           resolution-strategy: lowest
 
       - name: Install Python packages
-        run: uv sync --locked
+        run: uv sync --locked --all-extras
         shell: bash
 
       - name: Test

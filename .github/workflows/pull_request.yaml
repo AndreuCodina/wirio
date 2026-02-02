@@ -13,7 +13,8 @@ env:
   UV_NO_SYNC: 1
 
 jobs:
-  check-lockfile:
+  check-code:
+    name: Check code
     if: github.actor != 'dependabot[bot]'
     runs-on: ubuntu-24.04
     steps:
@@ -30,15 +31,24 @@ jobs:
         run: uv sync --locked
         shell: bash
 
-  continuous-integration:
-    needs: check-lockfile
+      - name: Check code
+        run: make check-code-pyright
+        shell: bash
+
+      - name: Type-check with ty
+        run: uv run -- ty check
+        shell: bash
+        continue-on-error: true
+
+  test:
+    name: Test Python=${{ matrix.python-version }}, Resolution=${{ matrix.resolution-strategy }}, Extra=${{ matrix.extra }}
+    needs: check-code
     runs-on: ubuntu-24.04
-    permissions:
-      contents: write # Allow Coveralls to comment on the PR
     strategy:
       matrix:
         python-version: ["3.13", "3.14"]
         resolution-strategy: ["lowest-direct", "highest"]
+        extra: [null, "fastapi"]
     steps:
       - name: Checkout repository
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
@@ -51,25 +61,33 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install Python packages
-        run: uv sync --resolution ${{ matrix.resolution-strategy }}
+        run: |
+          uv sync \
+          --resolution ${{ matrix.resolution-strategy }} \
+          ${{ matrix.extra != null && format('--extra {0}', matrix.extra) || '' }}
         shell: bash
-
-      - name: Check code
-        run: make check-code-pyright
-        shell: bash
-
-      - name: Type-check with ty
-        run: uv run -- ty check
-        shell: bash
-        continue-on-error: true
 
       - name: Test
         run: uv run -- pytest --cov=wirio --cov-branch --cov-report=xml tests
         shell: bash
 
-      - name: Publish coverage
-        if: ${{ matrix.python-version == '3.13' && matrix.resolution-strategy == 'lowest-direct' }}
+      - name: Publish coverage (partial)
         uses: coverallsapp/github-action@5cbfd81b66ca5d10c19b062c04de0199c215fb6e # v2.3.7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           file: ${{ github.workspace }}/coverage.xml
+          parallel: true
+          flag-name: ${{ matrix.python-version }}-${{ matrix.resolution-strategy }}-${{ matrix.extra || 'no-extra' }}
+
+  publish-coverage:
+    name: Publish coverage (finish)
+    needs: test
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write # Allow Coveralls to comment on the PR
+    steps:
+      - name: Publish coverage (finish)
+        uses: coverallsapp/github-action@5cbfd81b66ca5d10c19b062c04de0199c215fb6e # v2.3.7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          parallel-finished: true

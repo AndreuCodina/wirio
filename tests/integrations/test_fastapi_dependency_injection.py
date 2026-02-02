@@ -1,49 +1,60 @@
 from collections.abc import Generator
 from http import HTTPStatus
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated
 
 import pytest
-from fastapi import APIRouter, Depends, FastAPI
-from fastapi.testclient import TestClient
 
 from tests.utils.services import ServiceWithNoDependencies
+from wirio._utils._extra_dependencies import ExtraDependencies
 from wirio.annotations import FromKeyedServices, FromServices
 from wirio.exceptions import CannotResolveServiceFromEndpointError
 from wirio.service_collection import ServiceCollection
 
+if TYPE_CHECKING:
+    from fastapi import APIRouter, Depends, FastAPI
+    from fastapi.testclient import TestClient
 
-@pytest.fixture
-def app() -> FastAPI:
-    app = FastAPI()
-    router = APIRouter()
-
-    @router.get("/service-with-no-dependencies")
-    async def service_with_no_dependencies_endpoint(  # pyright: ignore[reportUnusedFunction]
-        service_with_no_dependencies: Annotated[
-            ServiceWithNoDependencies, FromServices()
-        ],
-    ) -> None:
-        assert isinstance(service_with_no_dependencies, ServiceWithNoDependencies)
-
-    @router.get("/sync-endpoint")
-    async def sync_endpoint(  # pyright: ignore[reportUnusedFunction]
-    ) -> None:
-        pass
-
-    app.include_router(router)
-    services = ServiceCollection()
-    services.add_transient(ServiceWithNoDependencies)
-    services.configure_fastapi(app)
-    return app
+try:
+    from fastapi import APIRouter, Depends, FastAPI
+    from fastapi.testclient import TestClient
+except ImportError:
+    pass
 
 
-@pytest.fixture
-def test_client(app: FastAPI) -> Generator[TestClient]:
-    with TestClient(app) as test_client:
-        yield test_client
-
-
+@pytest.mark.skipif(
+    not ExtraDependencies.is_fastapi_installed(),
+    reason="wirio[fastapi] is not installed",
+)
 class TestFastApi:
+    @pytest.fixture
+    def app(self) -> FastAPI:
+        app = FastAPI()
+        router = APIRouter()
+
+        @router.get("/service-with-no-dependencies")
+        async def service_with_no_dependencies_endpoint(  # pyright: ignore[reportUnusedFunction]
+            service_with_no_dependencies: Annotated[
+                ServiceWithNoDependencies, FromServices()
+            ],
+        ) -> None:
+            assert isinstance(service_with_no_dependencies, ServiceWithNoDependencies)
+
+        @router.get("/sync-endpoint")
+        async def sync_endpoint(  # pyright: ignore[reportUnusedFunction]
+        ) -> None:
+            pass
+
+        app.include_router(router)
+        services = ServiceCollection()
+        services.add_transient(ServiceWithNoDependencies)
+        services.configure_fastapi(app)
+        return app
+
+    @pytest.fixture
+    def test_client(self, app: FastAPI) -> Generator[TestClient]:
+        with TestClient(app) as test_client:
+            yield test_client
+
     def test_inject_service(self, test_client: TestClient) -> None:
         response = test_client.get("/service-with-no-dependencies")
 

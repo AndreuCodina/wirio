@@ -1,14 +1,10 @@
 import inspect
 import typing
 from collections.abc import Awaitable, Callable
-from typing import Final, cast, overload
+from typing import TYPE_CHECKING, Final, cast, overload
 
-from fastapi import FastAPI
-
-from wirio._integrations._fastapi_dependency_injection import (
-    FastApiDependencyInjection,
-)
 from wirio._service_lookup._typed_type import TypedType
+from wirio._utils._extra_dependencies import ExtraDependencies
 from wirio.exceptions import (
     NoKeyedSingletonServiceRegisteredError,
     NoSingletonServiceRegisteredError,
@@ -17,6 +13,16 @@ from wirio.service_descriptor import ServiceDescriptor
 from wirio.service_lifetime import ServiceLifetime
 from wirio.service_provider import ServiceProvider
 from wirio.wirio_undefined import WirioUndefined
+
+if TYPE_CHECKING:
+    from fastapi import FastAPI
+
+    from wirio._integrations._fastapi_dependency_injection import (
+        FastApiDependencyInjection,
+    )
+else:
+    FastAPI = None
+    FastApiDependencyInjection = None
 
 
 class ServiceCollection:
@@ -680,6 +686,7 @@ class ServiceCollection:
 
     def configure_fastapi(self, app: FastAPI) -> None:
         """Configure the FastAPI application to use dependency injection using the services from this service collection."""
+        self._import_fastapi()
         FastApiDependencyInjection.setup(app, self)
 
     def _add_from_overloaded_constructor[TService](
@@ -855,3 +862,10 @@ class ServiceCollection:
             raise ValueError(error_message)
 
         return return_type
+
+    def _import_fastapi(self) -> None:
+        ExtraDependencies.import_fastapi()
+        global FastApiDependencyInjection  # noqa: PLW0603
+        from wirio._integrations._fastapi_dependency_injection import (  # noqa: PLC0415
+            FastApiDependencyInjection,
+        )

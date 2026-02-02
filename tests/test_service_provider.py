@@ -344,3 +344,12 @@ class TestServiceProvider:
 
         with pytest.raises(ServiceProviderNotFullyInitializedError):
             service_provider.create_scope()
+
+    async def test_service_provider_fully_initialized_when_called_with_context_manager(
+        self,
+    ) -> None:
+        services = ServiceCollection()
+        services.add_transient(ServiceWithNoDependencies)
+
+        async with services.build_service_provider() as service_provider:
+            assert service_provider.is_fully_initialized

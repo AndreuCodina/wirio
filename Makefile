@@ -1,3 +1,7 @@
+.PHONY: install
+install:
+	uv sync --all-extras
+
 .PHONY: check-code
 check-code:
 	uv run -- ruff check
