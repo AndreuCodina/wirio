@@ -13,15 +13,18 @@ from wirio.service_collection import ServiceCollection
 if TYPE_CHECKING:
     from fastapi import APIRouter, Depends, FastAPI
     from fastapi.testclient import TestClient
-
-try:
-    from fastapi import APIRouter, Depends, FastAPI
-    from fastapi.testclient import TestClient
-except ImportError:
+else:
     APIRouter = None
     Depends = None
     FastAPI = None
     TestClient = None
+
+try:
+    ExtraDependencies.import_fastapi()
+    from fastapi import APIRouter, Depends, FastAPI
+    from fastapi.testclient import TestClient
+except ImportError:
+    pass
 
 
 @pytest.mark.skipif(
