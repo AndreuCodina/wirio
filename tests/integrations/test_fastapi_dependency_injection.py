@@ -77,7 +77,7 @@ class TestFastApi:
             return expected_name
 
         @app.get("/sync-endpoint")
-        async def sync_endpoint(  # pyright: ignore[reportUnusedFunction]
+        def sync_endpoint(  # pyright: ignore[reportUnusedFunction]
             name: Annotated[str, Depends(get_name)],
         ) -> str:
             return name
