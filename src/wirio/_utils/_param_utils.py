@@ -18,6 +18,9 @@ class ParamUtils:
 
         metadata_item = metadata[0]
 
+        if isinstance(metadata_item, Injectable):
+            return metadata_item
+
         if hasattr(metadata_item, "dependency") and hasattr(
             metadata_item.dependency, "__is_wirio_depends__"
         ):

@@ -1,7 +1,7 @@
+import contextlib
+import importlib
 from dataclasses import dataclass
 from typing import final, overload
-
-from fastapi import Depends
 
 from wirio.abstractions.service_key_lookup_mode import (
     ServiceKeyLookupMode,
@@ -32,11 +32,16 @@ class FromKeyedServicesInjectable(Injectable):
 def _return_injectable[TInjectable: Injectable](
     injectable: type[TInjectable],
 ) -> TInjectable:
-    def _dependency() -> Injectable:
+    def _dependency() -> TInjectable:
         return injectable()
 
     _dependency.__is_wirio_depends__ = True  # pyright: ignore[reportFunctionMemberAccess]
-    return Depends(_dependency, use_cache=False)
+
+    # In case of using FastAPI, wrap the injectable in a Depends
+    with contextlib.suppress(ModuleNotFoundError):
+        return importlib.import_module("fastapi").Depends(_dependency, use_cache=False)
+
+    return _dependency()
 
 
 def FromServices() -> Injectable:  # noqa: N802
@@ -78,4 +83,9 @@ def FromKeyedServices(  # noqa: N802
         return FromKeyedServicesInjectable(key=key, lookup_mode=lookup_mode)
 
     _dependency.__is_wirio_depends__ = True  # pyright: ignore[reportFunctionMemberAccess]
-    return Depends(_dependency, use_cache=False)
+
+    # In case of using FastAPI, wrap the injectable in a Depends
+    with contextlib.suppress(ModuleNotFoundError):
+        return importlib.import_module("fastapi").Depends(_dependency, use_cache=False)
+
+    return _dependency()

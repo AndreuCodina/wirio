@@ -98,6 +98,7 @@ class ServiceProvider(
 
     @property
     def is_fully_initialized(self) -> bool:
+        """Indicate whether the provider is fully initialized (useful for Jupyter notebooks, which don't work well with context managers)."""
         return self._is_fully_initialized
 
     @override
