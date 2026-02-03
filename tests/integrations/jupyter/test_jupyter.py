@@ -13,6 +13,7 @@ class TestJupyter:
                 "run",
                 "jupyter",
                 "execute",
+                "--timeout=10",
                 str(notebook),
             ],
             capture_output=True,
