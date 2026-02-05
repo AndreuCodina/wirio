@@ -51,6 +51,7 @@ services.add_singleton(ReportGenerator)
 
 with pytest.raises(ExceptionGroup):
     async with services.build_service_provider(validate_scopes=True, validate_on_build=True):
+        pass
 ```
 
 Fix the dependency by either making `ReportGenerator` scoped or moving the scoped dependency behind an abstracted service that supplies per-request values lazily.
