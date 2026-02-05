@@ -36,7 +36,7 @@ def _return_injectable[TInjectable: Injectable](
     def _dependency() -> TInjectable:
         return injectable()
 
-    _dependency.__is_wirio_depends__ = True  # pyright: ignore[reportFunctionMemberAccess]
+    _dependency.__is_wirio_depends__ = True  # pyright: ignore[reportFunctionMemberAccess] # ty: ignore[unresolved-attribute]
 
     # In case of using FastAPI, wrap the injectable in a Depends
     with contextlib.suppress(ModuleNotFoundError):
@@ -83,7 +83,7 @@ def FromKeyedServices(  # noqa: N802
         )
         return FromKeyedServicesInjectable(key=key, lookup_mode=lookup_mode)
 
-    _dependency.__is_wirio_depends__ = True  # pyright: ignore[reportFunctionMemberAccess]
+    _dependency.__is_wirio_depends__ = True  # pyright: ignore[reportFunctionMemberAccess] # ty: ignore[unresolved-attribute]
 
     # In case of using FastAPI, wrap the injectable in a Depends
     with contextlib.suppress(ModuleNotFoundError):

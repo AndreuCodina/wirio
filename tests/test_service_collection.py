@@ -1472,8 +1472,15 @@ class TestServiceCollection:
                 ApplicationSettings,
             )
 
+    @pytest.mark.parametrize(
+        argnames="is_async_implementation_factory",
+        argvalues=[
+            True,
+            False,
+        ],
+    )
     async def test_resolve_service_registered_as_a_key_without_a_key_using_implementation_factory(
-        self,
+        self, is_async_implementation_factory: bool
     ) -> None:
         @dataclass(frozen=True)
         class KeyedService1:
@@ -1485,14 +1492,24 @@ class TestServiceCollection:
 
         services = ServiceCollection()
 
-        def inject_service_1(key: int | None) -> KeyedService1:
+        async def async_inject_service_1(key: int | None) -> KeyedService1:
             return KeyedService1(service_key=key)
 
-        def inject_service_2(key: int | None) -> KeyedService2:
+        async def async_inject_service_2(key: int | None) -> KeyedService2:
             return KeyedService2(service_key=key)
 
-        services.add_keyed_transient(None, inject_service_1)
-        services.add_keyed_transient(None, KeyedService2, inject_service_2)
+        def sync_inject_service_1(key: int | None) -> KeyedService1:
+            return KeyedService1(service_key=key)
+
+        def sync_inject_service_2(key: int | None) -> KeyedService2:
+            return KeyedService2(service_key=key)
+
+        if is_async_implementation_factory:
+            services.add_keyed_transient(None, async_inject_service_1)
+            services.add_keyed_transient(None, KeyedService2, async_inject_service_2)
+        else:
+            services.add_keyed_transient(None, sync_inject_service_1)
+            services.add_keyed_transient(None, KeyedService2, sync_inject_service_2)
 
         async with services.build_service_provider() as service_provider:
             resolved_service_1 = await service_provider.get_required_service(

@@ -1,6 +1,6 @@
 import inspect
 import typing
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Iterator
 from typing import TYPE_CHECKING, Final, cast, overload
 
 from wirio._service_lookup._typed_type import TypedType
@@ -876,3 +876,6 @@ class ServiceCollection:
         from wirio.integrations._fastapi_dependency_injection import (  # noqa: PLC0415
             FastApiDependencyInjection,
         )
+
+    def __iter__(self) -> Iterator[ServiceDescriptor]:
+        return iter(self._descriptors)

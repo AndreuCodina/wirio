@@ -36,7 +36,7 @@ class FastApiDependencyInjection:
     @classmethod
     def setup(cls, app: FastAPI, services: "ServiceCollection") -> None:
         app.state.wirio_services = services
-        app.add_middleware(_WirioAsgiMiddleware)
+        app.add_middleware(_WirioAsgiMiddleware)  # ty: ignore[invalid-argument-type]
         cls._update_lifespan(app)
         cls._inject_routes(app.routes)
 

@@ -11,8 +11,8 @@ class AsyncConcurrentDictionary[TKey, TValue]:
     _lock: Final[AsyncioReentrantLock]
 
     def __init__(self) -> None:
-        self._dict = {}
-        self._lock = AsyncioReentrantLock()
+        self._dict = {}  # ty: ignore[invalid-assignment]
+        self._lock = AsyncioReentrantLock()  # ty: ignore[invalid-assignment]
 
     async def get_or_add(
         self, key: TKey, value_factory: Callable[[TKey], Awaitable[TValue]]

@@ -262,7 +262,7 @@ class ServiceDescriptor:
         lifetime = f"service_type: {self.service_type}, lifetime: {self.lifetime}, "
 
         if self.is_keyed_service:
-            lifetime += f"service_key: {self.service_key} "
+            lifetime += f"service_key: {self.service_key}, "
 
             if self.keyed_implementation_type is not None:
                 return (

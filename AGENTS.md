@@ -3,7 +3,7 @@
 # Environment
 
 - Package manager: `uv`.
-- Check code is correct: `make check-code-pyright`.
+- Check code is correct: `make check-code`.
 
 # General guidance
 

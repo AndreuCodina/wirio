@@ -31,13 +31,8 @@ jobs:
         shell: bash
 
       - name: Check code
-        run: make check-code-pyright
+        run: make check-code
         shell: bash
-
-      - name: Type-check with ty
-        run: uv run -- ty check
-        shell: bash
-        continue-on-error: true
 
   test:
     name: Test
