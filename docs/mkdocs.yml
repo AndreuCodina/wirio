@@ -71,6 +71,7 @@ nav:
       - Interfaces & abstract classes: advanced-features/interfaces-and-abstract-classes.md
       - Keyed services: advanced-features/keyed-services.md
       - Auto-activated services: advanced-features/auto-activated-services.md
+      - Service validation: advanced-features/service-validation.md
   - Integrations:
       - FastAPI: integrations/fastapi.md
   - API reference:

@@ -64,7 +64,7 @@ jobs:
           resolution-strategy: lowest
 
       - name: Install Python packages
-        run: uv sync --locked --all-extras
+        run: make install
         shell: bash
 
       - name: Download coverage artifacts
