@@ -1,11 +1,19 @@
 from typing import Annotated
 
 import pytest
+from pytest_mock import MockerFixture
 
 from tests.utils.services import ServiceWithDependencies, ServiceWithNoDependencies
 from wirio.abstractions.keyed_service import KeyedService
 from wirio.annotations import FromKeyedServices, ServiceKey
-from wirio.exceptions import ServiceProviderNotFullyInitializedError
+from wirio.exceptions import (
+    CannotResolveServiceError,
+    DirectScopedResolvedFromRootError,
+    ObjectDisposedError,
+    ScopedInSingletonError,
+    ScopedResolvedFromRootError,
+    ServiceProviderNotFullyInitializedError,
+)
 from wirio.service_collection import ServiceCollection
 
 
@@ -106,8 +114,41 @@ class TestServiceProvider:
 
                 assert resolved_service is overridden_instance
 
+    async def test_get_overridden_service_after_call_site_is_built(
+        self, mocker: MockerFixture
+    ) -> None:
+        class Service:
+            def __init__(self, dependency: ServiceWithNoDependencies) -> None:
+                self.dependency = dependency
+
+        services = ServiceCollection()
+        services.add_transient(ServiceWithNoDependencies)
+        services.add_transient(Service)
+
+        async with services.build_service_provider() as service_provider:
+            resolved_service = await service_provider.get_required_service(Service)
+            assert isinstance(resolved_service.dependency, ServiceWithNoDependencies)
+            overridden_instance = mocker.create_autospec(
+                ServiceWithNoDependencies, instance=True
+            )
+
+            with service_provider.override_service(
+                ServiceWithNoDependencies,
+                overridden_instance,
+            ):
+                resolved_service = await service_provider.get_required_service(Service)
+
+                assert resolved_service.dependency is overridden_instance
+                assert isinstance(
+                    resolved_service.dependency, ServiceWithNoDependencies
+                )
+
+            resolved_service = await service_provider.get_required_service(Service)
+            assert resolved_service.dependency is not overridden_instance
+            assert isinstance(resolved_service.dependency, ServiceWithNoDependencies)
+
     async def test_resolve_overridden_keyed_service_using_from_keyed_services_annotation(
-        self,
+        self, mocker: MockerFixture
     ) -> None:
         service_key = "key"
 
@@ -125,7 +166,9 @@ class TestServiceProvider:
         services.add_transient(Service)
 
         async with services.build_service_provider() as service_provider:
-            overridden_instance = ServiceWithNoDependencies()
+            overridden_instance = mocker.create_autospec(
+                ServiceWithNoDependencies, instance=True
+            )
 
             with service_provider.override_keyed_service(
                 service_key,
@@ -353,3 +396,159 @@ class TestServiceProvider:
 
         async with services.build_service_provider() as service_provider:
             assert service_provider.is_fully_initialized
+
+    async def test_create_call_site_validator_when_validate_scopes_is_enabled(
+        self,
+    ) -> None:
+        services = ServiceCollection()
+        services.add_transient(ServiceWithNoDependencies)
+
+        async with services.build_service_provider(
+            validate_scopes=True
+        ) as service_provider:
+            assert service_provider.call_site_validator is not None
+
+    async def test_not_create_call_site_validator_when_validate_scopes_is_not_enabled(
+        self,
+    ) -> None:
+        services = ServiceCollection()
+        services.add_transient(ServiceWithNoDependencies)
+
+        async with services.build_service_provider(
+            validate_scopes=False
+        ) as service_provider:
+            assert service_provider.call_site_validator is None
+
+    async def test_raise_exception_group_for_invalid_service_when_validate_on_build_is_enabled(
+        self,
+    ) -> None:
+        services = ServiceCollection()
+        services.add_transient(ServiceWithDependencies)
+
+        with pytest.raises(ExceptionGroup) as exception_group:
+            async with services.build_service_provider(
+                validate_scopes=False, validate_on_build=True
+            ):
+                pass
+
+        assert len(exception_group.value.exceptions) == 1
+        assert isinstance(
+            exception_group.value.exceptions[0].__cause__, CannotResolveServiceError
+        )
+
+    async def test_validate_on_build_can_be_disabled(self) -> None:
+        services = ServiceCollection()
+        services.add_transient(ServiceWithDependencies)
+
+        async with services.build_service_provider(
+            validate_on_build=False
+        ) as service_provider:
+            with pytest.raises(CannotResolveServiceError):
+                await service_provider.get_required_service(ServiceWithDependencies)
+
+    async def test_validate_scopes_can_be_disabled(self) -> None:
+        services = ServiceCollection()
+        services.add_transient(ServiceWithDependencies)
+
+        async with services.build_service_provider(
+            validate_scopes=False, validate_on_build=False
+        ) as service_provider:
+            with pytest.raises(CannotResolveServiceError):
+                await service_provider.get_required_service(ServiceWithDependencies)
+
+    async def test_fail_scope_validation_when_singleton_depends_on_scoped_service(
+        self,
+    ) -> None:
+        class ScopedService:
+            pass
+
+        class SingletonDependingOnScoped:
+            def __init__(self, dependency: ScopedService) -> None:
+                self.dependency = dependency
+
+        services = ServiceCollection()
+        services.add_scoped(ScopedService)
+        services.add_singleton(SingletonDependingOnScoped)
+
+        with pytest.raises(ExceptionGroup) as exception_group:
+            async with services.build_service_provider(
+                validate_scopes=True, validate_on_build=True
+            ):
+                pass
+
+        assert len(exception_group.value.exceptions) == 1
+        assert isinstance(
+            exception_group.value.exceptions[0].__cause__, ScopedInSingletonError
+        )
+
+    async def test_allow_singleton_with_scoped_dependency_when_scoped_validation_disabled(
+        self,
+    ) -> None:
+        class ScopedService:
+            pass
+
+        class SingletonDependingOnScoped:
+            def __init__(self, dependency: ScopedService) -> None:
+                self.dependency = dependency
+
+        services = ServiceCollection()
+        services.add_scoped(ScopedService)
+        services.add_singleton(SingletonDependingOnScoped)
+
+        async with services.build_service_provider(
+            validate_scopes=False, validate_on_build=False
+        ) as service_provider:
+            resolved_service = await service_provider.get_required_service(
+                SingletonDependingOnScoped
+            )
+
+            assert isinstance(resolved_service.dependency, ScopedService)
+
+    async def test_fail_resolving_scoped_service_from_root_scope(
+        self,
+    ) -> None:
+        services = ServiceCollection()
+        services.add_scoped(ServiceWithNoDependencies)
+
+        async with services.build_service_provider(
+            validate_scopes=True
+        ) as service_provider:
+            with pytest.raises(DirectScopedResolvedFromRootError):
+                await service_provider.get_required_service(ServiceWithNoDependencies)
+
+    async def test_fail_resolving_service_with_scoped_dependency_from_root_scope(
+        self,
+    ) -> None:
+        services = ServiceCollection()
+        services.add_scoped(ServiceWithNoDependencies)
+        services.add_transient(ServiceWithDependencies)
+
+        async with services.build_service_provider(
+            validate_scopes=True
+        ) as service_provider:
+            with pytest.raises(ScopedResolvedFromRootError):
+                await service_provider.get_required_service(ServiceWithDependencies)
+
+    async def test_fail_when_resolving_service_after_disposal(self) -> None:
+        class Service:
+            pass
+
+        class KeyedService:
+            pass
+
+        service_key = "key"
+        services = ServiceCollection()
+        services.add_transient(Service)
+        services.add_keyed_transient(service_key, KeyedService)
+
+        async with services.build_service_provider() as service_provider:
+            await service_provider.get_required_service(Service)
+            await service_provider.get_required_keyed_service(service_key, KeyedService)
+
+        assert service_provider.is_disposed
+
+        with pytest.raises(ObjectDisposedError):
+            await service_provider.get_required_service(Service)
+
+        with pytest.raises(ObjectDisposedError):
+            await service_provider.get_required_keyed_service(service_key, KeyedService)

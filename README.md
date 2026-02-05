@@ -43,7 +43,9 @@ class UserService:
 app = FastAPI()
 
 @app.post("/users")
-async def create_user(user_service: Annotated[UserService, FromServices()]) -> None:
+async def create_user(
+    user_service: Annotated[UserService, FromServices()],
+) -> None:
     ...
 
 services = ServiceCollection()

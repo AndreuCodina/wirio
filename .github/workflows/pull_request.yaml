@@ -9,14 +9,14 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
-env:
-  UV_NO_SYNC: 1
 
 jobs:
   check-code:
     name: Check code
     if: github.actor != 'dependabot[bot]'
     runs-on: ubuntu-24.04
+    env:
+      UV_NO_SYNC: 1
     steps:
       - name: Checkout repository
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
@@ -41,85 +41,6 @@ jobs:
         continue-on-error: true
 
   test:
-    name: Test (Python=${{ matrix.python-version }}, Resolution=${{ matrix.resolution-strategy }}, Extra=${{ matrix.extra }})
+    name: Test
     needs: check-code
-    runs-on: ubuntu-24.04
-    strategy:
-      matrix:
-        python-version: ["3.13", "3.14"]
-        resolution-strategy: ["lowest-direct", "highest"]
-        extra: ["no-extra", "fastapi"]
-    env:
-      COVERAGE_FILE: .coverage.python--${{ matrix.python-version }}.resolution--${{ matrix.resolution-strategy }}.extra--${{ matrix.extra }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@803947b9bd8e9f986429fa0c5a41c367cd732b41 # v7.2.1
-        with:
-          version-file: pyproject.toml
-          resolution-strategy: lowest
-          python-version: ${{ matrix.python-version }}
-
-      - name: Install Python packages
-        run: |
-          uv sync \
-          --resolution ${{ matrix.resolution-strategy }} \
-          ${{ matrix.extra != 'no-extra' && format('--extra {0}', matrix.extra) || '' }}
-        shell: bash
-
-      - name: Test
-        run: |
-          uv run -- pytest --cov=wirio --cov-branch tests
-        shell: bash
-        env:
-          COVERAGE_FILE: ${{ env.COVERAGE_FILE }}
-
-      - name: Upload coverage artifact
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
-        with:
-          name: ${{ env.COVERAGE_FILE }}
-          path: ${{ env.COVERAGE_FILE }}
-          include-hidden-files: true
-          if-no-files-found: error
-
-  publish-coverage:
-    name: Publish coverage
-    needs: test
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: write # Allow Coveralls to comment on the PR
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@803947b9bd8e9f986429fa0c5a41c367cd732b41 # v7.2.1
-        with:
-          version-file: pyproject.toml
-          resolution-strategy: lowest
-
-      - name: Install Python packages
-        run: uv sync --locked --all-extras
-        shell: bash
-
-      - name: Download coverage artifacts
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
-        with:
-          path: coverage
-          merge-multiple: true
-
-      - name: Combine coverage
-        run: uv run -- coverage combine coverage
-        shell: bash
-
-      - name: Convert coverage to XML
-        run: uv run -- coverage xml --data-file=.coverage -o coverage.xml
-        shell: bash
-
-      - name: Publish coverage
-        uses: coverallsapp/github-action@5cbfd81b66ca5d10c19b062c04de0199c215fb6e # v2.3.7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          file: ${{ github.workspace }}/coverage.xml
+    uses: ./.github/workflows/_test.yaml

@@ -65,3 +65,10 @@ class ServiceIdentifier(Hashable):
             )
 
         return False
+
+    @override
+    def __str__(self) -> str:
+        if self.service_key is None:
+            return str(self.service_type)
+
+        return f"({self.service_key}, {self.service_type})"

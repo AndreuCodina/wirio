@@ -10,6 +10,8 @@ from wirio._service_lookup._async_concurrent_dictionary import (
 )
 from wirio._service_lookup._call_site_chain import CallSiteChain
 from wirio._service_lookup._call_site_factory import CallSiteFactory
+from wirio._service_lookup._call_site_runtime_resolver import CallSiteRuntimeResolver
+from wirio._service_lookup._call_site_validator import CallSiteValidator
 from wirio._service_lookup._constant_call_site import (
     ConstantCallSite,
 )
@@ -29,6 +31,9 @@ from wirio._service_lookup._service_provider_engine import (
     ServiceProviderEngine,
 )
 from wirio._service_lookup._typed_type import TypedType
+from wirio._service_lookup.call_site_result_cache_location import (
+    CallSiteResultCacheLocation,
+)
 from wirio.abstractions.base_service_provider import BaseServiceProvider
 from wirio.abstractions.service_provider_is_keyed_service import (
     ServiceProviderIsKeyedService,
@@ -55,6 +60,7 @@ if TYPE_CHECKING:
     from wirio.service_descriptor import ServiceDescriptor
 
 
+@final
 @dataclass(frozen=True)
 class _ServiceAccessor:
     call_site: ServiceCallSite | None
@@ -68,6 +74,8 @@ class ServiceProvider(
     """Provider that resolves services."""
 
     _descriptors: Final[list["ServiceDescriptor"]]
+    _call_site_validator: Final[CallSiteValidator | None]
+    _validate_on_build: Final[bool]
     _root: Final[ServiceProviderEngineScope]
     _engine: Final[ServiceProviderEngine]
     _service_accessors: Final[
@@ -77,8 +85,16 @@ class ServiceProvider(
     _call_site_factory: Final[CallSiteFactory]
     _is_fully_initialized: bool
 
-    def __init__(self, descriptors: list["ServiceDescriptor"]) -> None:
+    def __init__(
+        self,
+        descriptors: list["ServiceDescriptor"],
+        validate_scopes: bool,
+        validate_on_build: bool,
+    ) -> None:
         self._descriptors = descriptors
+
+        self._call_site_validator = CallSiteValidator() if validate_scopes else None
+        self._validate_on_build = validate_on_build
         self._root = ServiceProviderEngineScope(
             service_provider=self, is_root_scope=True
         )
@@ -100,6 +116,10 @@ class ServiceProvider(
     def is_fully_initialized(self) -> bool:
         """Indicate whether the provider is fully initialized (useful for Jupyter notebooks, which don't work well with context managers)."""
         return self._is_fully_initialized
+
+    @property
+    def call_site_validator(self) -> CallSiteValidator | None:
+        return self._call_site_validator
 
     @override
     async def get_service_object(self, service_type: TypedType) -> object | None:
@@ -144,9 +164,7 @@ class ServiceProvider(
         service_identifier: ServiceIdentifier,
         service_provider_engine_scope: ServiceProviderEngineScope,
     ) -> object | None:
-        override_call_site = self._call_site_factory.get_overridden_call_site(
-            service_identifier
-        )
+        override_call_site = self.get_overridden_call_site(service_identifier)
 
         if override_call_site is not None:
             realized_override = self._engine.realize_service(override_call_site)
@@ -155,6 +173,7 @@ class ServiceProvider(
         service_accessor = await self._service_accessors.get_or_add(
             key=service_identifier, value_factory=self._create_service_accessor
         )
+        self._on_resolve(service_accessor.call_site, service_provider_engine_scope)
         return await service_accessor.realized_service(service_provider_engine_scope)
 
     @contextmanager
@@ -199,9 +218,27 @@ class ServiceProvider(
         ):
             yield
 
+    def get_overridden_call_site(
+        self, service_identifier: ServiceIdentifier
+    ) -> ServiceCallSite | None:
+        """Retrieve the override call site for a given identifier if present."""
+        return self._call_site_factory.get_overridden_call_site(service_identifier)
+
     async def _create_service_accessor(
         self, service_identifier: ServiceIdentifier
     ) -> _ServiceAccessor:
+        def get_realized_service_returning_service_object(
+            service_object: object | None,
+        ) -> Callable[[ServiceProviderEngineScope], Awaitable[object | None]]:
+            def realized_service_returning_service_object(
+                _: ServiceProviderEngineScope,
+            ) -> Awaitable[object | None]:
+                future = asyncio.Future[object | None]()
+                future.set_result(service_object)
+                return future
+
+            return realized_service_returning_service_object
+
         def realized_service_returning_none(
             _: ServiceProviderEngineScope,
         ) -> Awaitable[object | None]:
@@ -209,11 +246,25 @@ class ServiceProvider(
             future.set_result(None)
             return future
 
-        call_site = await self._call_site_factory.get_call_site(
+        call_site = await self._call_site_factory.get_call_site_from_service_identifier(
             service_identifier, CallSiteChain()
         )
 
         if call_site is not None:
+            await self._on_create(call_site)
+
+            # Optimize singleton case
+            if call_site.cache.location == CallSiteResultCacheLocation.ROOT:
+                service_object = await CallSiteRuntimeResolver.INSTANCE.resolve(
+                    call_site, self._root
+                )
+                realized_service = get_realized_service_returning_service_object(
+                    service_object
+                )
+                return _ServiceAccessor(
+                    call_site=call_site, realized_service=realized_service
+                )
+
             realized_service = self._engine.realize_service(call_site)
             return _ServiceAccessor(
                 call_site=call_site, realized_service=realized_service
@@ -282,12 +333,56 @@ class ServiceProvider(
         if not self._is_fully_initialized:
             raise ServiceProviderNotFullyInitializedError(method_name)
 
+    async def _validate_service(self, service_descriptor: "ServiceDescriptor") -> None:
+        try:
+            call_site = (
+                await self._call_site_factory.get_call_site_from_service_descriptor(
+                    service_descriptor, CallSiteChain()
+                )
+            )
+
+            if call_site is not None:
+                await self._on_create(call_site)
+        except Exception as exception:
+            error_message = f"Error while validating the service descriptor '{service_descriptor}': {exception!r}"
+            raise RuntimeError(error_message) from exception
+
+    async def _on_create(self, call_site: ServiceCallSite) -> None:
+        if self._call_site_validator is not None:
+            await self._call_site_validator.validate_call_site(call_site)
+
+    def _on_resolve(
+        self, call_site: ServiceCallSite | None, scope: ServiceScope
+    ) -> None:
+        if call_site is not None and self._call_site_validator is not None:
+            self._call_site_validator.validate_resolution(
+                call_site=call_site, scope=scope, root_scope=self._root
+            )
+
     @override
     async def __aenter__(self) -> Self:
         await self._add_built_in_services()
         await self._activate_auto_activated_singletons()
+        await self._validate_services()
         self._is_fully_initialized = True
         return self
+
+    async def _validate_services(self) -> None:
+        if self._validate_on_build:
+            exceptions: list[Exception] | None = None
+
+            for service_descriptor in self._descriptors:
+                try:
+                    await self._validate_service(service_descriptor)
+                except Exception as exception:  # noqa: BLE001
+                    if exceptions is None:
+                        exceptions = []
+
+                    exceptions.append(exception)
+
+            if exceptions is not None:
+                error_message = "Some services are not able to be constructed"
+                raise ExceptionGroup(error_message, exceptions)
 
     @override
     async def __aexit__(

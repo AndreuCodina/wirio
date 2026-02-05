@@ -54,6 +54,7 @@ class _RuntimeResolverLock(Flag):
     ROOT = 2
 
 
+@final
 @dataclass(frozen=True)
 class RuntimeResolverContext:
     scope: ServiceProviderEngineScope
@@ -77,6 +78,30 @@ class CallSiteRuntimeResolver(CallSiteVisitor[RuntimeResolverContext, object | N
                 scope=scope, acquired_locks=_RuntimeResolverLock.NONE
             ),
         )
+
+    @override
+    async def _visit_call_site(
+        self, call_site: ServiceCallSite, argument: RuntimeResolverContext
+    ) -> object | None:
+        overridden_call_site = self._get_overridden_call_site(call_site, argument)
+
+        if not isinstance(overridden_call_site, WirioUndefined):
+            return overridden_call_site
+
+        return await super()._visit_call_site(call_site, argument)
+
+    def _get_overridden_call_site(
+        self, call_site: ServiceCallSite, argument: RuntimeResolverContext
+    ) -> object | None | WirioUndefined:
+        service_identifier = call_site.cache.key.service_identifier
+        override_call_site = argument.scope.root_provider.get_overridden_call_site(
+            service_identifier
+        )
+
+        if override_call_site is None:
+            return WirioUndefined.INSTANCE
+
+        return override_call_site.value
 
     @override
     async def _visit_root_cache(

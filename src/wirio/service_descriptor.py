@@ -1,6 +1,6 @@
 from collections.abc import Awaitable, Callable
 from functools import partial
-from typing import Final, Self
+from typing import Final, Self, override
 
 from wirio._service_lookup._typed_type import TypedType
 from wirio.exceptions import NonKeyedDescriptorMisuseError
@@ -256,3 +256,50 @@ class ServiceDescriptor:
             return self.keyed_implementation_instance
 
         return self._implementation_instance
+
+    @override
+    def __str__(self) -> str:  # noqa: PLR0911
+        lifetime = f"service_type: {self.service_type}, lifetime: {self.lifetime}, "
+
+        if self.is_keyed_service:
+            lifetime += f"service_key: {self.service_key} "
+
+            if self.keyed_implementation_type is not None:
+                return (
+                    lifetime
+                    + f"keyed_implementation_type: {self.keyed_implementation_type}"
+                )
+
+            if self.keyed_async_implementation_factory is not None:
+                return (
+                    lifetime
+                    + f"keyed_async_implementation_factory: {self.keyed_async_implementation_factory}"
+                )
+
+            if self.keyed_sync_implementation_factory is not None:
+                return (
+                    lifetime
+                    + f"keyed_sync_implementation_factory: {self.keyed_sync_implementation_factory}"
+                )
+
+            return (
+                lifetime
+                + f"keyed_implementation_instance: {self.keyed_implementation_instance}"
+            )
+
+        if self.implementation_type is not None:
+            return lifetime + f"implementation_type: {self.implementation_type}"
+
+        if self.async_implementation_factory is not None:
+            return (
+                lifetime
+                + f"async_implementation_factory: {self.async_implementation_factory}"
+            )
+
+        if self.sync_implementation_factory is not None:
+            return (
+                lifetime
+                + f"sync_implementation_factory: {self.sync_implementation_factory}"
+            )
+
+        return lifetime + (f"implementation_instance: {self.implementation_instance}")

@@ -1,6 +1,5 @@
-import asyncio
 from collections.abc import Generator
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from dataclasses import dataclass
 from typing import ClassVar, Final, final, override
 
@@ -10,6 +9,7 @@ from wirio._service_lookup._async_concurrent_dictionary import (
 from wirio._service_lookup._async_factory_call_site import (
     AsyncFactoryCallSite,
 )
+from wirio._service_lookup._asyncio_reentrant_lock import AsyncioReentrantLock
 from wirio._service_lookup._call_site_chain import CallSiteChain
 from wirio._service_lookup._constant_call_site import (
     ConstantCallSite,
@@ -57,6 +57,7 @@ from wirio.exceptions import (
     CannotResolveServiceError,
     InvalidServiceDescriptorError,
     InvalidServiceKeyTypeError,
+    ServiceDescriptorDoesNotExistError,
 )
 from wirio.service_descriptor import ServiceDescriptor
 
@@ -90,7 +91,31 @@ class _ServiceDescriptorCacheItem:
 
         return new_cache_item
 
+    def __len__(self) -> int:
+        if self._item is None:
+            assert self._items is None
+            return 0
 
+        items_count = len(self._items) if self._items is not None else 0
+        return items_count + 1
+
+    def get_slot(self, service_descriptor: ServiceDescriptor) -> int:
+        if service_descriptor == self._item:
+            return len(self) - 1
+
+        if self._items is not None:
+            index: int | None = None
+
+            with suppress(ValueError):
+                index = self._items.index(service_descriptor)
+
+            if index is not None:
+                return len(self._items) - (index + 1)
+
+        raise ServiceDescriptorDoesNotExistError
+
+
+@final
 @dataclass(frozen=True)
 class _ServiceOverride:
     exists: bool
@@ -104,7 +129,9 @@ class CallSiteFactory(ServiceProviderIsKeyedService, ServiceProviderIsService):
     _descriptors: Final[list[ServiceDescriptor]]
     _descriptor_lookup: Final[dict[ServiceIdentifier, _ServiceDescriptorCacheItem]]
     _call_site_cache: Final[AsyncConcurrentDictionary[ServiceCacheKey, ServiceCallSite]]
-    _call_site_locks: Final[AsyncConcurrentDictionary[ServiceIdentifier, asyncio.Lock]]
+    _call_site_locks: Final[
+        AsyncConcurrentDictionary[ServiceIdentifier, AsyncioReentrantLock]
+    ]
     _service_overrides: Final[dict[ServiceIdentifier, list[object | None]]]
 
     def __init__(self, descriptors: list["ServiceDescriptor"]) -> None:
@@ -114,7 +141,7 @@ class CallSiteFactory(ServiceProviderIsKeyedService, ServiceProviderIsService):
             ServiceCacheKey, ServiceCallSite
         ]()
         self._call_site_locks = AsyncConcurrentDictionary[
-            ServiceIdentifier, asyncio.Lock
+            ServiceIdentifier, AsyncioReentrantLock
         ]()
         self._service_overrides = {}
         self._populate()
@@ -135,10 +162,10 @@ class CallSiteFactory(ServiceProviderIsKeyedService, ServiceProviderIsService):
             )
         )
 
-    async def get_call_site(
+    async def get_call_site_from_service_identifier(
         self, service_identifier: ServiceIdentifier, call_site_chain: CallSiteChain
     ) -> ServiceCallSite | None:
-        overridden_call_site = self._get_overridden_call_site(service_identifier)
+        overridden_call_site = self.get_overridden_call_site(service_identifier)
 
         if overridden_call_site is not None:
             return overridden_call_site
@@ -152,6 +179,22 @@ class CallSiteFactory(ServiceProviderIsKeyedService, ServiceProviderIsService):
             )
 
         return service_call_site
+
+    async def get_call_site_from_service_descriptor(
+        self, service_descriptor: ServiceDescriptor, call_site_chain: CallSiteChain
+    ) -> ServiceCallSite | None:
+        service_identifier = ServiceIdentifier.from_descriptor(service_descriptor)
+        service_descriptor_cache_item = self._descriptor_lookup.get(service_identifier)
+
+        if service_descriptor_cache_item is not None:
+            return await self._try_create_exact_from_service_descriptor(
+                service_descriptor,
+                service_identifier,
+                call_site_chain,
+                service_descriptor_cache_item.get_slot(service_descriptor),
+            )
+
+        return None
 
     async def add(
         self, service_identifier: ServiceIdentifier, service_call_site: ServiceCallSite
@@ -175,13 +218,22 @@ class CallSiteFactory(ServiceProviderIsKeyedService, ServiceProviderIsService):
     def get_overridden_call_site(
         self, service_identifier: ServiceIdentifier
     ) -> ServiceCallSite | None:
-        return self._get_overridden_call_site(service_identifier)
+        service_override = self._get_service_override(service_identifier)
+
+        if not service_override.exists:
+            return None
+
+        return ConstantCallSite(
+            service_type=service_identifier.service_type,
+            default_value=service_override.value,
+            service_key=service_identifier.service_key,
+        )
 
     async def _create_call_site(
         self, service_identifier: ServiceIdentifier, call_site_chain: CallSiteChain
     ) -> ServiceCallSite | None:
-        async def _create_new_lock(_: ServiceIdentifier) -> asyncio.Lock:
-            return asyncio.Lock()
+        async def _create_new_lock(_: ServiceIdentifier) -> AsyncioReentrantLock:
+            return AsyncioReentrantLock()
 
         # We need to lock the resolution process for a single service type at a time.
         # Consider the following:
@@ -196,10 +248,7 @@ class CallSiteFactory(ServiceProviderIsKeyedService, ServiceProviderIsService):
         call_site_lock = await self._call_site_locks.get_or_add(
             service_identifier, _create_new_lock
         )
-
-        # Check if the lock is already acquired to prevent deadlocks in case of re-entrancy
-        if call_site_lock.locked():
-            call_site_chain.check_circular_dependency(service_identifier)
+        call_site_chain.check_circular_dependency(service_identifier)
 
         async with call_site_lock:
             return await self._try_create_exact_from_service_identifier(
@@ -347,21 +396,7 @@ class CallSiteFactory(ServiceProviderIsKeyedService, ServiceProviderIsService):
         await self._call_site_cache.upsert(key=call_site_key, value=service_call_site)
         return service_call_site
 
-    def _get_overridden_call_site(
-        self, service_identifier: ServiceIdentifier
-    ) -> ServiceCallSite | None:
-        override = self._get_overridden_instance(service_identifier)
-
-        if not override.exists:
-            return None
-
-        return ConstantCallSite(
-            service_type=service_identifier.service_type,
-            default_value=override.value,
-            service_key=service_identifier.service_key,
-        )
-
-    def _get_overridden_instance(
+    def _get_service_override(
         self, service_identifier: ServiceIdentifier
     ) -> _ServiceOverride:
         overrides = self._service_overrides.get(service_identifier)
@@ -490,7 +525,7 @@ class CallSiteFactory(ServiceProviderIsKeyedService, ServiceProviderIsService):
                             service_key = None
 
                     if service_key is not None:
-                        call_site = await self.get_call_site(
+                        call_site = await self.get_call_site_from_service_identifier(
                             ServiceIdentifier.from_service_type(
                                 service_type=parameter_type, service_key=service_key
                             ),
@@ -499,7 +534,7 @@ class CallSiteFactory(ServiceProviderIsKeyedService, ServiceProviderIsService):
                         is_keyed_parameter = True
 
             if not is_keyed_parameter and call_site is None:
-                call_site = await self.get_call_site(
+                call_site = await self.get_call_site_from_service_identifier(
                     ServiceIdentifier.from_service_type(parameter_type), call_site_chain
                 )
 

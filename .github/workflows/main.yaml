@@ -10,7 +10,12 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  publish-coverage:
+  test:
+    name: Test
+    uses: ./.github/workflows/_test.yaml
+
+  publish-documentation:
+    needs: test
     runs-on: ubuntu-24.04
     permissions:
       contents: write # Allow mkdocs to push to gh-pages branch
@@ -27,18 +32,8 @@ jobs:
           resolution-strategy: lowest
 
       - name: Install Python packages
-        run: uv sync --locked --all-extras
+        run: uv sync --locked
         shell: bash
-
-      - name: Test
-        run: uv run -- pytest --cov=wirio --cov-branch --cov-report=xml tests
-        shell: bash
-
-      - name: Publish coverage
-        uses: coverallsapp/github-action@5cbfd81b66ca5d10c19b062c04de0199c215fb6e # v2.3.7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          file: ${{ github.workspace }}/coverage.xml
 
       - name: Publish documentation
         run: uv run -- mkdocs gh-deploy --config-file docs/mkdocs.yml --remote-branch gh-pages --clean --force --strict

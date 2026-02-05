@@ -23,6 +23,7 @@ class ServiceKeyInjectable(Injectable):
     pass
 
 
+@final
 @dataclass(frozen=True)
 class FromKeyedServicesInjectable(Injectable):
     key: object | None

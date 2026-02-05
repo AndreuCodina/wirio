@@ -87,8 +87,11 @@ class TestServiceCollection:
             case ServiceLifetime.TRANSIENT:
                 services.add_transient(ServiceWithNoDependencies)
 
-        async with services.build_service_provider() as service_provider:
-            resolved_service = await service_provider.get_required_service(
+        async with (
+            services.build_service_provider() as service_provider,
+            service_provider.create_scope() as service_scope,
+        ):
+            resolved_service = await service_scope.get_required_service(
                 ServiceWithNoDependencies
             )
 
@@ -169,8 +172,11 @@ class TestServiceCollection:
                     ServiceWithNoDependencies, implementation_factory
                 )
 
-        async with services.build_service_provider() as service_provider:
-            resolved_service = await service_provider.get_required_service(
+        async with (
+            services.build_service_provider() as service_provider,
+            service_provider.create_scope() as service_scope,
+        ):
+            resolved_service = await service_scope.get_required_service(
                 ServiceWithNoDependencies
             )
 
@@ -233,8 +239,11 @@ class TestServiceCollection:
                     service_key, KeyedServiceClas, implementation_factory
                 )
 
-        async with services.build_service_provider() as service_provider:
-            resolved_service = await service_provider.get_required_keyed_service(
+        async with (
+            services.build_service_provider() as service_provider,
+            service_provider.create_scope() as service_scope,
+        ):
+            resolved_service = await service_scope.get_required_keyed_service(
                 service_key, KeyedServiceClas
             )
 
@@ -265,8 +274,11 @@ class TestServiceCollection:
                 services.add_transient(ServiceWithNoDependencies)
                 services.add_transient(ServiceWithDependencies)
 
-        async with services.build_service_provider() as service_provider:
-            resolved_service = await service_provider.get_required_service(
+        async with (
+            services.build_service_provider() as service_provider,
+            service_provider.create_scope() as service_scope,
+        ):
+            resolved_service = await service_scope.get_required_service(
                 ServiceWithDependencies
             )
 
@@ -308,8 +320,11 @@ class TestServiceCollection:
             case ServiceLifetime.TRANSIENT:
                 services.add_transient(service_type)
 
-        async with services.build_service_provider() as service_provider:
-            resolved_service = await service_provider.get_required_service(service_type)
+        async with (
+            services.build_service_provider() as service_provider,
+            service_provider.create_scope() as service_scope,
+        ):
+            resolved_service = await service_scope.get_required_service(service_type)
 
             assert isinstance(resolved_service, service_type)
             assert resolved_service.is_disposed_initialized
@@ -340,8 +355,11 @@ class TestServiceCollection:
                 services.add_transient(ServiceWithAsyncContextManagerAndNoDependencies)
                 services.add_transient(ServiceWithAsyncContextManagerAndDependencies)
 
-        async with services.build_service_provider() as service_provider:
-            resolved_service = await service_provider.get_required_service(
+        async with (
+            services.build_service_provider() as service_provider,
+            service_provider.create_scope() as service_scope,
+        ):
+            resolved_service = await service_scope.get_required_service(
                 ServiceWithAsyncContextManagerAndDependencies
             )
 
@@ -362,7 +380,9 @@ class TestServiceCollection:
         services = ServiceCollection()
         services.add_transient(SelfCircularDependencyService)
 
-        async with services.build_service_provider() as service_provider:
+        async with services.build_service_provider(
+            validate_on_build=False
+        ) as service_provider:
             with pytest.raises(CircularDependencyError):
                 await service_provider.get_required_service(
                     SelfCircularDependencyService
@@ -454,11 +474,14 @@ class TestServiceCollection:
                 services.add_transient(Service2, implementation_factory)
                 services.add_transient(Service1)
 
-        async with services.build_service_provider() as service_provider:
-            resolved_service_1 = await service_provider.get_required_service(Service1)
+        async with (
+            services.build_service_provider() as service_provider,
+            service_provider.create_scope() as service_scope,
+        ):
+            resolved_service_1 = await service_scope.get_required_service(Service1)
             assert isinstance(resolved_service_1, Service1)
 
-            resolved_service_2 = await service_provider.get_required_service(Service2)
+            resolved_service_2 = await service_scope.get_required_service(Service2)
             assert isinstance(resolved_service_2, Service2)
 
     @pytest.mark.parametrize(
@@ -491,8 +514,11 @@ class TestServiceCollection:
             case ServiceLifetime.TRANSIENT:
                 services.add_transient(Service, implementation_factory)
 
-        async with services.build_service_provider() as service_provider:
-            resolved_service = await service_provider.get_required_service(Service)
+        async with (
+            services.build_service_provider() as service_provider,
+            service_provider.create_scope() as service_scope,
+        ):
+            resolved_service = await service_scope.get_required_service(Service)
 
             assert isinstance(resolved_service, BaseService)
             assert issubclass(type(resolved_service), BaseService)
@@ -700,8 +726,11 @@ class TestServiceCollection:
                 case ServiceLifetime.TRANSIENT:
                     services.add_transient(SyncService2, sync_inject_sync_service_2)
 
-        async with services.build_service_provider() as service_provider:
-            resolved_service_2 = await service_provider.get_required_service(
+        async with (
+            services.build_service_provider() as service_provider,
+            service_provider.create_scope() as service_scope,
+        ):
+            resolved_service_2 = await service_scope.get_required_service(
                 AsyncService2 if is_async_context_manager else SyncService2
             )
 
@@ -751,11 +780,14 @@ class TestServiceCollection:
             case ServiceLifetime.TRANSIENT:
                 services.add_transient(Service2, implementation_factory)
 
-        async with services.build_service_provider() as service_provider:
+        async with (
+            services.build_service_provider() as service_provider,
+            service_provider.create_scope() as service_scope,
+        ):
             with pytest.raises(
                 CannotResolveParameterServiceFromImplementationFactoryError
             ):
-                await service_provider.get_required_service(Service2)
+                await service_scope.get_required_service(Service2)
 
     @pytest.mark.parametrize(
         argnames=("service_lifetime", "is_async_implementation_factory"),
@@ -799,10 +831,11 @@ class TestServiceCollection:
             case ServiceLifetime.TRANSIENT:
                 services.add_transient(implementation_factory)
 
-        async with services.build_service_provider() as service_provider:
-            resolved_service = await service_provider.get_required_service(
-                expected_type
-            )
+        async with (
+            services.build_service_provider() as service_provider,
+            service_provider.create_scope() as service_scope,
+        ):
+            resolved_service = await service_scope.get_required_service(expected_type)
 
             assert TypedType.from_instance(resolved_service) == TypedType.from_type(
                 ServiceWithGeneric[str]
@@ -874,8 +907,11 @@ class TestServiceCollection:
             case ServiceLifetime.TRANSIENT:
                 services.add_transient(Parent, Child)
 
-        async with services.build_service_provider() as service_provider:
-            resolved_service = await service_provider.get_required_service(Parent)
+        async with (
+            services.build_service_provider() as service_provider,
+            service_provider.create_scope() as service_scope,
+        ):
+            resolved_service = await service_scope.get_required_service(Parent)
 
             assert isinstance(resolved_service, Parent)
             assert issubclass(type(resolved_service), Parent)
@@ -958,8 +994,11 @@ class TestServiceCollection:
             case ServiceLifetime.TRANSIENT:
                 services.add_transient(ServiceWithDefaultValues)
 
-        async with services.build_service_provider() as service_provider:
-            resolved_service = await service_provider.get_required_service(
+        async with (
+            services.build_service_provider() as service_provider,
+            service_provider.create_scope() as service_scope,
+        ):
+            resolved_service = await service_scope.get_required_service(
                 ServiceWithDefaultValues
             )
 
@@ -1077,7 +1116,9 @@ class TestServiceCollection:
         services = ServiceCollection()
         services.add_transient(Service)
 
-        async with services.build_service_provider() as service_provider:
+        async with services.build_service_provider(
+            validate_on_build=False
+        ) as service_provider:
             with pytest.raises(CannotResolveServiceError):
                 await service_provider.get_required_service(Service)
 
@@ -1121,8 +1162,11 @@ class TestServiceCollection:
             case ServiceLifetime.TRANSIENT:
                 services.add_keyed_transient(key, ServiceWithNoDependencies)
 
-        async with services.build_service_provider() as service_provider:
-            resolved_service = await service_provider.get_required_keyed_service(
+        async with (
+            services.build_service_provider() as service_provider,
+            service_provider.create_scope() as service_scope,
+        ):
+            resolved_service = await service_scope.get_required_keyed_service(
                 key, ServiceWithNoDependencies
             )
 
@@ -1227,7 +1271,9 @@ class TestServiceCollection:
         services = ServiceCollection()
         services.add_keyed_transient(1, ServiceWithServiceKey)
 
-        async with services.build_service_provider() as service_provider:
+        async with services.build_service_provider(
+            validate_on_build=False
+        ) as service_provider:
             with pytest.raises(InvalidServiceKeyTypeError):
                 await service_provider.get_required_keyed_service(
                     1, ServiceWithServiceKey
@@ -1564,7 +1610,9 @@ class TestServiceCollection:
         services = ServiceCollection()
         services.add_transient(ServiceWithServiceKey)
 
-        async with services.build_service_provider() as service_provider:
+        async with services.build_service_provider(
+            validate_on_build=False
+        ) as service_provider:
             with pytest.raises(CannotResolveServiceError):
                 await service_provider.get_required_service(ServiceWithServiceKey)
 

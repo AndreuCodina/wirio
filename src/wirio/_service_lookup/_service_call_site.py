@@ -1,6 +1,6 @@
-import asyncio
 from abc import ABC, abstractmethod
 
+from wirio._service_lookup._asyncio_reentrant_lock import AsyncioReentrantLock
 from wirio._service_lookup._call_site_kind import CallSiteKind
 from wirio._service_lookup._result_cache import ResultCache
 from wirio._service_lookup._typed_type import TypedType
@@ -12,7 +12,7 @@ class ServiceCallSite(ABC):
     _cache: ResultCache
     _value: object | None
     _key: object | None
-    _lock: asyncio.Lock
+    _lock: AsyncioReentrantLock
 
     def __init__(
         self, cache: ResultCache, key: object | None, value: object | None = None
@@ -20,7 +20,7 @@ class ServiceCallSite(ABC):
         self._cache = cache
         self._key = key
         self._value = value
-        self._lock = asyncio.Lock()
+        self._lock = AsyncioReentrantLock()
 
     @property
     def cache(self) -> ResultCache:
@@ -39,7 +39,7 @@ class ServiceCallSite(ABC):
         self._value = value
 
     @property
-    def lock(self) -> asyncio.Lock:
+    def lock(self) -> AsyncioReentrantLock:
         return self._lock
 
     @property

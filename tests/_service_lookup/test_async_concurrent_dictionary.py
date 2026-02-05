@@ -1,7 +1,5 @@
 import asyncio
 
-import pytest
-
 from wirio._service_lookup._async_concurrent_dictionary import (
     AsyncConcurrentDictionary,
 )
@@ -10,13 +8,14 @@ _run_count = 0
 
 
 class TestConcurrentDictionary:
-    async def test_get_or_add_should_execute_value_factory_only_once(
+    async def test_get_or_add_should_not_execute_customer_code_inside_lock(
         self,
     ) -> None:
-        expected_value_factory_executions = 1
         competing_tasks = 10
+        expected_value_factory_executions = competing_tasks
         dictionary = AsyncConcurrentDictionary[str, str]()
 
+        # Customer code
         async def value_factory(value_to_print: str) -> str:
             global _run_count  # noqa: PLW0603
             _run_count += 1
@@ -37,17 +36,18 @@ class TestConcurrentDictionary:
 
         assert _run_count == expected_value_factory_executions
 
-    async def test_lock_is_not_reentrant_and_can_block(self) -> None:
+    async def test_not_block_nested_operations(self) -> None:
         dictionary = AsyncConcurrentDictionary[str, str]()
 
         async def reentrant_value_factory(_: str) -> str:
-            # Attempt to acquire the same dictionary lock from within a locked section
-            # This should block because asyncio.Lock is not re-entrant
+            # The inner upsert should not deadlock the outer get_or_add call
             await dictionary.upsert("inner-key", "value")
             return "outer-value"
 
-        with pytest.raises(asyncio.TimeoutError):
-            await asyncio.wait_for(
-                dictionary.get_or_add("outer-key", reentrant_value_factory),
-                timeout=1.0,
-            )
+        value = await asyncio.wait_for(
+            dictionary.get_or_add("outer-key", reentrant_value_factory),
+            timeout=1.0,
+        )
+
+        assert value == "outer-value"
+        assert dictionary.get("inner-key") == "value"

@@ -35,6 +35,8 @@ def add_sqlmodel(services: ServiceCollection, connection_string: str) -> None:
     def inject_async_engine() -> AsyncEngine:
         return create_async_engine(connection_string)
 
+    services.add_singleton(inject_async_engine)
+
     def inject_async_sessionmaker(
         async_engine: AsyncEngine,
     ) -> async_sessionmaker[AsyncSession]:
@@ -42,14 +44,13 @@ def add_sqlmodel(services: ServiceCollection, connection_string: str) -> None:
             async_engine, class_=AsyncSession, expire_on_commit=False
         )
 
+    services.add_singleton(inject_async_sessionmaker)
+
     def inject_async_session(
         async_sessionmaker: async_sessionmaker[AsyncSession],
     ) -> AsyncSession:
         return async_sessionmaker()
 
-
-    services.add_singleton(inject_async_engine)
-    services.add_singleton(inject_async_sessionmaker)
     services.add_transient(inject_async_session)
 ```
 

@@ -59,10 +59,7 @@ class TypedType(Hashable):
 
         return self._origin[*self._args](*parameter_values)  # pyright: ignore[reportIndexIssue, reportUnknownVariableType]
 
-    def __repr__(self) -> str:
-        return self.create_representation(self._origin, self._args)
-
-    def create_representation(
+    def _create_representation(
         self,
         origin: Any,  # noqa: ANN401
         args: tuple[Any, ...],
@@ -76,7 +73,7 @@ class TypedType(Hashable):
                 has_generics = arg_origin is not None
 
                 if has_generics:
-                    args_representation += self.create_representation(
+                    args_representation += self._create_representation(
                         arg_origin, arg_args
                     )
                 else:
@@ -89,6 +86,10 @@ class TypedType(Hashable):
             args_representation = f"[{args_representation}]"
 
         return f"{origin.__module__}.{origin.__qualname__}{args_representation}"
+
+    @override
+    def __repr__(self) -> str:
+        return self._create_representation(self._origin, self._args)
 
     @override
     def __hash__(self) -> int:

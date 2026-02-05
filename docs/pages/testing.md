@@ -14,7 +14,7 @@ We have to use the service provider to resolve the services we want to test. The
     from main import app
     from wirio.integrations.fastapi import get_service_provider
 
-    @pytest.fixture
+    @pytest.fixture(autouse=True)
     def test_client() -> Generator[None]:
         with TestClient(app):
             yield

@@ -130,3 +130,49 @@ class ServiceProviderNotFullyInitializedError(WirioError):
     def __init__(self, method_name: str) -> None:
         message = f"The service provider must be fully initialized before calling '{method_name}'. Use 'async with' or '__aenter__'"
         super().__init__(message)
+
+
+@final
+class ServiceDescriptorDoesNotExistError(WirioError):
+    """The exception that is thrown when a requested service descriptor doesn't exist."""
+
+    def __init__(self) -> None:
+        super().__init__("Requested service descriptor doesn't exist")
+
+
+@final
+class ScopedInSingletonError(WirioError):
+    """The exception that is thrown when a scoped service is resolved from a singleton."""
+
+    def __init__(
+        self,
+        service_type_1: TypedType,
+        service_type_2: TypedType,
+    ) -> None:
+        message = f"Cannot consume scoped service '{service_type_1}' from singleton '{service_type_2}'"
+        super().__init__(message)
+
+
+@final
+class DirectScopedResolvedFromRootError(WirioError):
+    """The exception that is thrown when a scoped service is resolved directly from the root provider."""
+
+    def __init__(
+        self,
+        service_type: TypedType,
+    ) -> None:
+        message = f"Cannot resolve scoped service '{service_type}' from root provider"
+        super().__init__(message)
+
+
+@final
+class ScopedResolvedFromRootError(WirioError):
+    """The exception that is thrown when a scoped service is resolved from the root provider."""
+
+    def __init__(
+        self,
+        service_type: TypedType,
+        scoped_service_type: TypedType,
+    ) -> None:
+        message = f"Cannot resolve '{service_type}' from root provider because it requires scoped service '{scoped_service_type}'"
+        super().__init__(message)
