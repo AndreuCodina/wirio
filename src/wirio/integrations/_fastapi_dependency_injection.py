@@ -48,6 +48,7 @@ class FastApiDependencyInjection:
         async def new_lifespan(app: FastAPI) -> AsyncGenerator[Any]:
             services: ServiceCollection = app.state.wirio_services
 
+            # if it's already built, we assume it's because the user built it manually before calling setup, so we don't build it again
             async with services.build_service_provider() as service_provider:
                 app.state.wirio_service_provider = service_provider
 

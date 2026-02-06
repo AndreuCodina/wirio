@@ -3,7 +3,7 @@ from collections.abc import Awaitable, Callable, Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from types import TracebackType
-from typing import TYPE_CHECKING, Final, Self, final, override
+from typing import Final, Self, final, override
 
 from wirio._service_lookup._async_concurrent_dictionary import (
     AsyncConcurrentDictionary,
@@ -52,12 +52,10 @@ from wirio.exceptions import (
     ObjectDisposedError,
     ServiceProviderNotFullyInitializedError,
 )
+from wirio.service_descriptor import ServiceDescriptor
 from wirio.service_provider_engine_scope import (
     ServiceProviderEngineScope,
 )
-
-if TYPE_CHECKING:
-    from wirio.service_descriptor import ServiceDescriptor
 
 
 @final
@@ -127,7 +125,7 @@ class ServiceProvider(
         if self._is_disposed:
             raise ObjectDisposedError
 
-        await self._fully_initialize_if_not_fully_initialized()
+        await self.fully_initialize_if_not_fully_initialized()
         return await self.get_service_from_service_identifier(
             service_identifier=ServiceIdentifier.from_service_type(service_type),
             service_provider_engine_scope=self._root,
@@ -140,7 +138,7 @@ class ServiceProvider(
         if self._is_disposed:
             raise ObjectDisposedError
 
-        await self._fully_initialize_if_not_fully_initialized()
+        await self.fully_initialize_if_not_fully_initialized()
         return await self.get_service_from_service_identifier(
             service_identifier=ServiceIdentifier.from_service_type(
                 service_type=service_type, service_key=service_key
@@ -224,9 +222,13 @@ class ServiceProvider(
         """Retrieve the override call site for a given identifier if present."""
         return self._call_site_factory.get_overridden_call_site(service_identifier)
 
-    def add_descriptors(self, descriptors: list["ServiceDescriptor"]) -> None:
-        self._pending_descriptors.extend(descriptors.copy())
-        self._call_site_factory.add_descriptors(self._pending_descriptors)
+    def add_descriptor(self, descriptor: ServiceDescriptor) -> None:
+        self._pending_descriptors.append(descriptor)
+        self._call_site_factory.add_descriptor(descriptor)
+
+    async def fully_initialize_if_not_fully_initialized(self) -> None:
+        if not self.is_fully_initialized:
+            await self.__aenter__()
 
     async def _create_service_accessor(
         self, service_identifier: ServiceIdentifier
@@ -331,10 +333,6 @@ class ServiceProvider(
                 ),
                 service_provider_engine_scope=self._root,
             )
-
-    async def _fully_initialize_if_not_fully_initialized(self) -> None:
-        if not self.is_fully_initialized:
-            await self.__aenter__()
 
     def _ensure_is_fully_initialized(self, method_name: str) -> None:
         if not self.is_fully_initialized:

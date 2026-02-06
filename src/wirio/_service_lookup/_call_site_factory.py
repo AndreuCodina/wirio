@@ -144,7 +144,7 @@ class CallSiteFactory(ServiceProviderIsKeyedService, ServiceProviderIsService):
             ServiceIdentifier, AsyncioReentrantLock
         ]()
         self._service_overrides = {}
-        self._populate()
+        self._populate_all()
 
     @override
     def is_service(self, service_type: type) -> bool:
@@ -229,9 +229,9 @@ class CallSiteFactory(ServiceProviderIsKeyedService, ServiceProviderIsService):
             service_key=service_identifier.service_key,
         )
 
-    def add_descriptors(self, descriptors: list[ServiceDescriptor]) -> None:
-        self._descriptors.extend(descriptors)
-        self._populate()
+    def add_descriptor(self, descriptor: ServiceDescriptor) -> None:
+        self._descriptors.append(descriptor)
+        self._populate_descriptor(descriptor)
 
     async def _create_call_site(
         self, service_identifier: ServiceIdentifier, call_site_chain: CallSiteChain
@@ -259,8 +259,14 @@ class CallSiteFactory(ServiceProviderIsKeyedService, ServiceProviderIsService):
                 service_identifier, call_site_chain
             )
 
-    def _populate(self) -> None:
-        for descriptor in self._descriptors:
+    def _populate_descriptor(self, descriptor: ServiceDescriptor) -> None:
+        self._populate([descriptor])
+
+    def _populate_all(self) -> None:
+        self._populate(self._descriptors)
+
+    def _populate(self, descriptors: list[ServiceDescriptor]) -> None:
+        for descriptor in descriptors:
             cache_key = ServiceIdentifier.from_descriptor(descriptor)
             cache_item = self._descriptor_lookup.get(
                 cache_key, _ServiceDescriptorCacheItem()
