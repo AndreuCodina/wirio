@@ -453,9 +453,7 @@ class TestServiceContainer:
         constructed_instances: list[object] = []
 
         class DependentService:
-            def __init__(
-                self, dependency: ServiceWithNoDependencies
-            ) -> None:
+            def __init__(self, dependency: ServiceWithNoDependencies) -> None:
                 self.dependency = dependency
                 constructed_instances.append(self)
 
