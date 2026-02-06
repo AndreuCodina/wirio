@@ -29,23 +29,20 @@ class ServiceCollection:
     """Collection of service descriptors provided during configuration."""
 
     _descriptors: Final[list[ServiceDescriptor]]
-    _service_provider: ServiceProvider | None = None
 
     def __init__(self) -> None:
         self._descriptors = []
-        self._service_provider = None
         self._validate_on_build = True
 
     def build_service_provider(
         self, validate_scopes: bool = True, validate_on_build: bool = True
     ) -> ServiceProvider:
         """Create a :class:`ServiceProvider` containing services from the provided :class:`ServiceCollection`."""
-        self._service_provider = ServiceProvider(
+        return ServiceProvider(
             descriptors=self._descriptors,
             validate_scopes=validate_scopes,
             validate_on_build=validate_on_build,
         )
-        return self._service_provider
 
     @overload
     def add_transient[TService](self, service_type: type[TService], /) -> None: ...

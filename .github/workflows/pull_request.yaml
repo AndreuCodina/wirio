@@ -27,7 +27,7 @@ jobs:
           resolution-strategy: lowest
 
       - name: Install Python packages
-        run: make install
+        run: uv sync --locked --all-extras
         shell: bash
 
       - name: Check code

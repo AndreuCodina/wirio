@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import FastAPI
 
 from wirio.annotations import FromServices
-from wirio.service_collection import ServiceCollection
+from wirio.service_container import ServiceContainer
 
 
 class EmailService:
@@ -28,7 +28,7 @@ async def create_user(
     pass
 
 
-services = ServiceCollection()
+services = ServiceContainer()
 services.add_transient(EmailService)
 services.add_transient(UserService)
 services.configure_fastapi(app)

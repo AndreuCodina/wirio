@@ -16,9 +16,9 @@ To showcase the basics of Wirio, we will create a container able to resolve the 
 The next step is to create a container and register the dependencies we just defined.
 
 ```python title="main.py" hl_lines="4-5"
-from wirio.service_collection import ServiceCollection
+from wirio.service_container import ServiceContainer
 
-services = ServiceCollection()
+services = ServiceContainer()
 services.add_transient(EmailService)  # (1)!
 services.add_transient(UserService)
 ```
@@ -54,9 +54,7 @@ Finally, we convert the service collection into a service provider, which will v
     To resolve dependencies from the service provider, we call `get_required_service` with the type we want to resolve.
 
     ```python title="main.py"
-
-    async with services.build_service_provider() as service_provider:
-        user_service = await service_provider.get_required_service(UserService)
+    user_service = await services.get_required_service(UserService)
     ```
 
 === "Jupyter notebook"
@@ -64,8 +62,7 @@ Finally, we convert the service collection into a service provider, which will v
     To resolve dependencies from the service provider, we call `get_required_service` with the type we want to resolve.
 
     ```python title="notebook.ipynb"
-    service_provider = services.build_service_provider()
-    user_service = await service_provider.get_required_service(UserService)
+    user_service = await services.get_required_service(UserService)
     ```
 
 ## Full code
@@ -81,7 +78,7 @@ Finally, we convert the service collection into a service provider, which will v
     ```python
     import asyncio
 
-    from wirio.service_collection import ServiceCollection
+    from wirio.service_container import ServiceContainer
 
     class EmailService:
         pass
@@ -95,12 +92,10 @@ Finally, we convert the service collection into a service provider, which will v
 
 
     async def main() -> None:
-        services = ServiceCollection()
+        services = ServiceContainer()
         services.add_transient(EmailService)
         services.add_transient(UserService)
-
-        async with services.build_service_provider() as service_provider:
-            user_service = await service_provider.get_required_service(UserService)
+        user_service = await service_provider.get_required_service(UserService)
 
     if __name__ == "__main__":
         asyncio.run(main())
@@ -111,8 +106,7 @@ Finally, we convert the service collection into a service provider, which will v
     ```python
     from main import services
 
-    service_provider = services.build_service_provider()
-    user_service = await service_provider.get_required_service(UserService)
+    user_service = await services.get_required_service(UserService)
     ```
 
 ## Test
@@ -120,8 +114,20 @@ Finally, we convert the service collection into a service provider, which will v
 We can substitute dependencies on the fly meanwhile the context manager is active.
 
 ```python hl_lines="1"
-with service_provider.override_service(EmailService, email_service_mock):
-    user_service = await service_provider.get_required_service(UserService)
+with services.override_service(EmailService, email_service_mock):
+    user_service = await services.get_required_service(UserService)
 ```
 
 For more information, check the [testing documentation](../testing.md).
+
+## Best practices
+
+If we're building a console application, it's recommended to use a context manager to ensure that all resources are properly disposed of when the application finishes.
+
+```python hl_lines="4"
+services = ServiceContainer()
+services.add_transient(UserService)
+
+async with services:
+    user_service = await services.get(UserService)
+```

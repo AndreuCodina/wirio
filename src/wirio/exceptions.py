@@ -176,3 +176,12 @@ class ScopedResolvedFromRootError(WirioError):
     ) -> None:
         message = f"Cannot resolve '{service_type}' from root provider because it requires scoped service '{scoped_service_type}'"
         super().__init__(message)
+
+
+@final
+class ServiceContainerNotBuiltError(WirioError):
+    """The exception that is thrown when trying to modify the ServiceContainer before it has been built."""
+
+    def __init__(self) -> None:
+        message = "Operation not allowed before building the ServiceContainer"
+        super().__init__(message)
