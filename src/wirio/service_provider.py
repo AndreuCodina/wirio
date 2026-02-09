@@ -50,7 +50,6 @@ from wirio.abstractions.service_scope_factory import (
 )
 from wirio.exceptions import (
     ObjectDisposedError,
-    ServiceProviderNotFullyInitializedError,
 )
 from wirio.service_descriptor import ServiceDescriptor
 from wirio.service_provider_engine_scope import (
@@ -186,7 +185,6 @@ class ServiceProvider(
 
         It can be used to temporarily replace a service for testing specific scenarios. Don't use it in production.
         """
-        self._ensure_is_fully_initialized(self.override_service.__name__)
         service_identifier = ServiceIdentifier.from_service_type(
             TypedType.from_type(service_type)
         )
@@ -208,7 +206,6 @@ class ServiceProvider(
 
         It can be used to temporarily replace a service for testing specific scenarios. Don't use it in production.
         """
-        self._ensure_is_fully_initialized(self.override_keyed_service.__name__)
         service_identifier = ServiceIdentifier.from_service_type(
             service_type=TypedType.from_type(service_type),
             service_key=service_key,
@@ -337,10 +334,6 @@ class ServiceProvider(
                 ),
                 service_provider_engine_scope=self._root,
             )
-
-    def _ensure_is_fully_initialized(self, method_name: str) -> None:
-        if not self.is_fully_initialized:
-            raise ServiceProviderNotFullyInitializedError(method_name)
 
     async def _validate_service(self, service_descriptor: "ServiceDescriptor") -> None:
         try:

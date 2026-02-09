@@ -1,13 +1,25 @@
+import typing
 from collections.abc import Awaitable, Callable, Generator
 from contextlib import AbstractAsyncContextManager, contextmanager
 from types import TracebackType
-from typing import Self, final, override
+from typing import TYPE_CHECKING, Self, final
 
+from wirio._utils._extra_dependencies import ExtraDependencies
 from wirio.abstractions.service_scope import ServiceScope
 from wirio.exceptions import ServiceContainerNotBuiltError
 from wirio.service_collection import ServiceCollection
 from wirio.service_lifetime import ServiceLifetime
 from wirio.service_provider import ServiceProvider
+
+if TYPE_CHECKING:
+    from fastapi import FastAPI
+
+    from wirio.integrations._fastapi_dependency_injection import (
+        FastApiDependencyInjection,
+    )
+else:
+    FastAPI = None
+    FastApiDependencyInjection = None
 
 
 @final
@@ -22,7 +34,7 @@ class ServiceContainer(
         super().__init__()
         self._service_provider = None
 
-    @override
+    @typing.override
     def build_service_provider(
         self, validate_scopes: bool = True, validate_on_build: bool = True
     ) -> ServiceProvider:
@@ -35,19 +47,15 @@ class ServiceContainer(
     def service_provider(self) -> ServiceProvider | None:
         return self._service_provider
 
-    async def get_required_service[TService](
-        self, service_type: type[TService]
-    ) -> TService:
+    async def get[TService](self, service_type: type[TService]) -> TService:
         service_provider = await self._get_service_provider()
         return await service_provider.get_required_service(service_type)
 
-    async def get_service[TService](
-        self, service_type: type[TService]
-    ) -> TService | None:
+    async def try_get[TService](self, service_type: type[TService]) -> TService | None:
         service_provider = await self._get_service_provider()
         return await service_provider.get_service(service_type)
 
-    async def get_required_keyed_service[TService](
+    async def get_keyed[TService](
         self, service_key: object | None, service_type: type[TService]
     ) -> TService:
         service_provider = await self._get_service_provider()
@@ -55,7 +63,7 @@ class ServiceContainer(
             service_key=service_key, service_type=service_type
         )
 
-    async def get_keyed_service[TService](
+    async def try_get_keyed[TService](
         self, service_key: object | None, service_type: type[TService]
     ) -> TService | None:
         service_provider = await self._get_service_provider()
@@ -77,7 +85,7 @@ class ServiceContainer(
         self._service_provider = None
 
     @contextmanager
-    def override_service(
+    def override(
         self, service_type: type, implementation_instance: object | None
     ) -> Generator[None]:
         """Override a service registration within the context manager scope.
@@ -94,7 +102,7 @@ class ServiceContainer(
             yield
 
     @contextmanager
-    def override_keyed_service(
+    def override_keyed(
         self,
         service_key: object | None,
         service_type: type,
@@ -114,7 +122,21 @@ class ServiceContainer(
         ):
             yield
 
-    @override
+    @typing.override
+    def configure_fastapi(self, app: FastAPI) -> None:
+        """Configure the FastAPI application to use dependency injection using the services from this service container."""
+        self._import_fastapi()
+        FastApiDependencyInjection.setup(app, self)
+
+    @typing.override
+    def _import_fastapi(self) -> None:
+        ExtraDependencies.import_fastapi()
+        global FastApiDependencyInjection  # noqa: PLW0603
+        from wirio.integrations._fastapi_dependency_injection import (  # noqa: PLC0415
+            FastApiDependencyInjection,
+        )
+
+    @typing.override
     def _add[TService](
         self,
         lifetime: ServiceLifetime,
@@ -152,13 +174,13 @@ class ServiceContainer(
         if self._service_provider is None:
             raise ServiceContainerNotBuiltError
 
-    @override
+    @typing.override
     async def __aenter__(self) -> Self:
         service_provider = await self._get_service_provider()
         await service_provider.fully_initialize_if_not_fully_initialized()
         return self
 
-    @override
+    @typing.override
     async def __aexit__(
         self,
         exc_type: type[BaseException] | None,

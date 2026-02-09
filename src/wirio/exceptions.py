@@ -126,13 +126,6 @@ class NoKeyedSingletonServiceRegisteredError(WirioError):
 
 
 @final
-class ServiceProviderNotFullyInitializedError(WirioError):
-    def __init__(self, method_name: str) -> None:
-        message = f"The service provider must be fully initialized before calling '{method_name}'. Use 'async with' or '__aenter__'"
-        super().__init__(message)
-
-
-@final
 class ServiceDescriptorDoesNotExistError(WirioError):
     """The exception that is thrown when a requested service descriptor doesn't exist."""
 

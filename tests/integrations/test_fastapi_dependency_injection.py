@@ -10,7 +10,9 @@ from tests.utils.services import ServiceWithNoDependencies
 from wirio._utils._extra_dependencies import ExtraDependencies
 from wirio.annotations import FromKeyedServices, FromServices
 from wirio.exceptions import CannotResolveServiceFromEndpointError
+from wirio.integrations.fastapi import get_services
 from wirio.service_collection import ServiceCollection
+from wirio.service_container import ServiceContainer
 from wirio.service_provider import ServiceProvider
 
 if TYPE_CHECKING:
@@ -39,7 +41,7 @@ except ImportError:
     not ExtraDependencies.is_fastapi_installed(),
     reason="wirio[fastapi] is not installed",
 )
-class TestFastApi:
+class TestFastApiDependencyInjection:
     @pytest.fixture
     def app(self) -> FastAPI:
         app = FastAPI()
@@ -260,6 +262,20 @@ class TestFastApi:
             response = test_client.get("/endpoint")
 
             assert response.status_code == HTTPStatus.OK
+
+    def test_get_services(self) -> None:
+        @asynccontextmanager
+        async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
+            services = get_services(app)
+            assert isinstance(services, ServiceContainer)
+            yield
+
+        app = FastAPI(lifespan=lifespan)
+        services = ServiceContainer()
+        services.configure_fastapi(app)
+
+        with TestClient(app):
+            pass
 
     def test_get_service_provider(self) -> None:
         @asynccontextmanager

@@ -23,6 +23,7 @@ from wirio.exceptions import CannotResolveServiceFromEndpointError
 
 if TYPE_CHECKING:
     from wirio.service_collection import ServiceCollection
+    from wirio.service_container import ServiceContainer
     from wirio.service_provider import ServiceProvider
 
 
@@ -34,7 +35,9 @@ _current_request: ContextVar[Request | WebSocket] = ContextVar(
 @final
 class FastApiDependencyInjection:
     @classmethod
-    def setup(cls, app: FastAPI, services: "ServiceCollection") -> None:
+    def setup(
+        cls, app: FastAPI, services: "ServiceContainer|ServiceCollection"
+    ) -> None:
         app.state.wirio_services = services
         app.add_middleware(_WirioAsgiMiddleware)  # ty: ignore[invalid-argument-type]
         cls._update_lifespan(app)

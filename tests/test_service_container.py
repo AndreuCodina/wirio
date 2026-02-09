@@ -13,7 +13,7 @@ class TestServiceContainer:
         assert services.service_provider is None
 
         try:
-            await services.get_required_service(ServiceWithNoDependencies)
+            await services.get(ServiceWithNoDependencies)
             assert services.service_provider is not None
             assert services.service_provider.is_fully_initialized
         finally:
@@ -24,7 +24,7 @@ class TestServiceContainer:
         assert services.service_provider is None
 
         try:
-            await services.get_service(ServiceWithNoDependencies)
+            await services.try_get(ServiceWithNoDependencies)
             assert services.service_provider is not None
             assert services.service_provider.is_fully_initialized
         finally:
@@ -36,9 +36,7 @@ class TestServiceContainer:
         assert services.service_provider is None
 
         try:
-            await services.get_required_keyed_service(
-                service_key, ServiceWithNoDependencies
-            )
+            await services.get_keyed(service_key, ServiceWithNoDependencies)
             assert services.service_provider is not None
             assert services.service_provider.is_fully_initialized
         finally:
@@ -49,7 +47,7 @@ class TestServiceContainer:
         assert services.service_provider is None
 
         try:
-            await services.get_keyed_service(service_key, ServiceWithNoDependencies)
+            await services.try_get_keyed(service_key, ServiceWithNoDependencies)
             assert services.service_provider is not None
             assert services.service_provider.is_fully_initialized
         finally:
@@ -78,25 +76,19 @@ class TestServiceContainer:
         services.add_transient(ServiceWithNoDependencies)
 
         async with services:
-            resolved_service = await services.get_required_service(
-                ServiceWithNoDependencies
-            )
+            resolved_service = await services.get(ServiceWithNoDependencies)
             assert isinstance(resolved_service, ServiceWithNoDependencies)
 
             service_mock = mocker.create_autospec(
                 ServiceWithNoDependencies, instance=True
             )
 
-            with services.override_service(ServiceWithNoDependencies, service_mock):
-                resolved_service = await services.get_required_service(
-                    ServiceWithNoDependencies
-                )
+            with services.override(ServiceWithNoDependencies, service_mock):
+                resolved_service = await services.get(ServiceWithNoDependencies)
                 assert resolved_service is service_mock
                 assert isinstance(resolved_service, ServiceWithNoDependencies)
 
-            resolved_service = await services.get_required_service(
-                ServiceWithNoDependencies
-            )
+            resolved_service = await services.get(ServiceWithNoDependencies)
             assert resolved_service is not service_mock
             assert isinstance(resolved_service, ServiceWithNoDependencies)
 
@@ -106,7 +98,7 @@ class TestServiceContainer:
         services.add_keyed_transient(service_key, ServiceWithNoDependencies)
 
         async with services:
-            resolved_service = await services.get_required_keyed_service(
+            resolved_service = await services.get_keyed(
                 service_key, ServiceWithNoDependencies
             )
             assert isinstance(resolved_service, ServiceWithNoDependencies)
@@ -115,16 +107,16 @@ class TestServiceContainer:
                 ServiceWithNoDependencies, instance=True
             )
 
-            with services.override_keyed_service(
+            with services.override_keyed(
                 service_key, ServiceWithNoDependencies, service_mock
             ):
-                resolved_service = await services.get_required_keyed_service(
+                resolved_service = await services.get_keyed(
                     service_key, ServiceWithNoDependencies
                 )
                 assert resolved_service is service_mock
                 assert isinstance(resolved_service, ServiceWithNoDependencies)
 
-            resolved_service = await services.get_required_keyed_service(
+            resolved_service = await services.get_keyed(
                 service_key, ServiceWithNoDependencies
             )
             assert resolved_service is not service_mock
@@ -134,7 +126,7 @@ class TestServiceContainer:
         services = ServiceContainer()
 
         with pytest.raises(ServiceContainerNotBuiltError):  # noqa: SIM117
-            with services.override_service(ServiceWithNoDependencies, object()):
+            with services.override(ServiceWithNoDependencies, object()):
                 pass
 
     @pytest.mark.parametrize(
@@ -163,13 +155,11 @@ class TestServiceContainer:
             services.add_transient(ServiceWithNoDependencies)
 
         if is_keyed_service:
-            resolved_service = await services.get_required_keyed_service(
+            resolved_service = await services.get_keyed(
                 service_key, ServiceWithNoDependencies
             )
         else:
-            resolved_service = await services.get_required_service(
-                ServiceWithNoDependencies
-            )
+            resolved_service = await services.get(ServiceWithNoDependencies)
 
         assert isinstance(resolved_service, ServiceWithNoDependencies)
         assert services.service_provider is not None
@@ -184,11 +174,9 @@ class TestServiceContainer:
         assert len(list(services)) == expected_descriptors
 
         if is_keyed_service:
-            resolved_service = await services.get_required_keyed_service(
-                service_key, AdditionalService
-            )
+            resolved_service = await services.get_keyed(service_key, AdditionalService)
         else:
-            resolved_service = await services.get_required_service(AdditionalService)
+            resolved_service = await services.get(AdditionalService)
 
         assert isinstance(resolved_service, AdditionalService)
         assert len(constructed_instances) == 1
@@ -197,11 +185,9 @@ class TestServiceContainer:
         assert len(list(services)) == expected_descriptors
 
         if is_keyed_service:
-            resolved_service = await services.get_required_keyed_service(
-                service_key, AdditionalService
-            )
+            resolved_service = await services.get_keyed(service_key, AdditionalService)
         else:
-            resolved_service = await services.get_required_service(AdditionalService)
+            resolved_service = await services.get(AdditionalService)
 
         assert isinstance(resolved_service, AdditionalService)
         assert len(constructed_instances) == 2  # noqa: PLR2004
@@ -236,13 +222,11 @@ class TestServiceContainer:
 
         async with services:
             if is_keyed_service:
-                resolved_service = await services.get_required_keyed_service(
+                resolved_service = await services.get_keyed(
                     service_key, ServiceWithNoDependencies
                 )
             else:
-                resolved_service = await services.get_required_service(
-                    ServiceWithNoDependencies
-                )
+                resolved_service = await services.get(ServiceWithNoDependencies)
 
             assert isinstance(resolved_service, ServiceWithNoDependencies)
             assert services.service_provider is not None
@@ -257,13 +241,11 @@ class TestServiceContainer:
             assert len(list(services)) == expected_descriptors
 
             if is_keyed_service:
-                resolved_service = await services.get_required_keyed_service(
+                resolved_service = await services.get_keyed(
                     service_key, AdditionalService
                 )
             else:
-                resolved_service = await services.get_required_service(
-                    AdditionalService
-                )
+                resolved_service = await services.get(AdditionalService)
 
             assert isinstance(resolved_service, AdditionalService)
             assert len(constructed_instances) == 1
@@ -272,13 +254,11 @@ class TestServiceContainer:
             assert len(list(services)) == expected_descriptors
 
             if is_keyed_service:
-                resolved_service = await services.get_required_keyed_service(
+                resolved_service = await services.get_keyed(
                     service_key, AdditionalService
                 )
             else:
-                resolved_service = await services.get_required_service(
-                    AdditionalService
-                )
+                resolved_service = await services.get(AdditionalService)
 
             assert isinstance(resolved_service, AdditionalService)
             assert len(constructed_instances) == 2  # noqa: PLR2004
@@ -297,15 +277,15 @@ class TestServiceContainer:
         services.add_transient(ServiceWithNoDependencies)
 
         async with services:
-            await services.get_required_service(ServiceWithNoDependencies)
+            await services.get(ServiceWithNoDependencies)
             assert len(constructed_instances) == 0
 
             services.add_auto_activated_singleton(AutoActivatedService)
 
-            await services.get_required_service(ServiceWithNoDependencies)
+            await services.get(ServiceWithNoDependencies)
             assert len(constructed_instances) == 1
 
-            resolved_service = await services.get_required_service(AutoActivatedService)
+            resolved_service = await services.get(AutoActivatedService)
 
             assert isinstance(resolved_service, AutoActivatedService)
             assert resolved_service is constructed_instances[0]
@@ -325,7 +305,7 @@ class TestServiceContainer:
         services = ServiceContainer()
         services.add_transient(Service1)
 
-        service_1 = await services.get_required_service(Service1)
+        service_1 = await services.get(Service1)
         assert isinstance(service_1, Service1)
 
         services.add_auto_activated_singleton(Service2)
@@ -343,7 +323,7 @@ class TestServiceContainer:
             assert isinstance(auto_activated_service, Service2)
             assert isinstance(auto_activated_service.service_1, Service1)
 
-            resolved_service = await services.get_required_service(Service2)
+            resolved_service = await services.get(Service2)
             assert resolved_service is auto_activated_service
 
     async def test_not_accumulate_pending_descriptors_before_initialization(
@@ -360,7 +340,7 @@ class TestServiceContainer:
         assert services.service_provider is None
         assert len(list(services)) == expected_descriptors
 
-        await services.get_required_service(ServiceWithDependencies)
+        await services.get(ServiceWithDependencies)
         assert services.service_provider is not None
         assert len(services.service_provider.pending_descriptors) == 0
         assert len(list(services)) == expected_descriptors
@@ -373,7 +353,7 @@ class TestServiceContainer:
         assert services.service_provider is None
         assert len(list(services)) == 1
 
-        await services.get_required_service(ServiceWithNoDependencies)
+        await services.get(ServiceWithNoDependencies)
         assert services.service_provider is not None
         assert len(services.service_provider.pending_descriptors) == 0
         assert len(list(services)) == 1
@@ -408,12 +388,12 @@ class TestServiceContainer:
             services.add_singleton(SingletonService)
 
             # First resolution
-            service1 = await services.get_required_service(SingletonService)
+            service1 = await services.get(SingletonService)
             assert isinstance(service1, SingletonService)
             assert len(constructed_instances) == 1
 
             # Second resolution should return the same instance
-            service2 = await services.get_required_service(SingletonService)
+            service2 = await services.get(SingletonService)
             assert service2 is service1
             assert len(constructed_instances) == 1
 
@@ -465,7 +445,7 @@ class TestServiceContainer:
             services.add_transient(DependentService)
 
             # Resolve and verify dependencies are injected
-            service = await services.get_required_service(DependentService)
+            service = await services.get(DependentService)
             assert isinstance(service, DependentService)
             assert isinstance(service.dependency, ServiceWithNoDependencies)
             assert len(constructed_instances) == 1
@@ -490,7 +470,7 @@ class TestServiceContainer:
             services.add_transient(FactoryService, service_factory)
 
             # Verify factory is called
-            service = await services.get_required_service(FactoryService)
+            service = await services.get(FactoryService)
             assert isinstance(service, FactoryService)
             assert factory_call_count[0] == 1
             assert len(constructed_instances) == 1
@@ -515,16 +495,16 @@ class TestServiceContainer:
         async with services:
             # Add services one by one
             services.add_singleton(Service1)
-            service1 = await services.get_required_service(Service1)
+            service1 = await services.get(Service1)
             assert isinstance(service1, Service1)
 
             services.add_singleton(Service2)
-            service2 = await services.get_required_service(Service2)
+            service2 = await services.get(Service2)
             assert isinstance(service2, Service2)
             assert isinstance(service2.service1, Service1)
 
             services.add_singleton(Service3)
-            service3 = await services.get_required_service(Service3)
+            service3 = await services.get(Service3)
             assert isinstance(service3, Service3)
             assert isinstance(service3.service2, Service2)
             assert isinstance(service3.service2.service1, Service1)
