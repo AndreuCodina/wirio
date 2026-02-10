@@ -1,5 +1,5 @@
 <div align="center">
-<img alt="Logo" src="https://raw.githubusercontent.com/AndreuCodina/wirio/refs/heads/main/docs/logo.png" width="522" height="348">
+<img alt="Logo" src="https://raw.githubusercontent.com/AndreuCodina/wirio/refs/heads/main/docs/logo.png" width="348" height="348">
 
 [![CI](https://img.shields.io/github/actions/workflow/status/AndreuCodina/wirio/main.yaml?branch=main&logo=github&label=CI)](https://github.com/AndreuCodina/wirio/actions/workflows/main.yaml)
 [![Coverage status](https://coveralls.io/repos/github/AndreuCodina/wirio/badge.svg?branch=main)](https://coveralls.io/github/AndreuCodina/wirio?branch=main)
