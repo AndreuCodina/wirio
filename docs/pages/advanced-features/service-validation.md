@@ -2,7 +2,7 @@
 
 ## Overview
 
-`Wirio` validates your service graph at startup and during resolution so that dependency issues fail fast instead of surfacing as runtime bugs. Validation is opt-in through the `ServiceCollection.build_service_provider(validate_scopes=True, validate_on_build=True)` switches, both enabled by default. Use them to:
+Wirio validates your service graph at startup and during resolution so that dependency issues fail fast instead of surfacing as runtime bugs. Validation is opt-in through the `ServiceCollection.build_service_provider(validate_scopes=True, validate_on_build=True)` switches, both enabled by default. Use them to:
 
 - Catch missing registrations (`CannotResolveServiceError`) before the first request.
 - Detect scoped services flowing into singletons (`ScopedInSingletonError`).
@@ -78,4 +78,4 @@ Attempting to resolve a scoped service (or something that depends on it) directl
 ## Putting it together
 
 - You can disable validations selectively when you prefer lazy validation or no validation for faster startup times.
-- Keeping both validation flags enabled in production—together with auto-activated services— provides the fastest feedback loop and guarantees that your container is consistent before accepting traffic.
+- Keeping both validation flags enabled in production—together with auto-activated services—provides the fastest feedback loop and guarantees that your container is consistent before accepting traffic.

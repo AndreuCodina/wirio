@@ -22,4 +22,4 @@ So, if we want a dependency injection library that works well with async code an
 
 ## Wirio's async-first design
 
-`Wirio` is designed to be async-first, meaning that it can handle both synchronous and asynchronous services seamlessly.
+Wirio is designed to be async-first, meaning that it can handle both synchronous and asynchronous services seamlessly.

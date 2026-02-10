@@ -1,7 +1,7 @@
 # Introduction
 
 <div align="center">
-<img alt="Logo" src="https://raw.githubusercontent.com/AndreuCodina/wirio/refs/heads/main/docs/logo.png" width="522" height="348">
+<img alt="Logo" src="https://raw.githubusercontent.com/AndreuCodina/wirio/refs/heads/main/docs/logo.png" width="450" height="450">
 </div>
 
 ## What is Dependency Injection
@@ -12,23 +12,23 @@
 
 - **Loose coupling**
 
-    Easily extend or change the functionality of a system by combining the components in a different way.
+  Easily extend or change the functionality of a system by combining the components in a different way.
 
 - **Improved testability**
 
-    Dependencies can be replaced with mocks, stubs, or simple test doubles, enabling fast and isolated unit tests.
+  Dependencies can be replaced with mocks, stubs, or simple test doubles, enabling fast and isolated unit tests.
 
 - **Better maintainability**
 
-    Object creation, configuration, and business logic are clearly separated, making the codebase easier to understand and evolve.
+  Object creation, configuration, and business logic are clearly separated, making the codebase easier to understand and evolve.
 
 - **Controlled variability**
 
-    Different behaviors can be provided at runtime (for example, real vs. fake dependencies) without modifying the consuming code.
+  Different behaviors can be provided at runtime (for example, real vs. fake dependencies) without modifying the consuming code.
 
 - **Centralized wiring**
 
-    Object creation and dependency wiring live in one place (the composition root), keeping domain and application logic clean.
+  Object creation and dependency wiring live in one place (the composition root), keeping domain and application logic clean.
 
 In short, DI does not magically decouple behavior, but it **decouples construction**, which already brings significant practical benefits in Python.
 

@@ -133,6 +133,9 @@ class CallSiteFactory(ServiceProviderIsKeyedService, ServiceProviderIsService):
         AsyncConcurrentDictionary[ServiceIdentifier, AsyncioReentrantLock]
     ]
     _service_overrides: Final[dict[ServiceIdentifier, list[object | None]]]
+    _service_type_to_cache_keys: Final[dict[TypedType, set[ServiceCacheKey]]]
+    _dirty_service_types: Final[set[TypedType]]
+    _service_type_invalidation_lock: Final[AsyncioReentrantLock]
 
     def __init__(self, descriptors: list["ServiceDescriptor"]) -> None:
         self._descriptors = descriptors.copy()
@@ -144,7 +147,10 @@ class CallSiteFactory(ServiceProviderIsKeyedService, ServiceProviderIsService):
             ServiceIdentifier, AsyncioReentrantLock
         ]()
         self._service_overrides = {}
-        self._populate()
+        self._service_type_to_cache_keys = {}
+        self._dirty_service_types = set()
+        self._service_type_invalidation_lock = AsyncioReentrantLock()
+        self._populate(self._descriptors)
 
     @override
     def is_service(self, service_type: type) -> bool:
@@ -165,12 +171,15 @@ class CallSiteFactory(ServiceProviderIsKeyedService, ServiceProviderIsService):
     async def get_call_site_from_service_identifier(
         self, service_identifier: ServiceIdentifier, call_site_chain: CallSiteChain
     ) -> ServiceCallSite | None:
+        await self._invalidate_service_type_if_needed(service_identifier.service_type)
         overridden_call_site = self.get_overridden_call_site(service_identifier)
 
         if overridden_call_site is not None:
             return overridden_call_site
 
-        service_cache_key = ServiceCacheKey(service_identifier, self._DEFAULT_SLOT)
+        service_cache_key = self._create_service_cache_key(
+            service_identifier, self._DEFAULT_SLOT
+        )
         service_call_site = self._call_site_cache.get(service_cache_key)
 
         if service_call_site is None:
@@ -183,6 +192,7 @@ class CallSiteFactory(ServiceProviderIsKeyedService, ServiceProviderIsService):
     async def get_call_site_from_service_descriptor(
         self, service_descriptor: ServiceDescriptor, call_site_chain: CallSiteChain
     ) -> ServiceCallSite | None:
+        await self._invalidate_service_type_if_needed(service_descriptor.service_type)
         service_identifier = ServiceIdentifier.from_descriptor(service_descriptor)
         service_descriptor_cache_item = self._descriptor_lookup.get(service_identifier)
 
@@ -199,8 +209,11 @@ class CallSiteFactory(ServiceProviderIsKeyedService, ServiceProviderIsService):
     async def add(
         self, service_identifier: ServiceIdentifier, service_call_site: ServiceCallSite
     ) -> None:
-        cache_key = ServiceCacheKey(service_identifier, self._DEFAULT_SLOT)
+        cache_key = self._create_service_cache_key(
+            service_identifier, self._DEFAULT_SLOT
+        )
         await self._call_site_cache.upsert(key=cache_key, value=service_call_site)
+        self._track_cache_key(service_identifier.service_type, cache_key)
 
     @contextmanager
     def override_service(
@@ -229,6 +242,40 @@ class CallSiteFactory(ServiceProviderIsKeyedService, ServiceProviderIsService):
             service_key=service_identifier.service_key,
         )
 
+    def add_descriptor(self, descriptor: ServiceDescriptor) -> None:
+        self._descriptors.append(descriptor)
+        self._populate([descriptor])
+        self.mark_service_type_dirty(descriptor.service_type)
+
+    def mark_service_type_dirty(self, service_type: TypedType) -> None:
+        self._dirty_service_types.add(service_type)
+
+    async def _invalidate_service_type_if_needed(self, service_type: TypedType) -> None:
+        if service_type not in self._dirty_service_types:
+            return
+
+        async with self._service_type_invalidation_lock:
+            if service_type not in self._dirty_service_types:
+                return
+
+            cache_keys = self._service_type_to_cache_keys.pop(service_type, set())
+
+            for cache_key in cache_keys:
+                await self._call_site_cache.try_remove(cache_key)
+
+            self._dirty_service_types.remove(service_type)
+
+    def _create_service_cache_key(
+        self, service_identifier: ServiceIdentifier, slot: int
+    ) -> ServiceCacheKey:
+        return ServiceCacheKey(service_identifier, slot)
+
+    def _track_cache_key(
+        self, service_type: TypedType, cache_key: ServiceCacheKey
+    ) -> None:
+        cache_keys = self._service_type_to_cache_keys.setdefault(service_type, set())
+        cache_keys.add(cache_key)
+
     async def _create_call_site(
         self, service_identifier: ServiceIdentifier, call_site_chain: CallSiteChain
     ) -> ServiceCallSite | None:
@@ -255,8 +302,8 @@ class CallSiteFactory(ServiceProviderIsKeyedService, ServiceProviderIsService):
                 service_identifier, call_site_chain
             )
 
-    def _populate(self) -> None:
-        for descriptor in self._descriptors:
+    def _populate(self, descriptors: list[ServiceDescriptor]) -> None:
+        for descriptor in descriptors:
             cache_key = ServiceIdentifier.from_descriptor(descriptor)
             cache_item = self._descriptor_lookup.get(
                 cache_key, _ServiceDescriptorCacheItem()
@@ -327,14 +374,16 @@ class CallSiteFactory(ServiceProviderIsKeyedService, ServiceProviderIsService):
         call_site_chain: CallSiteChain,
         slot: int,
     ) -> ServiceCallSite:
-        call_site_key = ServiceCacheKey(service_identifier, slot)
+        call_site_key = self._create_service_cache_key(service_identifier, slot)
         service_call_site = self._call_site_cache.get(call_site_key)
 
         if service_call_site is not None:
             return service_call_site
 
         cache = ResultCache.from_lifetime(
-            service_descriptor.lifetime, service_identifier, slot
+            service_descriptor.lifetime,
+            service_identifier,
+            slot,
         )
 
         if service_descriptor.has_implementation_instance():
@@ -394,6 +443,7 @@ class CallSiteFactory(ServiceProviderIsKeyedService, ServiceProviderIsService):
             raise InvalidServiceDescriptorError
 
         await self._call_site_cache.upsert(key=call_site_key, value=service_call_site)
+        self._track_cache_key(service_identifier.service_type, call_site_key)
         return service_call_site
 
     def _get_service_override(

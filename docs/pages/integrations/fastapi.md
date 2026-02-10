@@ -2,7 +2,7 @@
 
 ## Installation
 
-While we can install `Wirio` with `uv add wirio`, it's recommended to add the `fastapi` extra to ensure the installed FastAPI version is compatible.
+While we can install Wirio with `uv add wirio`, it's recommended to add the `fastapi` extra to ensure the installed FastAPI version is compatible.
 
 ```bash
 uv add wirio[fastapi]

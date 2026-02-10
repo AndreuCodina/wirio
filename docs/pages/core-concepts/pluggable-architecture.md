@@ -2,7 +2,7 @@
 
 ## Overview
 
-`Wirio` follows the same extension-friendly design that ASP.NET Core popularized. Rather than hiding registrations behind a monolithic container, the library exposes the `ServiceCollection` and encourages features to be layered through small, self-contained modules. This lets applications opt into only the capabilities they need while keeping configurations declarative and easy to reason about.
+Wirio follows the same extension-friendly design that ASP.NET Core popularized. Rather than hiding registrations behind a monolithic container, the library exposes the `ServiceCollection` and encourages features to be layered through small, self-contained modules. This lets applications opt into only the capabilities they need while keeping configurations declarative and easy to reason about.
 
 ## ServiceCollection as the Composition Root
 
@@ -92,7 +92,7 @@ add_sqlmodel(services)
 
 ## Why not a Container subclass?
 
-Other libraries embrace a container-class API: we extend a `Container`, override methods, or mutate attributes to register services. That style works, but it comes with trade-offs that `Wirio` intentionally avoids:
+Other libraries embrace a container-class API: we extend a `Container`, override methods, or mutate attributes to register services. That style works, but it comes with trade-offs that Wirio intentionally avoids:
 
 - **Interoperability:** Both approaches technically work across frameworks, but the collection style keeps things primitive (just create an instance and start registering). Container subclasses introduce class-level state, overridden hooks, and metaclass magic that become friction points when we try to share the same container between, say, a CLI bootstrapper and an async worker, or application code and test cases.
 - **Composability:** Collection-first helpers (`add_logging`, `add_sqlmodel`, etc.) compose like ordinary functions. Container subclasses tend to accumulate registration logic across inheritance hierarchies, making it harder to cherry-pick modules or share them between apps.

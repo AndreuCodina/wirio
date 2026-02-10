@@ -126,13 +126,6 @@ class NoKeyedSingletonServiceRegisteredError(WirioError):
 
 
 @final
-class ServiceProviderNotFullyInitializedError(WirioError):
-    def __init__(self, method_name: str) -> None:
-        message = f"The service provider must be fully initialized before calling '{method_name}'. Use 'async with' or '__aenter__'"
-        super().__init__(message)
-
-
-@final
 class ServiceDescriptorDoesNotExistError(WirioError):
     """The exception that is thrown when a requested service descriptor doesn't exist."""
 
@@ -175,4 +168,13 @@ class ScopedResolvedFromRootError(WirioError):
         scoped_service_type: TypedType,
     ) -> None:
         message = f"Cannot resolve '{service_type}' from root provider because it requires scoped service '{scoped_service_type}'"
+        super().__init__(message)
+
+
+@final
+class ServiceContainerNotBuiltError(WirioError):
+    """The exception that is thrown when trying to modify the ServiceContainer before it has been built."""
+
+    def __init__(self) -> None:
+        message = "Operation not allowed before building the ServiceContainer"
         super().__init__(message)

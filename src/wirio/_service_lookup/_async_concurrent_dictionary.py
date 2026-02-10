@@ -32,3 +32,7 @@ class AsyncConcurrentDictionary[TKey, TValue]:
     async def upsert(self, key: TKey, value: TValue) -> None:
         async with self._lock:
             self._dict[key] = value
+
+    async def try_remove(self, key: TKey) -> None:
+        async with self._lock:
+            self._dict.pop(key, None)

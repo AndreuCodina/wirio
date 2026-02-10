@@ -1413,7 +1413,22 @@ class TestServiceCollection:
             assert isinstance(resolved_service, ServiceWithKeyedDependency)
             assert isinstance(resolved_service.dependency, ServiceWithNoDependencies)
 
-    async def test_resolve_latest_registered_service(
+    async def test_resolve_latest_registered_service_using_implementation_instance(
+        self,
+    ) -> None:
+        service_instance_1 = ServiceWithNoDependencies()
+        service_instance_2 = ServiceWithNoDependencies()
+        services = ServiceCollection()
+        services.add_singleton(ServiceWithNoDependencies, service_instance_1)
+        services.add_singleton(ServiceWithNoDependencies, service_instance_2)
+
+        async with services.build_service_provider() as service_provider:
+            resolved_service = await service_provider.get_required_service(
+                ServiceWithNoDependencies
+            )
+            assert resolved_service is service_instance_2
+
+    async def test_resolve_latest_registered_service_using_implementation_factory(
         self,
     ) -> None:
         expected_field = "Yes"

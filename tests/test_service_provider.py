@@ -12,7 +12,6 @@ from wirio.exceptions import (
     ObjectDisposedError,
     ScopedInSingletonError,
     ScopedResolvedFromRootError,
-    ServiceProviderNotFullyInitializedError,
 )
 from wirio.service_collection import ServiceCollection
 
@@ -375,19 +374,6 @@ class TestServiceProvider:
         assert service_provider.is_fully_initialized
         await service_provider.aclose()
 
-    async def test_fail_when_calling_some_methods_before_fully_initialized(
-        self,
-    ) -> None:
-        services = ServiceCollection()
-        services.add_transient(ServiceWithNoDependencies)
-
-        service_provider = services.build_service_provider()
-
-        assert not service_provider.is_fully_initialized
-
-        with pytest.raises(ServiceProviderNotFullyInitializedError):
-            service_provider.create_scope()
-
     async def test_service_provider_fully_initialized_when_called_with_context_manager(
         self,
     ) -> None:
@@ -552,3 +538,30 @@ class TestServiceProvider:
 
         with pytest.raises(ObjectDisposedError):
             await service_provider.get_required_keyed_service(service_key, KeyedService)
+
+    async def test_override_not_initialized_service_provider(self) -> None:
+        services = ServiceCollection()
+        services.add_transient(ServiceWithNoDependencies)
+
+        service_provider = services.build_service_provider()
+
+        with service_provider.override_service(
+            ServiceWithNoDependencies, ServiceWithNoDependencies()
+        ):
+            resolved_service = await service_provider.get_required_service(
+                ServiceWithNoDependencies
+            )
+
+            assert isinstance(resolved_service, ServiceWithNoDependencies)
+
+    async def test_fail_when_creating_scope_after_disposal(self) -> None:
+        services = ServiceCollection()
+        services.add_transient(ServiceWithNoDependencies)
+
+        async with services.build_service_provider() as service_provider:
+            await service_provider.get_required_service(ServiceWithNoDependencies)
+
+        assert service_provider.is_disposed
+
+        with pytest.raises(ObjectDisposedError):
+            service_provider.create_scope()
