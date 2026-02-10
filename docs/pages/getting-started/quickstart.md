@@ -72,13 +72,13 @@ Finally, we convert the service collection into a service provider, which will v
 
 === "FastAPI"
 
-    ```python
+    ```python hl_lines="26 31-34"
     --8<-- "docs/code/getting_started/quickstart/fastapi_full_code.py"
     ```
 
 === "Console application"
 
-    ```python
+    ```python hl_lines="17-19 21-22"
     import asyncio
 
     from wirio.service_collection import ServiceCollection
@@ -108,7 +108,7 @@ Finally, we convert the service collection into a service provider, which will v
 
 === "Jupyter notebook"
 
-    ```python
+    ```python hl_lines="3-4"
     from main import services
 
     service_provider = services.build_service_provider()
