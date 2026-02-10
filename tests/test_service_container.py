@@ -422,7 +422,7 @@ class TestServiceContainer:
                 assert service1_again is service1
                 assert len(constructed_instances) == 1
 
-            # Create second scope. It should get different instance
+            # Create second scope. It should get a different instance
             async with services.create_scope() as scope2:
                 service2 = await scope2.get_required_service(ScopedService)
                 assert isinstance(service2, ScopedService)
