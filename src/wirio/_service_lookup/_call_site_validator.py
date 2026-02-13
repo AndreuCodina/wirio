@@ -6,6 +6,7 @@ from wirio._service_lookup._async_factory_call_site import AsyncFactoryCallSite
 from wirio._service_lookup._call_site_visitor import CallSiteVisitor
 from wirio._service_lookup._constant_call_site import ConstantCallSite
 from wirio._service_lookup._constructor_call_site import ConstructorCallSite
+from wirio._service_lookup._sequence_call_site import SequenceCallSite
 from wirio._service_lookup._service_call_site import ServiceCallSite
 from wirio._service_lookup._service_provider_call_site import ServiceProviderCallSite
 from wirio._service_lookup._sync_factory_call_site import SyncFactoryCallSite
@@ -124,6 +125,20 @@ class CallSiteValidator(CallSiteVisitor[_CallSiteValidatorState, TypedType | Non
         argument: _CallSiteValidatorState,
     ) -> TypedType | None:
         return None
+
+    @override
+    async def _visit_sequence(
+        self, sequence_call_site: SequenceCallSite, argument: _CallSiteValidatorState
+    ) -> TypedType | None:
+        result: TypedType | None = None
+
+        for service_call_site in sequence_call_site.service_call_sites:
+            scoped = await self._visit_call_site(service_call_site, argument)
+
+            if result is None:
+                result = scoped
+
+        return result
 
     @override
     def _visit_service_provider(

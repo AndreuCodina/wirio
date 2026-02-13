@@ -101,34 +101,6 @@ class ServiceProviderEngineScope(BaseServiceProvider, ServiceScope):
             service_provider_engine_scope=self,
         )
 
-    async def get_service[TService](
-        self, service_type: type[TService]
-    ) -> TService | None:
-        """Get service of type `TService` or return `None`."""
-        return await super().get_service(service_type)
-
-    async def get_required_service[TService](
-        self, service_type: type[TService]
-    ) -> TService:
-        """Get service of type `TService` or raise :class:`NoServiceRegisteredError`."""
-        return await super().get_required_service(service_type)
-
-    async def get_keyed_service[TService](
-        self, service_key: object | None, service_type: type[TService]
-    ) -> TService | None:
-        """Get service of type `TService` or return `None`."""
-        return await super().get_keyed_service(
-            service_key=service_key, service_type=service_type
-        )
-
-    async def get_required_keyed_service[TService](
-        self, service_key: object | None, service_type: type[TService]
-    ) -> TService:
-        """Get service of type `TService` or raise an error."""
-        return await super().get_required_keyed_service(
-            service_key=service_key, service_type=service_type
-        )
-
     async def capture_disposable(self, service: object | None) -> object | None:
         if service is self or not (
             isinstance(service, (SupportsAsyncContextManager, SupportsContextManager))

@@ -17,11 +17,11 @@ class TypedType(Hashable):
         type_: Any,  # noqa: ANN401
     ) -> None:
         origin = typing.get_origin(type_)
-        has_no_generics = origin is None
+        has_generics = origin is not None
 
-        if has_no_generics:
+        if not has_generics:
             self._origin = type_
-            self._args = typing.get_args(type_)
+            self._args = ()
             return
 
         self._origin = origin
@@ -41,6 +41,11 @@ class TypedType(Hashable):
 
         return cls(instance_type)
 
+    @property
+    def is_generic_type(self) -> bool:
+        """Get a value indicating whether the current type is a generic type."""
+        return len(self._args) > 0
+
     def to_type(self) -> type:
         return self._origin
 
@@ -58,6 +63,18 @@ class TypedType(Hashable):
             return self._origin(*parameter_values)
 
         return self._origin[*self._args](*parameter_values)  # pyright: ignore[reportIndexIssue, reportUnknownVariableType]
+
+    def get_generic_type_definition(self) -> "TypedType":
+        """Return a `TypedType` object that represents a generic type definition from which the current generic type can be constructed."""
+        if not self.is_generic_type:
+            error_message = "The current type is not a constructed generic type"
+            raise RuntimeError(error_message)
+
+        return TypedType(self._origin)
+
+    def generic_type_arguments(self) -> list["TypedType"]:
+        """Get an list of the generic type arguments for this type."""
+        return [TypedType(argument) for argument in self._args]
 
     def _create_representation(
         self,

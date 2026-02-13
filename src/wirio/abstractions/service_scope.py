@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from contextlib import AbstractAsyncContextManager
 
 from wirio.abstractions.base_service_provider import (
@@ -44,4 +45,18 @@ class ServiceScope(AbstractAsyncContextManager["ServiceScope"], ABC):
         self, service_key: object | None, service_type: type[TService]
     ) -> TService:
         """Get service of type `TService` or raise an error."""
+        ...
+
+    @abstractmethod
+    async def get_services[TService](
+        self, service_type: type[TService]
+    ) -> Sequence[TService]:
+        """Get all services of type `TService`."""
+        ...
+
+    @abstractmethod
+    async def get_keyed_services[TService](
+        self, service_key: object | None, service_type: type[TService]
+    ) -> Sequence[TService]:
+        """Get all services of type `TService`."""
         ...

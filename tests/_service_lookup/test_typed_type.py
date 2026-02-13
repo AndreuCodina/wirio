@@ -2,6 +2,7 @@ import sys
 
 import pytest
 
+from tests.utils.services import ServiceWithNoDependencies
 from wirio._service_lookup._typed_type import TypedType
 
 
@@ -14,6 +15,10 @@ class CustomClassWithGeneric1[T]:
 
 
 class CustomClassWithGeneric2[T]:
+    pass
+
+
+class CustomClassWithGeneric3[T]:
     pass
 
 
@@ -30,6 +35,10 @@ class CustomClassWithOptionalGeneric1[T = None]:
 
 
 class CustomClassWithOptionalGeneric2[T = None]:
+    pass
+
+
+class CustomClassWithGenericAndOptionalGeneric1[T1, T2 = None]:
     pass
 
 
@@ -192,3 +201,54 @@ class TestTypedType:
             match="The instance does not retain type hint information because it has no generics",
         ):
             TypedType.from_instance(type_())
+
+    @pytest.mark.parametrize(
+        argnames=("type_", "is_generic"),
+        argvalues=[
+            (int, False),
+            (list[int], True),
+            (ServiceWithNoDependencies, False),
+            (CustomClassWithGeneric3, False),
+            (CustomClassWithGeneric1[int], True),
+            (CustomClassWithGenerics2[int, str], True),
+            (CustomClassWithOptionalGeneric1[list[int]], True),
+            (CustomClassWithOptionalGeneric2, False),
+            (CustomClassWithGenericAndOptionalGeneric1[int], True),
+        ],
+    )
+    def test_return_if_type_is_generic(self, type_: type, is_generic: bool) -> None:
+        typed_type = TypedType.from_type(type_)
+
+        assert typed_type.is_generic_type == is_generic
+
+    def test_return_generic_type_definition(self) -> None:
+        typed_type = TypedType.from_type(CustomClassWithGenerics2[int, str])
+
+        generic_type = typed_type.get_generic_type_definition()
+
+        assert generic_type == TypedType.from_type(CustomClassWithGenerics2)
+
+    def test_fail_getting_generic_type_definition_when_type_has_no_generics(
+        self,
+    ) -> None:
+        typed_type = TypedType.from_type(int)
+
+        with pytest.raises(RuntimeError):
+            typed_type.get_generic_type_definition()
+
+    def test_get_generic_type_arguments(self) -> None:
+        typed_type = TypedType.from_type(CustomClassWithGenerics1[int, str])
+
+        arguments = typed_type.generic_type_arguments()
+
+        assert arguments == [
+            TypedType.from_type(int),
+            TypedType.from_type(str),
+        ]
+
+    def test_not_get_generic_type_arguments_when_type_has_no_generics_specified(
+        self,
+    ) -> None:
+        typed_type = TypedType.from_type(CustomClassWithGenerics1)
+
+        assert typed_type.generic_type_arguments() == []

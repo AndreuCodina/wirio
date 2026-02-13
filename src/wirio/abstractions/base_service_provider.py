@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from typing import cast
 
 from wirio._service_lookup._typed_type import TypedType
@@ -84,3 +85,18 @@ class BaseServiceProvider(KeyedServiceProvider, ServiceScopeFactory, ABC):
             )
 
         return service
+
+    async def get_services[TService](
+        self, service_type: type[TService]
+    ) -> Sequence[TService]:
+        """Get all services of type `TService`."""
+        return await self.get_required_service(Sequence[service_type])  # ty: ignore[invalid-type-form]
+
+    async def get_keyed_services[TService](
+        self, service_key: object | None, service_type: type[TService]
+    ) -> Sequence[TService]:
+        """Get all services of type `TService`."""
+        return await self.get_required_keyed_service(
+            service_key,
+            Sequence[service_type],  # ty: ignore[invalid-type-form]
+        )

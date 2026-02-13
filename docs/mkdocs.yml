@@ -71,11 +71,11 @@ nav:
       - Interfaces & abstract classes: advanced-features/interfaces-and-abstract-classes.md
       - Keyed services: advanced-features/keyed-services.md
       - Auto-activated services: advanced-features/auto-activated-services.md
+      - Get all services of a type: advanced-features/get-all-services-of-a-type.md
       - Service validation: advanced-features/service-validation.md
   - Integrations:
       - FastAPI: integrations/fastapi.md
   - API reference:
-      - ServiceContainer: api-reference/service-container.md
       - ServiceCollection: api-reference/service-collection.md
       - ServiceScope: api-reference/service-scope.md
       - KeyedService: api-reference/keyed-service.md
@@ -83,6 +83,7 @@ nav:
       - ServiceScopeFactory: api-reference/service-scope-factory.md
       - ServiceProviderIsService: api-reference/service-provider-is-service.md
       - ServiceProviderIsKeyedService: api-reference/service-provider-is-keyed-service.md
+      - ServiceContainer: api-reference/service-container.md
       - Exceptions: api-reference/exceptions.md
   - Other:
       - Changelogs: other/changelogs.md

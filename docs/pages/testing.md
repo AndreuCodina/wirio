@@ -22,7 +22,7 @@ We have to use the service provider to resolve the services we want to test. The
 
 === "Console application"
 
-    We have to import the services from `main.py`. To do that, you can create the function `configure_services` (or move the `services` variable outside the `main` function).
+    We have to import the services from `main.py`. To do that, we can create the function `configure_services` (or move the `services` variable outside the `main` function).
 
     ```python
     def configure_services() -> ServiceCollection:

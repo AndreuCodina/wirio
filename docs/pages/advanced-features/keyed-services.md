@@ -10,7 +10,7 @@ We have two implementations of `NotificationService`: one that sends emails and 
 
 We can use `add_keyed_transient`, `add_keyed_scoped`, or `add_keyed_singleton` to bind an implementation to a specific key.
 
-```python hl_lines="31 32"
+```python hl_lines="22 31-32"
 class NotificationService(ABC):
     @abstractmethod
     async def send_notification(self, recipient: str, message: str) -> None:

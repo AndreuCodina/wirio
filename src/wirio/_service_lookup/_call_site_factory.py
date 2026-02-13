@@ -1,4 +1,4 @@
-from collections.abc import Generator
+from collections.abc import Generator, Iterator, Sequence
 from contextlib import contextmanager, suppress
 from dataclasses import dataclass
 from typing import ClassVar, Final, final, override
@@ -24,6 +24,7 @@ from wirio._service_lookup._parameter_information import (
     ParameterInformation,
 )
 from wirio._service_lookup._result_cache import ResultCache
+from wirio._service_lookup._sequence_call_site import SequenceCallSite
 from wirio._service_lookup._service_call_site import (
     ServiceCallSite,
 )
@@ -34,6 +35,9 @@ from wirio._service_lookup._sync_factory_call_site import (
     SyncFactoryCallSite,
 )
 from wirio._service_lookup._typed_type import TypedType
+from wirio._service_lookup.call_site_result_cache_location import (
+    CallSiteResultCacheLocation,
+)
 from wirio._service_lookup.service_cache_key import ServiceCacheKey
 from wirio.abstractions.base_service_provider import BaseServiceProvider
 from wirio.abstractions.keyed_service import KeyedService
@@ -63,7 +67,7 @@ from wirio.service_descriptor import ServiceDescriptor
 
 
 @final
-class _ServiceDescriptorCacheItem:
+class ServiceDescriptorCacheItem:
     _item: ServiceDescriptor | None
     _items: list[ServiceDescriptor] | None
 
@@ -79,8 +83,8 @@ class _ServiceDescriptorCacheItem:
         assert self._item is not None
         return self._item
 
-    def add(self, descriptor: ServiceDescriptor) -> "_ServiceDescriptorCacheItem":
-        new_cache_item = _ServiceDescriptorCacheItem()
+    def add(self, descriptor: ServiceDescriptor) -> "ServiceDescriptorCacheItem":
+        new_cache_item = ServiceDescriptorCacheItem()
 
         if self._item is None:
             new_cache_item._item = descriptor
@@ -114,6 +118,17 @@ class _ServiceDescriptorCacheItem:
 
         raise ServiceDescriptorDoesNotExistError
 
+    def __iter__(self) -> Iterator[ServiceDescriptor]:
+        if self._item is None:
+            return iter([])
+
+        if self._items is None:
+            return iter([self._item])
+
+        items: list[ServiceDescriptor] = [self._item]
+        items.extend(self._items)
+        return iter(items)
+
 
 @final
 @dataclass(frozen=True)
@@ -127,7 +142,7 @@ class CallSiteFactory(ServiceProviderIsKeyedService, ServiceProviderIsService):
     _DEFAULT_SLOT: ClassVar[int] = 0
 
     _descriptors: Final[list[ServiceDescriptor]]
-    _descriptor_lookup: Final[dict[ServiceIdentifier, _ServiceDescriptorCacheItem]]
+    _descriptor_lookup: Final[dict[ServiceIdentifier, ServiceDescriptorCacheItem]]
     _call_site_cache: Final[AsyncConcurrentDictionary[ServiceCacheKey, ServiceCallSite]]
     _call_site_locks: Final[
         AsyncConcurrentDictionary[ServiceIdentifier, AsyncioReentrantLock]
@@ -250,6 +265,175 @@ class CallSiteFactory(ServiceProviderIsKeyedService, ServiceProviderIsService):
     def mark_service_type_dirty(self, service_type: TypedType) -> None:
         self._dirty_service_types.add(service_type)
 
+    async def try_create_sequence(  # noqa: C901, PLR0915
+        self, service_identifier: ServiceIdentifier, call_site_chain: CallSiteChain
+    ) -> ServiceCallSite | None:
+        call_site_key = ServiceCacheKey(service_identifier, slot=self._DEFAULT_SLOT)
+
+        if (service_call_site := self._call_site_cache.get(call_site_key)) is not None:
+            return service_call_site
+
+        try:
+            call_site_chain.add(service_identifier)
+            service_type = service_identifier.service_type
+
+            if (
+                not service_type.is_generic_type
+                or service_type.get_generic_type_definition()
+                != TypedType.from_type(Sequence)
+            ):
+                return None
+
+            item_type = service_type.generic_type_arguments()[0]
+            cache_key = ServiceIdentifier.from_service_type(
+                service_type=item_type, service_key=service_identifier.service_key
+            )
+
+            cache_location = CallSiteResultCacheLocation.ROOT
+            service_call_sites: list[ServiceCallSite] = []
+            is_any_key_lookup = service_identifier.service_key == KeyedService.ANY_KEY
+
+            # If `item_type` is not generic we can safely use descriptor cache
+            # Special case for `KeyedService.ANY_KEY`, we don't want to check the cache because a `KeyedService.ANY_KEY` registration
+            # will "hide" all the other service registration
+            if (
+                not item_type.is_generic_type
+                and not is_any_key_lookup
+                and (service_descriptors := self._descriptor_lookup.get(cache_key))
+                is not None
+            ):
+                # Last service will get slot 0
+                slot = len(service_descriptors)
+
+                for service_descriptor in service_descriptors:
+                    # There are no open generics here, so we only need to call `_create_exact`
+                    slot -= 1
+                    service_call_site = await self._create_exact(
+                        service_descriptor=service_descriptor,
+                        service_identifier=cache_key,
+                        call_site_chain=call_site_chain,
+                        slot=slot,
+                    )
+                    cache_location = self._get_common_cache_location(
+                        cache_location, service_call_site.cache.location
+                    )
+                    service_call_sites.append(service_call_site)
+            else:
+                # We need to construct a list of matching call sites in declaration order, but to ensure
+                # correct caching we must assign slots in reverse declaration order and with slots being
+                # given out first to any exact matches before any open generic matches. Therefore, we
+                # iterate over the descriptors twice in reverse, catching exact matches on the first pass
+                # and open generic matches on the second pass.
+
+                service_call_sites_by_index: list[tuple[int, ServiceCallSite]] = []
+                keyed_slot_assignment: dict[ServiceIdentifier, int] | None = None
+                slot = 0
+
+                def keys_match(
+                    lookup_key: object | None, descriptor_key: object | None
+                ) -> bool:
+                    if lookup_key is None and descriptor_key is None:
+                        # Both are non keyed services
+                        return True
+
+                    if lookup_key is not None and descriptor_key is not None:
+                        # Both are keyed services
+
+                        # We don't want to return `ANY_KEY` registration, so ignore it
+                        if descriptor_key is KeyedService.ANY_KEY:
+                            return False
+
+                        # Check if both keys are equal, or if the lookup key
+                        # should matches all keys (except `ANY_KEY`)
+                        return (
+                            lookup_key == descriptor_key
+                            or lookup_key is KeyedService.ANY_KEY
+                        )
+
+                    # One is a keyed service, one is not
+                    return False
+
+                def get_slot(key: ServiceIdentifier) -> int:
+                    if not is_any_key_lookup:
+                        return slot
+
+                    # Each unique key (including its service type) maintains its own slot counter for ordering and identity
+
+                    nonlocal keyed_slot_assignment
+
+                    if keyed_slot_assignment is None:
+                        keyed_slot_assignment = {key: 0}
+                        return 0
+
+                    if (existing_slot := keyed_slot_assignment.get(key)) is not None:
+                        return existing_slot
+
+                    keyed_slot_assignment[key] = 0
+                    return 0
+
+                def add_service_call_site(
+                    service_call_site: ServiceCallSite, index: int
+                ) -> None:
+                    nonlocal cache_location
+                    cache_location = self._get_common_cache_location(
+                        cache_location, service_call_site.cache.location
+                    )
+                    service_call_sites_by_index.append((index, service_call_site))
+
+                def update_slot(key: ServiceIdentifier) -> None:
+                    if not is_any_key_lookup:
+                        nonlocal slot
+                        slot += 1
+                    else:
+                        assert keyed_slot_assignment is not None
+                        keyed_slot_assignment[key] = slot + 1
+
+                # Do the exact matches first
+                for i, service_descriptor in reversed(
+                    list(enumerate(self._descriptors))
+                ):
+                    if keys_match(
+                        cache_key.service_key, service_descriptor.service_key
+                    ) and self._should_create_exact(
+                        service_descriptor.service_type, cache_key.service_type
+                    ):
+                        # For `ANY_KEY`, we want to cache based on descriptor identity, not `ANY_KEY` that cacheKey has
+                        registration_key = (
+                            service_identifier.from_descriptor(service_descriptor)
+                            if is_any_key_lookup
+                            else cache_key
+                        )
+                        slot = get_slot(registration_key)
+                        service_call_site = await self._create_exact(
+                            service_descriptor=service_descriptor,
+                            service_identifier=registration_key,
+                            call_site_chain=call_site_chain,
+                            slot=slot,
+                        )
+                        add_service_call_site(service_call_site, i)
+                        update_slot(registration_key)
+
+                service_call_sites_by_index.sort(key=lambda x: x[0])
+                service_call_sites = [x[1] for x in service_call_sites_by_index]
+
+            result_cache = (
+                ResultCache(cache_location, call_site_key)
+                if cache_location is CallSiteResultCacheLocation.SCOPE
+                or cache_location is CallSiteResultCacheLocation.ROOT
+                else ResultCache(CallSiteResultCacheLocation.NONE, call_site_key)
+            )
+            sequence_call_site = SequenceCallSite(
+                result_cache=result_cache,
+                item_type=item_type,
+                service_call_sites=service_call_sites,
+                service_key=service_identifier.service_key,
+            )
+            await self._call_site_cache.upsert(call_site_key, sequence_call_site)
+            return sequence_call_site
+
+        finally:
+            call_site_chain.remove(service_identifier)
+
     async def _invalidate_service_type_if_needed(self, service_type: TypedType) -> None:
         if service_type not in self._dirty_service_types:
             return
@@ -298,15 +482,22 @@ class CallSiteFactory(ServiceProviderIsKeyedService, ServiceProviderIsService):
         call_site_chain.check_circular_dependency(service_identifier)
 
         async with call_site_lock:
-            return await self._try_create_exact_from_service_identifier(
+            service_call_site = await self._try_create_exact_from_service_identifier(
                 service_identifier, call_site_chain
             )
+
+            if service_call_site is None:
+                service_call_site = await self.try_create_sequence(
+                    service_identifier, call_site_chain
+                )
+
+            return service_call_site
 
     def _populate(self, descriptors: list[ServiceDescriptor]) -> None:
         for descriptor in descriptors:
             cache_key = ServiceIdentifier.from_descriptor(descriptor)
             cache_item = self._descriptor_lookup.get(
-                cache_key, _ServiceDescriptorCacheItem()
+                cache_key, ServiceDescriptorCacheItem()
             )
             self._descriptor_lookup[cache_key] = cache_item.add(descriptor)
 
@@ -381,9 +572,7 @@ class CallSiteFactory(ServiceProviderIsKeyedService, ServiceProviderIsService):
             return service_call_site
 
         cache = ResultCache.from_lifetime(
-            service_descriptor.lifetime,
-            service_identifier,
-            slot,
+            service_descriptor.lifetime, service_identifier, slot
         )
 
         if service_descriptor.has_implementation_instance():
@@ -633,3 +822,10 @@ class CallSiteFactory(ServiceProviderIsKeyedService, ServiceProviderIsService):
             or service_type == TypedType.from_type(ServiceProviderIsService)
             or service_type == TypedType.from_type(ServiceProviderIsKeyedService)
         )
+
+    def _get_common_cache_location(
+        self,
+        location_1: CallSiteResultCacheLocation,
+        location_2: CallSiteResultCacheLocation,
+    ) -> CallSiteResultCacheLocation:
+        return CallSiteResultCacheLocation(max(location_1.value, location_2.value))
