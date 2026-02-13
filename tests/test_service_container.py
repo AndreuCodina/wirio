@@ -1,3 +1,5 @@
+from collections.abc import Sequence
+
 import pytest
 from pytest_mock import MockerFixture
 
@@ -631,3 +633,40 @@ class TestServiceContainer:
             assert second_factory_invocations == 1
         finally:
             await services.aclose()
+
+    @pytest.mark.parametrize(
+        argnames=("is_keyed_service"),
+        argvalues=[
+            (True),
+            (False),
+        ],
+    )
+    async def test_resolve_all_services_of_the_same_type(
+        self, is_keyed_service: bool
+    ) -> None:
+        expected_services = 3
+        service_key = "key"
+        services = ServiceContainer()
+
+        if is_keyed_service:
+            services.add_keyed_transient(service_key, ServiceWithNoDependencies)
+            services.add_keyed_transient(service_key, ServiceWithNoDependencies)
+            services.add_keyed_transient(service_key, ServiceWithNoDependencies)
+        else:
+            services.add_transient(ServiceWithNoDependencies)
+            services.add_transient(ServiceWithNoDependencies)
+            services.add_transient(ServiceWithNoDependencies)
+
+        async with services:
+            resolved_services = (
+                await services.get_all_keyed(service_key, ServiceWithNoDependencies)
+                if is_keyed_service
+                else await services.get_all(ServiceWithNoDependencies)
+            )
+
+            assert isinstance(resolved_services, Sequence)
+            assert len(resolved_services) == expected_services
+            assert all(
+                isinstance(service, ServiceWithNoDependencies)
+                for service in resolved_services
+            )

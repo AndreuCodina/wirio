@@ -1,5 +1,6 @@
 import asyncio
 from abc import ABC
+from collections.abc import Sequence
 from contextlib import AbstractAsyncContextManager, AbstractContextManager
 from dataclasses import dataclass
 from types import TracebackType
@@ -96,6 +97,20 @@ class TestServiceCollection:
             )
 
             assert isinstance(resolved_service, ServiceWithNoDependencies)
+
+    async def test_resolve_service_with_generic(self) -> None:
+        services = ServiceCollection()
+        services.add_transient(ServiceWithGeneric[int])
+
+        async with services.build_service_provider() as service_provider:
+            resolved_service = await service_provider.get_required_service(
+                ServiceWithGeneric[int]
+            )
+
+            assert isinstance(resolved_service, ServiceWithGeneric)
+            assert TypedType.from_instance(resolved_service) == TypedType.from_type(
+                ServiceWithGeneric[int]
+            )
 
     @pytest.mark.parametrize(
         argnames=("service_lifetime"),
@@ -1657,6 +1672,7 @@ class TestServiceCollection:
 
         services = ServiceCollection()
         services.add_transient(RegisteredService)
+        services.add_transient(ServiceWithGeneric[int])
 
         async with services.build_service_provider() as service_provider:
             service_provider_is_service = await service_provider.get_required_service(
@@ -1669,17 +1685,25 @@ class TestServiceCollection:
             )
 
             is_registered = service_provider_is_service.is_service(RegisteredService)
-            assert is_registered is True
+            assert is_registered
             is_registered = service_provider_is_keyed_service.is_service(
                 RegisteredService
             )
-            assert is_registered is True
+            assert is_registered
 
             is_registered = service_provider_is_service.is_service(UnregisteredService)
             assert not is_registered
             is_registered = service_provider_is_keyed_service.is_service(
                 UnregisteredService
             )
+            assert not is_registered
+
+            is_registered = service_provider_is_service.is_service(
+                ServiceWithGeneric[int]
+            )
+            assert is_registered
+
+            is_registered = service_provider_is_service.is_service(ServiceWithGeneric)
             assert not is_registered
 
     async def test_check_if_keyed_service_is_registered(self) -> None:
@@ -1890,3 +1914,122 @@ class TestServiceCollection:
 
             assert isinstance(resolved_service, Parent)
             assert isinstance(resolved_service, Child)
+
+    @pytest.mark.parametrize(
+        argnames=("is_keyed_service"),
+        argvalues=[
+            (True),
+            (False),
+        ],
+    )
+    async def test_resolve_all_services_of_the_same_type(
+        self, is_keyed_service: bool
+    ) -> None:
+        expected_services = 3
+        service_key = "key"
+        services = ServiceCollection()
+
+        if is_keyed_service:
+            services.add_keyed_transient(service_key, ServiceWithNoDependencies)
+            services.add_keyed_transient(service_key, ServiceWithNoDependencies)
+            services.add_keyed_transient(service_key, ServiceWithNoDependencies)
+        else:
+            services.add_transient(ServiceWithNoDependencies)
+            services.add_transient(ServiceWithNoDependencies)
+            services.add_transient(ServiceWithNoDependencies)
+
+        async with services.build_service_provider() as service_provider:
+            resolved_services = (
+                await service_provider.get_keyed_services(
+                    service_key, ServiceWithNoDependencies
+                )
+                if is_keyed_service
+                else await service_provider.get_services(ServiceWithNoDependencies)
+            )
+
+            assert isinstance(resolved_services, Sequence)
+            assert len(resolved_services) == expected_services
+            assert all(
+                isinstance(service, ServiceWithNoDependencies)
+                for service in resolved_services
+            )
+
+    @pytest.mark.parametrize(
+        argnames=("is_keyed_service"),
+        argvalues=[
+            (True),
+            (False),
+        ],
+    )
+    async def test_return_empty_sequence_when_resolving_all_services_of_not_registered_type(
+        self, is_keyed_service: bool
+    ) -> None:
+        services = ServiceCollection()
+
+        async with services.build_service_provider() as service_provider:
+            resolved_services = (
+                await service_provider.get_keyed_services(
+                    "key", ServiceWithNoDependencies
+                )
+                if is_keyed_service
+                else await service_provider.get_services(ServiceWithNoDependencies)
+            )
+
+            assert isinstance(resolved_services, Sequence)
+            assert len(resolved_services) == 0
+
+    async def test_resolve_service_sequence_in_implementation_factory(self) -> None:
+        class Service:
+            def __init__(
+                self, service_sequence: Sequence[ServiceWithNoDependencies]
+            ) -> None:
+                self.service_sequence = service_sequence
+
+        def inject_service(
+            service_sequence: Sequence[ServiceWithNoDependencies],
+        ) -> Service:
+            return Service(service_sequence=service_sequence)
+
+        expected_services = 2
+        services = ServiceCollection()
+        services.add_transient(ServiceWithNoDependencies)
+        services.add_transient(ServiceWithNoDependencies)
+        services.add_transient(inject_service)
+
+        async with services.build_service_provider() as service_provider:
+            resolved_service = await service_provider.get_required_service(Service)
+
+            assert len(resolved_service.service_sequence) == expected_services
+            assert all(
+                isinstance(service, ServiceWithNoDependencies)
+                for service in resolved_service.service_sequence
+            )
+
+    async def test_resolve_service_sequence_in_implementation_factory_using_from_keyed_services_annotation(
+        self,
+    ) -> None:
+        service_key = "key"
+
+        class Service:
+            def __init__(
+                self,
+                service_sequence: Annotated[
+                    Sequence[ServiceWithNoDependencies], FromKeyedServices(service_key)
+                ],
+            ) -> None:
+                self.service_sequence = service_sequence
+
+        expected_services = 2
+        services = ServiceCollection()
+        services.add_keyed_transient(service_key, ServiceWithNoDependencies)
+        services.add_keyed_transient(service_key, ServiceWithNoDependencies)
+        services.add_transient(Service)
+
+        async with services.build_service_provider() as service_provider:
+            resolved_service = await service_provider.get_required_service(Service)
+
+            assert len(resolved_service.service_sequence) == expected_services
+            assert all(
+                isinstance(service, ServiceWithNoDependencies)
+                for service in resolved_service.service_sequence
+            )

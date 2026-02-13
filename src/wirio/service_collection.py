@@ -716,8 +716,10 @@ class ServiceCollection:
         implementation_type_to_add: type | None = None
         implementation_instance_to_add: object | None = None
 
-        if isinstance(service_type_or_implementation_factory, type):
-            service_type_to_add = service_type_or_implementation_factory
+        if self._is_service_type(service_type_or_implementation_factory):
+            service_type_to_add = cast(
+                "type[TService]", service_type_or_implementation_factory
+            )
 
         if isinstance(
             implementation_factory_or_implementation_type_or_implementation_instance_or_none,
@@ -845,6 +847,13 @@ class ServiceCollection:
 
         assert service_descriptor is not None
         self._descriptors.append(service_descriptor)
+
+    def _is_service_type(self, value: object) -> bool:
+        if isinstance(value, type):
+            return True
+
+        origin = typing.get_origin(value)
+        return isinstance(origin, type)
 
     def _get_provided_service_type[TService](
         self,

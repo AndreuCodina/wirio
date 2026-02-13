@@ -22,6 +22,7 @@ from wirio._service_lookup._constructor_call_site import (
 from wirio._service_lookup._parameter_information import (
     ParameterInformation,
 )
+from wirio._service_lookup._sequence_call_site import SequenceCallSite
 from wirio._service_lookup._service_call_site import (
     ServiceCallSite,
 )
@@ -284,6 +285,18 @@ class CallSiteRuntimeResolver(CallSiteVisitor[RuntimeResolverContext, object | N
             service.__enter__()
 
         return service
+
+    @override
+    async def _visit_sequence(
+        self, sequence_call_site: SequenceCallSite, argument: RuntimeResolverContext
+    ) -> object | None:
+        sequence: list[object | None] = []
+
+        for service_call_site in sequence_call_site.service_call_sites:
+            value = await self._visit_call_site(service_call_site, argument)
+            sequence.append(value)
+
+        return sequence
 
     @override
     def _visit_service_provider(

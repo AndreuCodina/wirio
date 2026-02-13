@@ -90,6 +90,17 @@ def add_sqlmodel(services: ServiceCollection) -> None:
 add_sqlmodel(services)
 ```
 
+We could also have the next extensions:
+
+```python
+add_api_versioning(services)
+add_caching(services)
+add_cors(services)
+add_identity(services)
+add_cookie_policy(services, ...)
+add_authorization(services, ...)
+```
+
 ## Why not a Container subclass?
 
 Other libraries embrace a container-class API: we extend a `Container`, override methods, or mutate attributes to register services. That style works, but it comes with trade-offs that Wirio intentionally avoids:

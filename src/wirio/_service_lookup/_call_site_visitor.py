@@ -11,6 +11,7 @@ from wirio._service_lookup._constant_call_site import (
 from wirio._service_lookup._constructor_call_site import (
     ConstructorCallSite,
 )
+from wirio._service_lookup._sequence_call_site import SequenceCallSite
 from wirio._service_lookup._service_call_site import (
     ServiceCallSite,
 )
@@ -83,6 +84,11 @@ class CallSiteVisitor[TArgument, TResult](ABC):
                     constant_call_site=cast("ConstantCallSite", call_site),
                     argument=argument,
                 )
+            case CallSiteKind.SEQUENCE:
+                return await self._visit_sequence(
+                    sequence_call_site=cast("SequenceCallSite", call_site),
+                    argument=argument,
+                )
             case CallSiteKind.SERVICE_PROVIDER:
                 return self._visit_service_provider(
                     service_provider_call_site=cast(
@@ -109,6 +115,11 @@ class CallSiteVisitor[TArgument, TResult](ABC):
     @abstractmethod
     async def _visit_async_factory(
         self, async_factory_call_site: AsyncFactoryCallSite, argument: TArgument
+    ) -> TResult: ...
+
+    @abstractmethod
+    async def _visit_sequence(
+        self, sequence_call_site: SequenceCallSite, argument: TArgument
     ) -> TResult: ...
 
     @abstractmethod

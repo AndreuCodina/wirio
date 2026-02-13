@@ -1,5 +1,5 @@
 import typing
-from collections.abc import Awaitable, Callable, Generator
+from collections.abc import Awaitable, Callable, Generator, Sequence
 from contextlib import AbstractAsyncContextManager, contextmanager
 from types import TracebackType
 from typing import TYPE_CHECKING, Self, final
@@ -48,16 +48,19 @@ class ServiceContainer(
         return self._service_provider
 
     async def get[TService](self, service_type: type[TService]) -> TService:
+        """Get service of type `TService` or raise :class:`NoServiceRegisteredError`."""
         service_provider = await self._get_service_provider()
         return await service_provider.get_required_service(service_type)
 
     async def try_get[TService](self, service_type: type[TService]) -> TService | None:
+        """Get service of type `TService` or return `None`."""
         service_provider = await self._get_service_provider()
         return await service_provider.get_service(service_type)
 
     async def get_keyed[TService](
         self, service_key: object | None, service_type: type[TService]
     ) -> TService:
+        """Get service of type `TService` or raise an error."""
         service_provider = await self._get_service_provider()
         return await service_provider.get_required_keyed_service(
             service_key=service_key, service_type=service_type
@@ -66,8 +69,25 @@ class ServiceContainer(
     async def try_get_keyed[TService](
         self, service_key: object | None, service_type: type[TService]
     ) -> TService | None:
+        """Get service of type `TService` or return `None`."""
         service_provider = await self._get_service_provider()
         return await service_provider.get_keyed_service(
+            service_key=service_key, service_type=service_type
+        )
+
+    async def get_all[TService](
+        self, service_type: type[TService]
+    ) -> Sequence[TService]:
+        """Get all services of type `TService`."""
+        service_provider = await self._get_service_provider()
+        return await service_provider.get_services(service_type)
+
+    async def get_all_keyed[TService](
+        self, service_key: object | None, service_type: type[TService]
+    ) -> Sequence[TService]:
+        """Get service of type `TService` or raise an error."""
+        service_provider = await self._get_service_provider()
+        return await service_provider.get_keyed_services(
             service_key=service_key, service_type=service_type
         )
 

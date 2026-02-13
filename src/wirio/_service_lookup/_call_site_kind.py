@@ -6,4 +6,5 @@ class CallSiteKind(Enum):
     ASYNC_FACTORY = auto()
     CONSTRUCTOR = auto()
     CONSTANT = auto()
+    SEQUENCE = auto()
     SERVICE_PROVIDER = auto()

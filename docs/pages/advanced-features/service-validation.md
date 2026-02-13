@@ -2,7 +2,7 @@
 
 ## Overview
 
-Wirio validates your service graph at startup and during resolution so that dependency issues fail fast instead of surfacing as runtime bugs. Validation is opt-in through the `ServiceCollection.build_service_provider(validate_scopes=True, validate_on_build=True)` switches, both enabled by default. Use them to:
+Wirio validates our service graph at startup and during resolution, so that dependency issues fail fast instead of surfacing as runtime bugs. Validation is opt-in through the `ServiceCollection.build_service_provider(validate_scopes=True, validate_on_build=True)` switches, both enabled by default. Use them to:
 
 - Catch missing registrations (`CannotResolveServiceError`) before the first request.
 - Detect scoped services flowing into singletons (`ScopedInSingletonError`).
@@ -10,7 +10,7 @@ Wirio validates your service graph at startup and during resolution so that depe
 
 ## Build-time validation (`validate_on_build`)
 
-When `validate_on_build=True`, the provider walks every registered descriptor while entering the `async with services.build_service_provider()` context. Each failure is wrapped in an `ExceptionGroup` so you can see every misconfiguration at once.
+When `validate_on_build=True`, the provider walks every registered descriptor while entering the `async with services.build_service_provider()` context. Each failure is wrapped in an `ExceptionGroup` so we can see every misconfiguration at once.
 
 ```python
 services = ServiceCollection()
@@ -25,7 +25,7 @@ except ExceptionGroup as exc:
         print(error.__cause__)
 ```
 
-Set `validate_on_build=False` when you prefer lazy validation.
+Set `validate_on_build=False` when we prefer lazy validation.
 
 ## Scope validation (`validate_scopes`)
 
@@ -66,16 +66,16 @@ async with services.build_service_provider() as service_provider:
         report_generator = await service_scope.get_required_service(ReportGenerator)
 ```
 
-Attempting to resolve a scoped service (or something that depends on it) directly from the root scope raises `DirectScopedResolvedFromRootError` or `ScopedResolvedFromRootError`. These errors usually mean you forgot to create a scope for your background job or test.
+Attempting to resolve a scoped service (or something that depends on it) directly from the root scope raises `DirectScopedResolvedFromRootError` or `ScopedResolvedFromRootError`. These errors usually mean we forgot to create a scope for our background job or test.
 
 ## Troubleshooting reference
 
 - `CannotResolveServiceError`: register the missing dependency or adjust the constructor signature.
 - `ScopedInSingletonError`: change the singleton into a scoped service or extract a factory/service locator that captures scoped state per resolution.
-- `DirectScopedResolvedFromRootError`: create a scope via `provider.create_scope()` (or let your framework manage scopes) before resolving scoped services.
+- `DirectScopedResolvedFromRootError`: create a scope via `provider.create_scope()` (or let our framework manage scopes) before resolving scoped services.
 - `ScopedResolvedFromRootError`: same as above, but triggered when a transient or singleton indirectly requires a scoped service from the root provider.
 
 ## Putting it together
 
-- You can disable validations selectively when you prefer lazy validation or no validation for faster startup times.
-- Keeping both validation flags enabled in production—together with auto-activated services—provides the fastest feedback loop and guarantees that your container is consistent before accepting traffic.
+- We can disable validations selectively when we prefer lazy validation or no validation for faster startup times.
+- Keeping both validation flags enabled in production—together with auto-activated services—provides the fastest feedback loop and guarantees that our container is consistent before accepting traffic.
