@@ -85,7 +85,7 @@ class ServiceContainer(
     async def get_all_keyed[TService](
         self, service_key: object | None, service_type: type[TService]
     ) -> Sequence[TService]:
-        """Get service of type `TService` or raise an error."""
+        """Get all services of type `TService`."""
         service_provider = await self._get_service_provider()
         return await service_provider.get_keyed_services(
             service_key=service_key, service_type=service_type

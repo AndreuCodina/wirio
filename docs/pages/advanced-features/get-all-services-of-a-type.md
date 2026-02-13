@@ -19,9 +19,9 @@ class UserService:
 You could also resolve all implementations with a specific key.
 
 ```python hl_lines="9-11"
-services.add_transient("key", EmailService)
-services.add_transient("key", SmsService)
-services.add_transient("key", WhatsAppService)
+services.add_keyed_transient("key", EmailService)
+services.add_keyed_transient("key", SmsService)
+services.add_keyed_transient("key", WhatsAppService)
 
 
 class UserService:
