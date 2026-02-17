@@ -24,12 +24,12 @@ class SqlmodelIntegration:
         expire_on_commit: bool = False,
         autoflush: bool = True,
     ) -> None:
-        def inject_async_engine() -> AsyncEngine:
+        def inject_sql_engine() -> AsyncEngine:
             return create_async_engine(url=connection_string)
 
-        services.add_singleton(inject_async_engine)
+        services.add_singleton(inject_sql_engine)
 
-        def inject_async_sessionmaker(
+        def inject_sql_session_maker(
             async_engine: AsyncEngine,
         ) -> async_sessionmaker[AsyncSession]:
             return async_sessionmaker(
@@ -39,14 +39,14 @@ class SqlmodelIntegration:
                 autoflush=autoflush,
             )
 
-        services.add_singleton(inject_async_sessionmaker)
+        services.add_singleton(inject_sql_session_maker)
 
-        def inject_async_session(
+        def inject_sql_session(
             async_sessionmaker: async_sessionmaker[AsyncSession],
         ) -> AsyncSession:
             return async_sessionmaker()
 
-        services.add_scoped(inject_async_session)
+        services.add_scoped(inject_sql_session)
 
     @staticmethod
     def add_sync_services(
@@ -56,12 +56,12 @@ class SqlmodelIntegration:
         expire_on_commit: bool = True,
         autoflush: bool = True,
     ) -> None:
-        def inject_engine() -> Engine:
+        def inject_sql_engine() -> Engine:
             return create_engine(url=connection_string)
 
-        services.add_singleton(inject_engine)
+        services.add_singleton(inject_sql_engine)
 
-        def inject_sessionmaker(
+        def inject_sql_session_maker(
             engine: Engine,
         ) -> sessionmaker[Session]:
             return sessionmaker(
@@ -71,11 +71,11 @@ class SqlmodelIntegration:
                 autoflush=autoflush,
             )
 
-        services.add_singleton(inject_sessionmaker)
+        services.add_singleton(inject_sql_session_maker)
 
-        def inject_session(
+        def inject_sql_session(
             sessionmaker: sessionmaker[Session],
         ) -> Session:
             return sessionmaker()
 
-        services.add_scoped(inject_session)
+        services.add_scoped(inject_sql_session)

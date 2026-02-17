@@ -218,6 +218,22 @@ We can register a service as auto-activated. This is useful when we want to ensu
 services.add_auto_activated_singleton(MachineLearningModel)
 ```
 
+## 💾 SQLModel integration
+
+Ready-to-use SQLModel with the the recommended defaults.
+
+```python
+services = ServiceCollection()
+services.add_sqlmodel("connection_string")
+
+
+class UserService:
+    def __init__(self, sql_session: AsyncSession) -> None:
+        self.sql_session = sql_session
+```
+
+More information [here](https://andreucodina.github.io/wirio/integrations/sqlmodel).
+
 ## 📚 Documentation
 
 For more information, [check out the documentation](https://AndreuCodina.github.io/wirio).
