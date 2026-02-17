@@ -2,17 +2,11 @@
 
 ## Benefits
 
-It's difficult to setup SQLModel for lots of reasons:
+You had to dive into the docs every time to set up SQLModel: multiple ways to initialize it, context managers everywhere, different settings for sync and async.
 
-- We can set up SQLModel in different ways, and it's not always clear which one is the best for our application.
-- We need to manage the lifetimes of the engine, sessionmaker and sessions ourself.
-- We need to manage the disposal of the engine and sessions ourself.
-- Code is bloated with context managers, and SQLModel services aren't easily shareable between the functions of our service.
-- Sometimes we need to import from SQLAlchemy, sometimes from SQLModel, and it's not always clear which one to use.
-- Asynchronous and synchronous services require different setups, different than the default ones.
-- Services aren't easily testable.
+Setting up SQLModel should take seconds, and be configured with the best practices by just adding a single line of code.
 
-Wirio can help with that by providing a clean integration that provides:
+Some of the SQLModel integration benefits:
 
 - Automatic registration of SQLModel services.
 - Recommended configuration by default.
@@ -37,10 +31,10 @@ uv add wirio[sqlmodel]
 
 We only have to provide the connection string, and Wirio will take care of the rest.
 
-```python hl_lines="3"
+```python hl_lines="2-4"
 services = ServiceCollection()
 services.add_sqlmodel(
-    connection_string="postgresql+asyncpg://<user>:<password>@<host>:<port>/<database>"
+    "postgresql+asyncpg://<user>:<password>@<host>:<port>/<database>"
 )
 ```
 
@@ -55,11 +49,11 @@ from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker
 from sqlmodel.ext.asyncio.session import AsyncSession
 ```
 
-Then, we can use it in the most easy way possible:
+Then, we can use it in the easiest way possible:
 
 ```python
 class UserService:
-    def __init__(self, sql_session: AsyncSession):
+    def __init__(self, sql_session: AsyncSession) -> None:
         self.sql_session = sql_session
 ```
 
@@ -73,10 +67,10 @@ class UserService:
 
 We only have to provide the connection string, and Wirio will take care of the rest.
 
-```python hl_lines="3"
+```python hl_lines="2-4"
 services = ServiceCollection()
 services.add_sync_sqlmodel(
-    connection_string="postgresql+psycopg2://<user>:<password>@<host>:<port>/<database>"
+    "postgresql+psycopg2://<user>:<password>@<host>:<port>/<database>"
 )
 ```
 
@@ -92,7 +86,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlmodel import Session
 ```
 
-Then, we can use it in the most easy way possible:
+Then, we can use it in the easiest way possible:
 
 ```python
 class UserService:
