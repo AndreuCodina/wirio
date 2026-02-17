@@ -220,7 +220,7 @@ services.add_auto_activated_singleton(MachineLearningModel)
 
 ## 💾 SQLModel integration
 
-Ready-to-use SQLModel with the the recommended defaults.
+Ready-to-use SQLModel with the recommended defaults.
 
 ```python
 services = ServiceCollection()
