@@ -178,3 +178,12 @@ class ServiceContainerNotBuiltError(WirioError):
     def __init__(self) -> None:
         message = "Operation not allowed before building the ServiceContainer"
         super().__init__(message)
+
+
+@final
+class GeneratorFactoryYieldedSeveralTimesError(WirioError):
+    """The exception that is thrown when a generator factory yields multiple times."""
+
+    def __init__(self) -> None:
+        message = "Generator factory must yield exactly one service instance"
+        super().__init__(message)

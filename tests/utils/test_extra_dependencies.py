@@ -5,7 +5,7 @@ from wirio._utils._extra_dependencies import ExtraDependencies
 
 
 class TestExtraDependencies:
-    def test_fail_importing_fastapi_when_not_installed(
+    def test_fail_when_importing_fastapi_when_not_installed(
         self, mocker: MockerFixture
     ) -> None:
         mocker.patch.dict("sys.modules", {"fastapi": None})
@@ -15,7 +15,7 @@ class TestExtraDependencies:
                 str(exception_info) == ExtraDependencies.ensure_fastapi_is_installed()
             )
 
-    def test_fail_importing_sqlmodel_when_not_installed(
+    def test_fail_when_importing_sqlmodel_when_not_installed(
         self, mocker: MockerFixture
     ) -> None:
         mocker.patch.dict("sys.modules", {"sqlmodel": None, "greenlet": None})

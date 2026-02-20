@@ -5,7 +5,7 @@ from wirio._service_lookup._typed_type import TypedType
 
 
 class TestServiceIdentifier:
-    def test_service_identifier_equality_with_same_type_and_no_key(self) -> None:
+    def test_equality_with_same_type_and_no_key(self) -> None:
         service_identifier_1 = ServiceIdentifier(
             service_key=None, service_type=TypedType.from_type(int)
         )
@@ -15,7 +15,7 @@ class TestServiceIdentifier:
 
         assert service_identifier_1 == service_identifier_2
 
-    def test_service_identifier_inequality_with_different_types_and_no_key(
+    def test_inequality_with_different_types_and_no_key(
         self,
     ) -> None:
         service_identifier_1 = ServiceIdentifier(
@@ -27,7 +27,7 @@ class TestServiceIdentifier:
 
         assert service_identifier_1 != service_identifier_2
 
-    def test_service_identifier_equality_with_same_type_and_same_key(self) -> None:
+    def test_equality_with_same_type_and_same_key(self) -> None:
         service_identifier_1 = ServiceIdentifier(
             service_key="key", service_type=TypedType.from_type(int)
         )
@@ -37,7 +37,7 @@ class TestServiceIdentifier:
 
         assert service_identifier_1 == service_identifier_2
 
-    def test_service_identifier_inequality_with_same_type_and_different_keys(
+    def test_inequality_with_same_type_and_different_keys(
         self,
     ) -> None:
         service_identifier_1 = ServiceIdentifier(
@@ -49,7 +49,7 @@ class TestServiceIdentifier:
 
         assert service_identifier_1 != service_identifier_2
 
-    def test_service_identifier_inequality_with_different_types_and_different_keys(
+    def test_inequality_with_different_types_and_different_keys(
         self,
     ) -> None:
         service_identifier_1 = ServiceIdentifier(
@@ -61,7 +61,7 @@ class TestServiceIdentifier:
 
         assert service_identifier_1 != service_identifier_2
 
-    def test_service_identifier_inequality_when_only_one_has_key(self) -> None:
+    def test_inequality_when_only_one_has_key(self) -> None:
         service_identifier_1 = ServiceIdentifier(
             service_key=None, service_type=TypedType.from_type(int)
         )
@@ -71,7 +71,7 @@ class TestServiceIdentifier:
 
         assert service_identifier_1 != service_identifier_2
 
-    def test_service_identifier_inequality_with_non_service_identifier(
+    def test_inequality_with_non_service_identifier(
         self,
     ) -> None:
         service_identifier = ServiceIdentifier(

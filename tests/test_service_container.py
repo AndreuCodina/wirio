@@ -124,7 +124,7 @@ class TestServiceContainer:
             assert resolved_service is not service_mock
             assert isinstance(resolved_service, ServiceWithNoDependencies)
 
-    async def test_fail_overriding_when_container_is_not_built(self) -> None:
+    async def test_fail_when_overriding_when_container_is_not_built(self) -> None:
         services = ServiceContainer()
 
         with pytest.raises(ServiceContainerNotBuiltError):  # noqa: SIM117

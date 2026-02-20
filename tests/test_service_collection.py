@@ -1,6 +1,6 @@
 import asyncio
 from abc import ABC
-from collections.abc import Sequence
+from collections.abc import AsyncGenerator, Generator, Sequence
 from contextlib import AbstractAsyncContextManager, AbstractContextManager
 from dataclasses import dataclass
 from types import TracebackType
@@ -34,6 +34,7 @@ from wirio.exceptions import (
     CannotResolveParameterServiceFromImplementationFactoryError,
     CannotResolveServiceError,
     CircularDependencyError,
+    GeneratorFactoryYieldedSeveralTimesError,
     InvalidServiceKeyTypeError,
     KeyedServiceAnyKeyUsedToResolveServiceError,
     NoKeyedServiceRegisteredError,
@@ -1556,6 +1557,64 @@ class TestServiceCollection:
             assert isinstance(resolved_service_2, KeyedService2)
             assert resolved_service_2.service_key is None
 
+    @pytest.mark.parametrize(
+        argnames="is_async_implementation_factory",
+        argvalues=[
+            True,
+            False,
+        ],
+    )
+    async def test_resolve_service_registered_as_a_key_without_a_key_using_generator_implementation_factory(
+        self, is_async_implementation_factory: bool
+    ) -> None:
+        @dataclass(frozen=True)
+        class KeyedService1:
+            service_key: int | None
+
+        @dataclass(frozen=True)
+        class KeyedService2:
+            service_key: int | None
+
+        services = ServiceCollection()
+
+        async def async_inject_service_1(
+            key: int | None,
+        ) -> AsyncGenerator[KeyedService1]:
+            yield KeyedService1(service_key=key)
+
+        async def async_inject_service_2(
+            key: int | None,
+        ) -> AsyncGenerator[KeyedService2]:
+            yield KeyedService2(service_key=key)
+
+        def sync_inject_service_1(key: int | None) -> Generator[KeyedService1]:
+            yield KeyedService1(service_key=key)
+
+        def sync_inject_service_2(key: int | None) -> Generator[KeyedService2]:
+            yield KeyedService2(service_key=key)
+
+        if is_async_implementation_factory:
+            services.add_keyed_transient(None, async_inject_service_1)
+            services.add_keyed_transient(None, KeyedService2, async_inject_service_2)
+        else:
+            services.add_keyed_transient(None, sync_inject_service_1)
+            services.add_keyed_transient(None, KeyedService2, sync_inject_service_2)
+
+        async with services.build_service_provider() as service_provider:
+            resolved_service_1 = await service_provider.get_required_service(
+                KeyedService1
+            )
+
+            assert isinstance(resolved_service_1, KeyedService1)
+            assert resolved_service_1.service_key is None
+
+            resolved_service_2 = await service_provider.get_required_service(
+                KeyedService2
+            )
+
+            assert isinstance(resolved_service_2, KeyedService2)
+            assert resolved_service_2.service_key is None
+
     async def test_resolve_service_using_none_as_key_when_registered_keyed_service_with_none_key(
         self,
     ) -> None:
@@ -2033,3 +2092,285 @@ class TestServiceCollection:
                 isinstance(service, ServiceWithNoDependencies)
                 for service in resolved_service.service_sequence
             )
+
+    @pytest.mark.parametrize(
+        argnames=("service_lifetime", "is_async_generator_implementation_factory"),
+        argvalues=[
+            (ServiceLifetime.SINGLETON, True),
+            (ServiceLifetime.SINGLETON, False),
+            (ServiceLifetime.SCOPED, True),
+            (ServiceLifetime.SCOPED, False),
+            (ServiceLifetime.TRANSIENT, True),
+            (ServiceLifetime.TRANSIENT, False),
+        ],
+    )
+    async def test_dispose_service_from_generator_implementation_factory(
+        self,
+        service_lifetime: ServiceLifetime,
+        is_async_generator_implementation_factory: bool,
+    ) -> None:
+        is_disposed = False
+
+        async def async_generator_implementation_factory(
+            _: BaseServiceProvider,
+        ) -> AsyncGenerator[ServiceWithAsyncContextManagerAndNoDependencies]:
+            nonlocal is_disposed
+
+            async with ServiceWithAsyncContextManagerAndNoDependencies() as service:
+                yield service
+
+            is_disposed = True
+
+        def generator_implementation_factory(
+            _: BaseServiceProvider,
+        ) -> Generator[ServiceWithSyncContextManagerAndNoDependencies]:
+            nonlocal is_disposed
+
+            with ServiceWithSyncContextManagerAndNoDependencies() as service:
+                yield service
+
+            is_disposed = True
+
+        services = ServiceCollection()
+        service_type = (
+            ServiceWithAsyncContextManagerAndNoDependencies
+            if is_async_generator_implementation_factory
+            else ServiceWithSyncContextManagerAndNoDependencies
+        )
+        implementation_factory = (
+            async_generator_implementation_factory
+            if is_async_generator_implementation_factory
+            else generator_implementation_factory
+        )
+
+        match service_lifetime:
+            case ServiceLifetime.SINGLETON:
+                services.add_singleton(service_type, implementation_factory)
+            case ServiceLifetime.SCOPED:
+                services.add_scoped(service_type, implementation_factory)
+            case ServiceLifetime.TRANSIENT:
+                services.add_transient(service_type, implementation_factory)
+
+        async with services.build_service_provider() as service_provider:
+            async with service_provider.create_scope() as service_scope:
+                resolved_service = await service_scope.get_required_service(
+                    service_type
+                )
+
+                assert isinstance(resolved_service, service_type)
+                assert not is_disposed
+
+            if service_lifetime in (ServiceLifetime.SCOPED, ServiceLifetime.TRANSIENT):
+                assert is_disposed
+
+            if service_lifetime is ServiceLifetime.SINGLETON:
+                assert not is_disposed
+
+        assert is_disposed
+
+    @pytest.mark.parametrize(
+        argnames=("service_lifetime", "is_async_generator_implementation_factory"),
+        argvalues=[
+            (ServiceLifetime.SINGLETON, True),
+            (ServiceLifetime.SINGLETON, False),
+            (ServiceLifetime.SCOPED, True),
+            (ServiceLifetime.SCOPED, False),
+            (ServiceLifetime.TRANSIENT, True),
+            (ServiceLifetime.TRANSIENT, False),
+        ],
+    )
+    async def test_dispose_keyed_service_from_generator_implementation_factory(
+        self,
+        service_lifetime: ServiceLifetime,
+        is_async_generator_implementation_factory: bool,
+    ) -> None:
+        expected_service_key = "key"
+        is_disposed = False
+
+        async def async_generator_implementation_factory(
+            the_key: str | None,
+            _: BaseServiceProvider,
+        ) -> AsyncGenerator[ServiceWithAsyncContextManagerAndNoDependencies]:
+            nonlocal is_disposed
+            assert the_key == expected_service_key
+
+            async with ServiceWithAsyncContextManagerAndNoDependencies() as service:
+                yield service
+
+            is_disposed = True
+
+        def generator_implementation_factory(
+            the_key: str | None,
+            _: BaseServiceProvider,
+        ) -> Generator[ServiceWithSyncContextManagerAndNoDependencies]:
+            nonlocal is_disposed
+            assert the_key == expected_service_key
+
+            with ServiceWithSyncContextManagerAndNoDependencies() as service:
+                yield service
+
+            is_disposed = True
+
+        services = ServiceCollection()
+        service_type = (
+            ServiceWithAsyncContextManagerAndNoDependencies
+            if is_async_generator_implementation_factory
+            else ServiceWithSyncContextManagerAndNoDependencies
+        )
+        implementation_factory = (
+            async_generator_implementation_factory
+            if is_async_generator_implementation_factory
+            else generator_implementation_factory
+        )
+
+        match service_lifetime:
+            case ServiceLifetime.SINGLETON:
+                services.add_keyed_singleton(
+                    expected_service_key, service_type, implementation_factory
+                )
+            case ServiceLifetime.SCOPED:
+                services.add_keyed_scoped(
+                    expected_service_key, service_type, implementation_factory
+                )
+            case ServiceLifetime.TRANSIENT:
+                services.add_keyed_transient(
+                    expected_service_key, service_type, implementation_factory
+                )
+
+        async with services.build_service_provider() as service_provider:
+            async with service_provider.create_scope() as service_scope:
+                resolved_service = await service_scope.get_required_keyed_service(
+                    expected_service_key, service_type
+                )
+
+                assert isinstance(resolved_service, service_type)
+                assert not is_disposed
+
+            if service_lifetime in (ServiceLifetime.SCOPED, ServiceLifetime.TRANSIENT):
+                assert is_disposed
+
+            if service_lifetime is ServiceLifetime.SINGLETON:
+                assert not is_disposed
+
+        assert is_disposed
+
+    @pytest.mark.parametrize(
+        argnames=("is_async_generator_implementation_factory"),
+        argvalues=[True, False],
+    )
+    async def test_fail_when_generator_implementation_factory_yields_more_than_once(
+        self, is_async_generator_implementation_factory: bool
+    ) -> None:
+        async def async_generator_implementation_factory(
+            _: BaseServiceProvider,
+        ) -> AsyncGenerator[ServiceWithNoDependencies]:
+            yield ServiceWithNoDependencies()
+            yield ServiceWithNoDependencies()
+
+        def sync_generator_implementation_factory(
+            _: BaseServiceProvider,
+        ) -> Generator[ServiceWithNoDependencies]:
+            yield ServiceWithNoDependencies()
+            yield ServiceWithNoDependencies()
+
+        services = ServiceCollection()
+
+        if is_async_generator_implementation_factory:
+            services.add_transient(
+                ServiceWithNoDependencies, async_generator_implementation_factory
+            )
+        else:
+            services.add_transient(
+                ServiceWithNoDependencies, sync_generator_implementation_factory
+            )
+
+        async with services.build_service_provider() as service_provider:
+            with pytest.raises(GeneratorFactoryYieldedSeveralTimesError):
+                async with service_provider.create_scope() as service_scope:
+                    await service_scope.get_required_service(ServiceWithNoDependencies)
+
+    @pytest.mark.parametrize(
+        argnames=("is_async_generator_implementation_factory"),
+        argvalues=[
+            True,
+            False,
+        ],
+    )
+    async def test_raise_error_when_generator_implementation_factory_fails_during_cleanup(
+        self, is_async_generator_implementation_factory: bool
+    ) -> None:
+        expected_error_message = "generator cleanup failed"
+
+        async def async_generator_implementation_factory() -> AsyncGenerator[
+            ServiceWithNoDependencies
+        ]:
+            yield ServiceWithNoDependencies()
+            raise RuntimeError(expected_error_message)
+
+        def sync_generator_implementation_factory() -> Generator[
+            ServiceWithNoDependencies
+        ]:
+            yield ServiceWithNoDependencies()
+            raise RuntimeError(expected_error_message)
+
+        services = ServiceCollection()
+
+        if is_async_generator_implementation_factory:
+            services.add_transient(
+                ServiceWithNoDependencies, async_generator_implementation_factory
+            )
+        else:
+            services.add_transient(
+                ServiceWithNoDependencies, sync_generator_implementation_factory
+            )
+
+        async with services.build_service_provider() as service_provider:
+            with pytest.raises(RuntimeError) as exception_info:  # noqa: PT012
+                async with service_provider.create_scope() as service_scope:
+                    resolved_service = await service_scope.get_required_service(
+                        ServiceWithNoDependencies
+                    )
+
+                    assert isinstance(resolved_service, ServiceWithNoDependencies)
+
+            assert str(exception_info.value) == expected_error_message
+
+    @pytest.mark.parametrize(
+        argnames=("is_async_generator_implementation_factory"),
+        argvalues=[
+            True,
+            False,
+        ],
+    )
+    async def test_raise_error_when_generator_implementation_factory_fails_before_yielding(
+        self, is_async_generator_implementation_factory: bool
+    ) -> None:
+        expected_error_message = "Factory failed before yield"
+
+        async def async_generator_implementation_factory() -> AsyncGenerator[
+            ServiceWithNoDependencies
+        ]:
+            raise RuntimeError(expected_error_message)
+
+        def sync_generator_implementation_factory() -> Generator[
+            ServiceWithNoDependencies
+        ]:
+            raise RuntimeError(expected_error_message)
+
+        services = ServiceCollection()
+
+        if is_async_generator_implementation_factory:
+            services.add_transient(
+                ServiceWithNoDependencies, async_generator_implementation_factory
+            )
+        else:
+            services.add_transient(
+                ServiceWithNoDependencies, sync_generator_implementation_factory
+            )
+
+        async with services.build_service_provider() as service_provider:
+            with pytest.raises(RuntimeError) as exception_info:
+                async with service_provider.create_scope() as service_scope:
+                    await service_scope.get_required_service(ServiceWithNoDependencies)
+
+            assert str(exception_info.value) == expected_error_message

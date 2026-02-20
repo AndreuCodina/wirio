@@ -1,6 +1,6 @@
 import inspect
 import typing
-from collections.abc import Awaitable, Callable, Iterator
+from collections.abc import AsyncGenerator, Awaitable, Callable, Generator, Iterator
 from typing import TYPE_CHECKING, Final, cast, overload
 
 from wirio._service_lookup._typed_type import TypedType
@@ -53,6 +53,22 @@ class ServiceCollection:
     def add_transient[TService](
         self,
         service_type: type[TService],
+        implementation_factory: Callable[..., AsyncGenerator[TService]],
+        /,
+    ) -> None: ...
+
+    @overload
+    def add_transient[TService](
+        self,
+        service_type: type[TService],
+        implementation_factory: Callable[..., Generator[TService]],
+        /,
+    ) -> None: ...
+
+    @overload
+    def add_transient[TService](
+        self,
+        service_type: type[TService],
         implementation_factory: Callable[..., Awaitable[TService]],
         /,
     ) -> None: ...
@@ -62,6 +78,20 @@ class ServiceCollection:
         self,
         service_type: type[TService],
         implementation_factory: Callable[..., TService],
+        /,
+    ) -> None: ...
+
+    @overload
+    def add_transient[TService](
+        self,
+        implementation_factory: Callable[..., AsyncGenerator[TService]],
+        /,
+    ) -> None: ...
+
+    @overload
+    def add_transient[TService](
+        self,
+        implementation_factory: Callable[..., Generator[TService]],
         /,
     ) -> None: ...
 
@@ -90,11 +120,15 @@ class ServiceCollection:
     def add_transient[TService](
         self,
         service_type_or_implementation_factory: type[TService]
+        | Callable[..., AsyncGenerator[TService]]
+        | Callable[..., Generator[TService]]
         | Callable[..., Awaitable[TService]]
         | Callable[..., TService],
         implementation_factory_or_implementation_type_or_none: Callable[
-            ..., Awaitable[TService]
+            ..., AsyncGenerator[TService]
         ]
+        | Callable[..., Generator[TService]]
+        | Callable[..., Awaitable[TService]]
         | Callable[..., TService]
         | type
         | None = None,
@@ -114,6 +148,22 @@ class ServiceCollection:
     def add_singleton[TService](
         self,
         service_type: type[TService],
+        implementation_factory: Callable[..., AsyncGenerator[TService]],
+        /,
+    ) -> None: ...
+
+    @overload
+    def add_singleton[TService](
+        self,
+        service_type: type[TService],
+        implementation_factory: Callable[..., Generator[TService]],
+        /,
+    ) -> None: ...
+
+    @overload
+    def add_singleton[TService](
+        self,
+        service_type: type[TService],
         implementation_factory: Callable[..., Awaitable[TService]],
         /,
     ) -> None: ...
@@ -123,6 +173,20 @@ class ServiceCollection:
         self,
         service_type: type[TService],
         implementation_factory: Callable[..., TService],
+        /,
+    ) -> None: ...
+
+    @overload
+    def add_singleton[TService](
+        self,
+        implementation_factory: Callable[..., AsyncGenerator[TService]],
+        /,
+    ) -> None: ...
+
+    @overload
+    def add_singleton[TService](
+        self,
+        implementation_factory: Callable[..., Generator[TService]],
         /,
     ) -> None: ...
 
@@ -159,6 +223,8 @@ class ServiceCollection:
     def add_singleton[TService](
         self,
         service_type_or_implementation_factory: type[TService]
+        | Callable[..., AsyncGenerator[TService]]
+        | Callable[..., Generator[TService]]
         | Callable[..., Awaitable[TService]]
         | Callable[..., TService],
         implementation_factory_or_implementation_type_or_implementation_instance_or_none: Callable[
@@ -184,6 +250,22 @@ class ServiceCollection:
     def add_scoped[TService](
         self,
         service_type: type[TService],
+        implementation_factory: Callable[..., AsyncGenerator[TService]],
+        /,
+    ) -> None: ...
+
+    @overload
+    def add_scoped[TService](
+        self,
+        service_type: type[TService],
+        implementation_factory: Callable[..., Generator[TService]],
+        /,
+    ) -> None: ...
+
+    @overload
+    def add_scoped[TService](
+        self,
+        service_type: type[TService],
         implementation_factory: Callable[..., Awaitable[TService]],
         /,
     ) -> None: ...
@@ -193,6 +275,20 @@ class ServiceCollection:
         self,
         service_type: type[TService],
         implementation_factory: Callable[..., TService],
+        /,
+    ) -> None: ...
+
+    @overload
+    def add_scoped[TService](
+        self,
+        implementation_factory: Callable[..., AsyncGenerator[TService]],
+        /,
+    ) -> None: ...
+
+    @overload
+    def add_scoped[TService](
+        self,
+        implementation_factory: Callable[..., Generator[TService]],
         /,
     ) -> None: ...
 
@@ -221,11 +317,15 @@ class ServiceCollection:
     def add_scoped[TService](
         self,
         service_type_or_implementation_factory: type[TService]
+        | Callable[..., AsyncGenerator[TService]]
+        | Callable[..., Generator[TService]]
         | Callable[..., Awaitable[TService]]
         | Callable[..., TService],
         implementation_factory_or_implementation_type_or_none: Callable[
-            ..., Awaitable[TService]
+            ..., AsyncGenerator[TService]
         ]
+        | Callable[..., Generator[TService]]
+        | Callable[..., Awaitable[TService]]
         | Callable[..., TService]
         | type
         | None = None,
@@ -252,6 +352,28 @@ class ServiceCollection:
         service_key: TKey | None,
         service_type: type[TService],
         implementation_factory: Callable[
+            [TKey | None, *TFactoryParameter], AsyncGenerator[TService]
+        ],
+        /,
+    ) -> None: ...
+
+    @overload
+    def add_keyed_transient[TKey, TService, *TFactoryParameter](
+        self,
+        service_key: TKey | None,
+        service_type: type[TService],
+        implementation_factory: Callable[
+            [TKey | None, *TFactoryParameter], Generator[TService]
+        ],
+        /,
+    ) -> None: ...
+
+    @overload
+    def add_keyed_transient[TKey, TService, *TFactoryParameter](
+        self,
+        service_key: TKey | None,
+        service_type: type[TService],
+        implementation_factory: Callable[
             [TKey | None, *TFactoryParameter], Awaitable[TService]
         ],
         /,
@@ -263,6 +385,26 @@ class ServiceCollection:
         service_key: TKey | None,
         service_type: type[TService],
         implementation_factory: Callable[[TKey | None, *TFactoryParameter], TService],
+        /,
+    ) -> None: ...
+
+    @overload
+    def add_keyed_transient[TKey, TService, *TFactoryParameter](
+        self,
+        service_key: TKey | None,
+        implementation_factory: Callable[
+            [TKey | None, *TFactoryParameter], AsyncGenerator[TService]
+        ],
+        /,
+    ) -> None: ...
+
+    @overload
+    def add_keyed_transient[TKey, TService, *TFactoryParameter](
+        self,
+        service_key: TKey | None,
+        implementation_factory: Callable[
+            [TKey | None, *TFactoryParameter], Generator[TService]
+        ],
         /,
     ) -> None: ...
 
@@ -297,11 +439,15 @@ class ServiceCollection:
         self,
         service_key: TKey | None,
         service_type_or_implementation_factory: type[TService]
+        | Callable[[TKey | None, *TFactoryParameter], AsyncGenerator[TService]]
+        | Callable[[TKey | None, *TFactoryParameter], Generator[TService]]
         | Callable[[TKey | None, *TFactoryParameter], Awaitable[TService]]
         | Callable[[TKey | None, *TFactoryParameter], TService],
         implementation_factory_or_implementation_type_or_none: Callable[
-            [TKey | None, *TFactoryParameter], Awaitable[TService]
+            [TKey | None, *TFactoryParameter], AsyncGenerator[TService]
         ]
+        | Callable[[TKey | None, *TFactoryParameter], Generator[TService]]
+        | Callable[[TKey | None, *TFactoryParameter], Awaitable[TService]]
         | Callable[[TKey | None, *TFactoryParameter], TService]
         | type
         | None = None,
@@ -329,6 +475,28 @@ class ServiceCollection:
         service_key: TKey | None,
         service_type: type[TService],
         implementation_factory: Callable[
+            [TKey | None, *TFactoryParameter], AsyncGenerator[TService]
+        ],
+        /,
+    ) -> None: ...
+
+    @overload
+    def add_keyed_singleton[TKey, TService, *TFactoryParameter](
+        self,
+        service_key: TKey | None,
+        service_type: type[TService],
+        implementation_factory: Callable[
+            [TKey | None, *TFactoryParameter], Generator[TService]
+        ],
+        /,
+    ) -> None: ...
+
+    @overload
+    def add_keyed_singleton[TKey, TService, *TFactoryParameter](
+        self,
+        service_key: TKey | None,
+        service_type: type[TService],
+        implementation_factory: Callable[
             [TKey | None, *TFactoryParameter], Awaitable[TService]
         ],
         /,
@@ -340,6 +508,26 @@ class ServiceCollection:
         service_key: TKey | None,
         service_type: type[TService],
         implementation_factory: Callable[[TKey | None, *TFactoryParameter], TService],
+        /,
+    ) -> None: ...
+
+    @overload
+    def add_keyed_singleton[TKey, TService, *TFactoryParameter](
+        self,
+        service_key: TKey | None,
+        implementation_factory: Callable[
+            [TKey | None, *TFactoryParameter], AsyncGenerator[TService]
+        ],
+        /,
+    ) -> None: ...
+
+    @overload
+    def add_keyed_singleton[TKey, TService, *TFactoryParameter](
+        self,
+        service_key: TKey | None,
+        implementation_factory: Callable[
+            [TKey | None, *TFactoryParameter], Generator[TService]
+        ],
         /,
     ) -> None: ...
 
@@ -383,11 +571,15 @@ class ServiceCollection:
         self,
         service_key: TKey | None,
         service_type_or_implementation_factory: type[TService]
+        | Callable[[TKey | None, *TFactoryParameter], AsyncGenerator[TService]]
+        | Callable[[TKey | None, *TFactoryParameter], Generator[TService]]
         | Callable[[TKey | None, *TFactoryParameter], Awaitable[TService]]
         | Callable[[TKey | None, *TFactoryParameter], TService],
         implementation_factory_or_implementation_type_or_implementation_instance_or_none: Callable[
-            [TKey | None, *TFactoryParameter], Awaitable[TService]
+            [TKey | None, *TFactoryParameter], AsyncGenerator[TService]
         ]
+        | Callable[[TKey | None, *TFactoryParameter], Generator[TService]]
+        | Callable[[TKey | None, *TFactoryParameter], Awaitable[TService]]
         | Callable[[TKey | None, *TFactoryParameter], TService]
         | type
         | object
@@ -416,6 +608,28 @@ class ServiceCollection:
         service_key: TKey | None,
         service_type: type[TService],
         implementation_factory: Callable[
+            [TKey | None, *TFactoryParameter], AsyncGenerator[TService]
+        ],
+        /,
+    ) -> None: ...
+
+    @overload
+    def add_keyed_scoped[TKey, TService, *TFactoryParameter](
+        self,
+        service_key: TKey | None,
+        service_type: type[TService],
+        implementation_factory: Callable[
+            [TKey | None, *TFactoryParameter], Generator[TService]
+        ],
+        /,
+    ) -> None: ...
+
+    @overload
+    def add_keyed_scoped[TKey, TService, *TFactoryParameter](
+        self,
+        service_key: TKey | None,
+        service_type: type[TService],
+        implementation_factory: Callable[
             [TKey | None, *TFactoryParameter], Awaitable[TService]
         ],
         /,
@@ -427,6 +641,26 @@ class ServiceCollection:
         service_key: TKey | None,
         service_type: type[TService],
         implementation_factory: Callable[[TKey | None, *TFactoryParameter], TService],
+        /,
+    ) -> None: ...
+
+    @overload
+    def add_keyed_scoped[TKey, TService, *TFactoryParameter](
+        self,
+        service_key: TKey | None,
+        implementation_factory: Callable[
+            [TKey | None, *TFactoryParameter], AsyncGenerator[TService]
+        ],
+        /,
+    ) -> None: ...
+
+    @overload
+    def add_keyed_scoped[TKey, TService, *TFactoryParameter](
+        self,
+        service_key: TKey | None,
+        implementation_factory: Callable[
+            [TKey | None, *TFactoryParameter], Generator[TService]
+        ],
         /,
     ) -> None: ...
 
@@ -461,12 +695,16 @@ class ServiceCollection:
         self,
         service_key: TKey | None,
         service_type_or_implementation_factory: type[TService]
+        | Callable[[TKey | None, *TFactoryParameter], AsyncGenerator[TService]]
+        | Callable[[TKey | None, *TFactoryParameter], Generator[TService]]
         | Callable[[TKey | None, *TFactoryParameter], Awaitable[TService]]
         | Callable[[TKey | None, *TFactoryParameter], TService],
         implementation_factory_or_implementation_type_or_none: Callable[
-            [TKey | None, *TFactoryParameter], Awaitable[TService]
+            [TKey | None, *TFactoryParameter], AsyncGenerator[TService]
         ]
-        | Callable[..., TService]
+        | Callable[[TKey | None, *TFactoryParameter], Generator[TService]]
+        | Callable[[TKey | None, *TFactoryParameter], Awaitable[TService]]
+        | Callable[[TKey | None, *TFactoryParameter], TService]
         | type
         | None = None,
         /,
@@ -488,6 +726,22 @@ class ServiceCollection:
     def add_auto_activated_singleton[TService](
         self,
         service_type: type[TService],
+        implementation_factory: Callable[..., AsyncGenerator[TService]],
+        /,
+    ) -> None: ...
+
+    @overload
+    def add_auto_activated_singleton[TService](
+        self,
+        service_type: type[TService],
+        implementation_factory: Callable[..., Generator[TService]],
+        /,
+    ) -> None: ...
+
+    @overload
+    def add_auto_activated_singleton[TService](
+        self,
+        service_type: type[TService],
         implementation_factory: Callable[..., Awaitable[TService]],
         /,
     ) -> None: ...
@@ -497,6 +751,20 @@ class ServiceCollection:
         self,
         service_type: type[TService],
         implementation_factory: Callable[..., TService],
+        /,
+    ) -> None: ...
+
+    @overload
+    def add_auto_activated_singleton[TService](
+        self,
+        implementation_factory: Callable[..., AsyncGenerator[TService]],
+        /,
+    ) -> None: ...
+
+    @overload
+    def add_auto_activated_singleton[TService](
+        self,
+        implementation_factory: Callable[..., Generator[TService]],
         /,
     ) -> None: ...
 
@@ -533,11 +801,15 @@ class ServiceCollection:
     def add_auto_activated_singleton[TService](
         self,
         service_type_or_implementation_factory: type[TService]
+        | Callable[..., AsyncGenerator[TService]]
+        | Callable[..., Generator[TService]]
         | Callable[..., Awaitable[TService]]
         | Callable[..., TService],
         implementation_factory_or_implementation_type_or_implementation_instance_or_none: Callable[
-            ..., Awaitable[TService]
+            ..., AsyncGenerator[TService]
         ]
+        | Callable[..., Generator[TService]]
+        | Callable[..., Awaitable[TService]]
         | Callable[..., TService]
         | type
         | object
@@ -569,6 +841,28 @@ class ServiceCollection:
         service_key: TKey | None,
         service_type: type[TService],
         implementation_factory: Callable[
+            [TKey | None, *TFactoryParameter], AsyncGenerator[TService]
+        ],
+        /,
+    ) -> None: ...
+
+    @overload
+    def add_auto_activated_keyed_singleton[TKey, TService, *TFactoryParameter](
+        self,
+        service_key: TKey | None,
+        service_type: type[TService],
+        implementation_factory: Callable[
+            [TKey | None, *TFactoryParameter], Generator[TService]
+        ],
+        /,
+    ) -> None: ...
+
+    @overload
+    def add_auto_activated_keyed_singleton[TKey, TService, *TFactoryParameter](
+        self,
+        service_key: TKey | None,
+        service_type: type[TService],
+        implementation_factory: Callable[
             [TKey | None, *TFactoryParameter], Awaitable[TService]
         ],
         /,
@@ -580,6 +874,26 @@ class ServiceCollection:
         service_key: TKey | None,
         service_type: type[TService],
         implementation_factory: Callable[[TKey | None, *TFactoryParameter], TService],
+        /,
+    ) -> None: ...
+
+    @overload
+    def add_auto_activated_keyed_singleton[TKey, TService, *TFactoryParameter](
+        self,
+        service_key: TKey | None,
+        implementation_factory: Callable[
+            [TKey | None, *TFactoryParameter], AsyncGenerator[TService]
+        ],
+        /,
+    ) -> None: ...
+
+    @overload
+    def add_auto_activated_keyed_singleton[TKey, TService, *TFactoryParameter](
+        self,
+        service_key: TKey | None,
+        implementation_factory: Callable[
+            [TKey | None, *TFactoryParameter], Generator[TService]
+        ],
         /,
     ) -> None: ...
 
@@ -623,11 +937,15 @@ class ServiceCollection:
         self,
         service_key: TKey | None,
         service_type_or_implementation_factory: type[TService]
+        | Callable[[TKey | None, *TFactoryParameter], AsyncGenerator[TService]]
+        | Callable[[TKey | None, *TFactoryParameter], Generator[TService]]
         | Callable[[TKey | None, *TFactoryParameter], Awaitable[TService]]
         | Callable[[TKey | None, *TFactoryParameter], TService],
         implementation_factory_or_implementation_type_or_implementation_instance_or_none: Callable[
-            [TKey | None, *TFactoryParameter], Awaitable[TService]
+            [TKey | None, *TFactoryParameter], AsyncGenerator[TService]
         ]
+        | Callable[[TKey | None, *TFactoryParameter], Generator[TService]]
+        | Callable[[TKey | None, *TFactoryParameter], Awaitable[TService]]
         | Callable[[TKey | None, *TFactoryParameter], TService]
         | type
         | object
@@ -714,11 +1032,15 @@ class ServiceCollection:
         self,
         lifetime: ServiceLifetime,
         service_type_or_implementation_factory: type[TService]
+        | Callable[..., AsyncGenerator[TService]]
+        | Callable[..., Generator[TService]]
         | Callable[..., Awaitable[TService]]
         | Callable[..., TService],
         implementation_factory_or_implementation_type_or_implementation_instance_or_none: Callable[
-            ..., Awaitable[TService]
+            ..., AsyncGenerator[TService]
         ]
+        | Callable[..., Generator[TService]]
+        | Callable[..., Awaitable[TService]]
         | Callable[..., TService]
         | type
         | object
@@ -728,7 +1050,11 @@ class ServiceCollection:
     ) -> None:
         service_type_to_add: type[TService] | None = None
         implementation_factory_to_add: (
-            Callable[..., Awaitable[TService]] | Callable[..., TService] | None
+            Callable[..., AsyncGenerator[TService]]
+            | Callable[..., Generator[TService]]
+            | Callable[..., Awaitable[TService]]
+            | Callable[..., TService]
+            | None
         ) = None
         implementation_type_to_add: type | None = None
         implementation_instance_to_add: object | None = None
@@ -752,7 +1078,7 @@ class ServiceCollection:
                 implementation_factory_or_implementation_type_or_implementation_instance_or_none
             ):
                 implementation_factory_to_add = cast(
-                    "Callable[..., Awaitable[TService]] | Callable[..., TService]",
+                    "Callable[..., AsyncGenerator[TService]] | Callable[..., Generator[TService]] | Callable[..., Awaitable[TService]] | Callable[..., TService]",
                     implementation_factory_or_implementation_type_or_implementation_instance_or_none,
                 )
             else:
@@ -774,11 +1100,13 @@ class ServiceCollection:
             auto_activate=auto_activate,
         )
 
-    def _add[TService](  # noqa: PLR0913
+    def _add[TService](  # noqa: C901, PLR0912, PLR0913
         self,
         lifetime: ServiceLifetime,
         service_type: type[TService] | None,
-        implementation_factory: Callable[..., Awaitable[TService]]
+        implementation_factory: Callable[..., AsyncGenerator[TService]]
+        | Callable[..., Generator[TService]]
+        | Callable[..., Awaitable[TService]]
         | Callable[..., TService]
         | None,
         implementation_type: type | None,
@@ -823,6 +1151,46 @@ class ServiceCollection:
                 lifetime=lifetime,
                 auto_activate=auto_activate,
             )
+        elif inspect.isasyncgenfunction(implementation_factory):
+            if is_service_key_provided:
+                service_descriptor = (
+                    ServiceDescriptor.from_keyed_async_generator_implementation_factory(
+                        service_type=provided_service_type,
+                        implementation_factory=implementation_factory,
+                        service_key=service_key_to_add,
+                        lifetime=lifetime,
+                        auto_activate=auto_activate,
+                    )
+                )
+            else:
+                service_descriptor = (
+                    ServiceDescriptor.from_async_generator_implementation_factory(
+                        service_type=provided_service_type,
+                        implementation_factory=implementation_factory,
+                        lifetime=lifetime,
+                        auto_activate=auto_activate,
+                    )
+                )
+        elif inspect.isgeneratorfunction(implementation_factory):
+            if is_service_key_provided:
+                service_descriptor = (
+                    ServiceDescriptor.from_keyed_generator_implementation_factory(
+                        service_type=provided_service_type,
+                        implementation_factory=implementation_factory,
+                        service_key=service_key_to_add,
+                        lifetime=lifetime,
+                        auto_activate=auto_activate,
+                    )
+                )
+            else:
+                service_descriptor = (
+                    ServiceDescriptor.from_sync_generator_implementation_factory(
+                        service_type=provided_service_type,
+                        implementation_factory=implementation_factory,
+                        lifetime=lifetime,
+                        auto_activate=auto_activate,
+                    )
+                )
         elif inspect.iscoroutinefunction(implementation_factory):
             if is_service_key_provided:
                 service_descriptor = (
@@ -877,6 +1245,8 @@ class ServiceCollection:
         service_type: type[TService] | None = None,
         implementation_factory: Callable[..., Awaitable[TService]]
         | Callable[..., TService]
+        | Callable[..., Generator[TService]]
+        | Callable[..., AsyncGenerator[TService]]
         | None = None,
     ) -> type:
         if service_type is not None:
@@ -890,6 +1260,12 @@ class ServiceCollection:
         if return_type is None:
             error_message = "Missing return type hints from 'implementation_factory'"
             raise ValueError(error_message)
+
+        return_type_origin = typing.get_origin(return_type)
+
+        if return_type_origin in (Generator, AsyncGenerator):
+            return_type_arguments = typing.get_args(return_type)
+            return return_type_arguments[0]
 
         return return_type
 

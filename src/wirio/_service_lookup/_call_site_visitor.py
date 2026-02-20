@@ -4,6 +4,9 @@ from typing import cast
 from wirio._service_lookup._async_factory_call_site import (
     AsyncFactoryCallSite,
 )
+from wirio._service_lookup._async_generator_factory_call_site import (
+    AsyncGeneratorFactoryCallSite,
+)
 from wirio._service_lookup._call_site_kind import CallSiteKind
 from wirio._service_lookup._constant_call_site import (
     ConstantCallSite,
@@ -20,6 +23,9 @@ from wirio._service_lookup._service_provider_call_site import (
 )
 from wirio._service_lookup._sync_factory_call_site import (
     SyncFactoryCallSite,
+)
+from wirio._service_lookup._sync_generator_factory_call_site import (
+    GeneratorFactoryCallSite,
 )
 from wirio._service_lookup.call_site_result_cache_location import (
     CallSiteResultCacheLocation,
@@ -60,7 +66,7 @@ class CallSiteVisitor[TArgument, TResult](ABC):
     ) -> TResult:
         return await self._visit_call_site_main(call_site, argument)
 
-    async def _visit_call_site_main(
+    async def _visit_call_site_main(  # noqa: PLR0911
         self, call_site: ServiceCallSite, argument: TArgument
     ) -> TResult:
         match call_site.kind:
@@ -72,6 +78,20 @@ class CallSiteVisitor[TArgument, TResult](ABC):
             case CallSiteKind.ASYNC_FACTORY:
                 return await self._visit_async_factory(
                     async_factory_call_site=cast("AsyncFactoryCallSite", call_site),
+                    argument=argument,
+                )
+            case CallSiteKind.SYNC_GENERATOR_FACTORY:
+                return await self._visit_sync_generator_factory(
+                    sync_generator_factory_call_site=cast(
+                        "GeneratorFactoryCallSite", call_site
+                    ),
+                    argument=argument,
+                )
+            case CallSiteKind.ASYNC_GENERATOR_FACTORY:
+                return await self._visit_async_generator_factory(
+                    async_generator_factory_call_site=cast(
+                        "AsyncGeneratorFactoryCallSite", call_site
+                    ),
                     argument=argument,
                 )
             case CallSiteKind.CONSTRUCTOR:
@@ -115,6 +135,20 @@ class CallSiteVisitor[TArgument, TResult](ABC):
     @abstractmethod
     async def _visit_async_factory(
         self, async_factory_call_site: AsyncFactoryCallSite, argument: TArgument
+    ) -> TResult: ...
+
+    @abstractmethod
+    async def _visit_sync_generator_factory(
+        self,
+        sync_generator_factory_call_site: GeneratorFactoryCallSite,
+        argument: TArgument,
+    ) -> TResult: ...
+
+    @abstractmethod
+    async def _visit_async_generator_factory(
+        self,
+        async_generator_factory_call_site: AsyncGeneratorFactoryCallSite,
+        argument: TArgument,
     ) -> TResult: ...
 
     @abstractmethod
