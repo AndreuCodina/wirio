@@ -3,9 +3,15 @@ from typing import Final, final, override
 
 from wirio._service_lookup._async_concurrent_dictionary import AsyncConcurrentDictionary
 from wirio._service_lookup._async_factory_call_site import AsyncFactoryCallSite
+from wirio._service_lookup._async_generator_factory_call_site import (
+    AsyncGeneratorFactoryCallSite,
+)
 from wirio._service_lookup._call_site_visitor import CallSiteVisitor
 from wirio._service_lookup._constant_call_site import ConstantCallSite
 from wirio._service_lookup._constructor_call_site import ConstructorCallSite
+from wirio._service_lookup._sync_generator_factory_call_site import (
+    GeneratorFactoryCallSite,
+)
 from wirio._service_lookup._sequence_call_site import SequenceCallSite
 from wirio._service_lookup._service_call_site import ServiceCallSite
 from wirio._service_lookup._service_provider_call_site import ServiceProviderCallSite
@@ -122,6 +128,22 @@ class CallSiteValidator(CallSiteVisitor[_CallSiteValidatorState, TypedType | Non
     async def _visit_async_factory(
         self,
         async_factory_call_site: AsyncFactoryCallSite,
+        argument: _CallSiteValidatorState,
+    ) -> TypedType | None:
+        return None
+
+    @override
+    async def _visit_sync_generator_factory(
+        self,
+        sync_generator_factory_call_site: GeneratorFactoryCallSite,
+        argument: _CallSiteValidatorState,
+    ) -> TypedType | None:
+        return None
+
+    @override
+    async def _visit_async_generator_factory(
+        self,
+        async_generator_factory_call_site: AsyncGeneratorFactoryCallSite,
         argument: _CallSiteValidatorState,
     ) -> TypedType | None:
         return None

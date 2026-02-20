@@ -30,10 +30,10 @@ class SqlmodelIntegration:
         services.add_singleton(inject_sql_engine)
 
         def inject_sql_session_maker(
-            async_engine: AsyncEngine,
+            sql_engine: AsyncEngine,
         ) -> async_sessionmaker[AsyncSession]:
             return async_sessionmaker(
-                bind=async_engine,
+                bind=sql_engine,
                 class_=AsyncSession,
                 expire_on_commit=expire_on_commit,
                 autoflush=autoflush,
@@ -42,9 +42,9 @@ class SqlmodelIntegration:
         services.add_singleton(inject_sql_session_maker)
 
         def inject_sql_session(
-            async_sessionmaker: async_sessionmaker[AsyncSession],
+            sql_session_maker: async_sessionmaker[AsyncSession],
         ) -> AsyncSession:
-            return async_sessionmaker()
+            return sql_session_maker()
 
         services.add_scoped(inject_sql_session)
 
@@ -62,10 +62,10 @@ class SqlmodelIntegration:
         services.add_singleton(inject_sql_engine)
 
         def inject_sql_session_maker(
-            engine: Engine,
+            sql_engine: Engine,
         ) -> sessionmaker[Session]:
             return sessionmaker(
-                bind=engine,
+                bind=sql_engine,
                 class_=Session,
                 expire_on_commit=expire_on_commit,
                 autoflush=autoflush,
@@ -74,8 +74,8 @@ class SqlmodelIntegration:
         services.add_singleton(inject_sql_session_maker)
 
         def inject_sql_session(
-            sessionmaker: sessionmaker[Session],
+            sql_session_maker: sessionmaker[Session],
         ) -> Session:
-            return sessionmaker()
+            return sql_session_maker()
 
         services.add_scoped(inject_sql_session)

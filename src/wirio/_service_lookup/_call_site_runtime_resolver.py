@@ -1,10 +1,14 @@
 import inspect
 import typing
-from collections.abc import Awaitable, Callable
+from collections.abc import AsyncGenerator, Awaitable, Callable, Generator
+from contextlib import AbstractAsyncContextManager, AbstractContextManager
 from dataclasses import dataclass
 from enum import Flag
+from types import TracebackType
 from typing import (
     ClassVar,
+    Final,
+    Self,
     final,
     override,
 )
@@ -12,12 +16,18 @@ from typing import (
 from wirio._service_lookup._async_factory_call_site import (
     AsyncFactoryCallSite,
 )
+from wirio._service_lookup._async_generator_factory_call_site import (
+    AsyncGeneratorFactoryCallSite,
+)
 from wirio._service_lookup._call_site_visitor import CallSiteVisitor
 from wirio._service_lookup._constant_call_site import (
     ConstantCallSite,
 )
 from wirio._service_lookup._constructor_call_site import (
     ConstructorCallSite,
+)
+from wirio._service_lookup._sync_generator_factory_call_site import (
+    GeneratorFactoryCallSite,
 )
 from wirio._service_lookup._parameter_information import (
     ParameterInformation,
@@ -60,6 +70,80 @@ class _RuntimeResolverLock(Flag):
 class RuntimeResolverContext:
     scope: ServiceProviderEngineScope
     acquired_locks: _RuntimeResolverLock
+
+
+@final
+class _GeneratorFactoryDisposable(
+    AbstractContextManager["_GeneratorFactoryDisposable"]
+):
+    _generator: Final[Generator[object]]
+    _service: object | None
+
+    def __init__(self, generator: Generator[object]) -> None:
+        self._generator = generator
+        self._service = None
+
+    @property
+    def service(self) -> object | None:
+        return self._service
+
+    @override
+    def __enter__(self) -> Self:
+        self._service = next(self._generator)
+        return self
+
+    @override
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> bool | None:
+        try:
+            next(self._generator)
+        except StopIteration:
+            return None
+
+        error_message = "Generator factory must yield exactly one service instance"
+        raise RuntimeError(error_message)
+
+
+@final
+class _AsyncGeneratorFactoryDisposable(
+    AbstractAsyncContextManager["_AsyncGeneratorFactoryDisposable"]
+):
+    _generator: Final[AsyncGenerator[object]]
+    _service: object | None
+
+    def __init__(self, generator: AsyncGenerator[object]) -> None:
+        self._generator = generator
+        self._service = None
+
+    @property
+    def service(self) -> object | None:
+        return self._service
+
+    @override
+    async def __aenter__(self) -> Self:
+        self._service = await anext(self._generator)
+        return self
+
+    @override
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> bool | None:
+        try:
+            await anext(self._generator)
+        except StopAsyncIteration:
+            return None
+
+        error_message = (
+            "Async generator factory must yield exactly one service instance"
+        )
+        raise RuntimeError(error_message)
 
 
 @final
@@ -233,6 +317,7 @@ class CallSiteRuntimeResolver(CallSiteVisitor[RuntimeResolverContext, object | N
 
         service = constructor_call_site.constructor_information.invoke(parameter_values)
 
+        # Use await argument.scope.capture_disposable(disposable) directly ???
         if isinstance(service, SupportsAsyncContextManager):
             await service.__aenter__()
         elif isinstance(service, SupportsContextManager):
@@ -284,6 +369,42 @@ class CallSiteRuntimeResolver(CallSiteVisitor[RuntimeResolverContext, object | N
         elif isinstance(service, SupportsContextManager):
             service.__enter__()
 
+        return service
+
+    @override
+    async def _visit_sync_generator_factory(
+        self,
+        sync_generator_factory_call_site: GeneratorFactoryCallSite,
+        argument: RuntimeResolverContext,
+    ) -> object | None:
+        parameter_services = await self.get_parameter_services(
+            sync_generator_factory_call_site.implementation_factory, argument.scope
+        )
+        service_generator = sync_generator_factory_call_site.implementation_factory(
+            *parameter_services
+        )
+        disposable = _GeneratorFactoryDisposable(service_generator)
+        disposable.__enter__()
+        service = disposable.service
+        await argument.scope.capture_disposable(disposable)
+        return service
+
+    @override
+    async def _visit_async_generator_factory(
+        self,
+        async_generator_factory_call_site: AsyncGeneratorFactoryCallSite,
+        argument: RuntimeResolverContext,
+    ) -> object | None:
+        parameter_services = await self.get_parameter_services(
+            async_generator_factory_call_site.implementation_factory, argument.scope
+        )
+        service_generator = async_generator_factory_call_site.implementation_factory(
+            *parameter_services
+        )
+        disposable = _AsyncGeneratorFactoryDisposable(service_generator)
+        await disposable.__aenter__()
+        service = disposable.service
+        await argument.scope.capture_disposable(disposable)
         return service
 
     @override

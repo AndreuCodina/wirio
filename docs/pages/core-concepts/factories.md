@@ -1,5 +1,7 @@
 # Factories
 
+## Overview
+
 Sometimes, we need to use a factory function to create a service. For example, we have settings (a connection string, database name, etc.) stored using the package `pydantic-settings` and we want to provide them to a service `DatabaseClient` to access a database.
 
 ```python
@@ -41,3 +43,19 @@ services.add_transient(inject_database_client)
 ```
 
 The factories can take as parameters other services registered. In this case, `inject_database_client` takes `ApplicationSettings` as a parameter, and the dependency injection mechanism will resolve it automatically.
+
+## Generator factories
+
+As we have seen, we don't need the boilerplate of creating generator factories, but in order to support the edge case you want to use a library with custom methods instead of context manager support, you also can do it with Wirio.
+
+```python
+async def inject_database_client(application_settings: ApplicationSettings) -> AsyncGenerator[DatabaseClient]:
+    try:
+        database_client = DatabaseClient(application_settings.database_connection_string)
+        await database_client.connect()
+    finally:
+        await database_client.aclose()
+
+
+services.add_transient(inject_database_client)
+```

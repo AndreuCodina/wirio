@@ -228,7 +228,7 @@ class TestTypedType:
 
         assert generic_type == TypedType.from_type(CustomClassWithGenerics2)
 
-    def test_fail_getting_generic_type_definition_when_type_has_no_generics(
+    def test_fail_when_getting_generic_type_definition_when_type_has_no_generics(
         self,
     ) -> None:
         typed_type = TypedType.from_type(int)

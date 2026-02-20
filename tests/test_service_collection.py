@@ -1,6 +1,6 @@
 import asyncio
 from abc import ABC
-from collections.abc import Sequence
+from collections.abc import AsyncGenerator, Generator, Sequence
 from contextlib import AbstractAsyncContextManager, AbstractContextManager
 from dataclasses import dataclass
 from types import TracebackType
@@ -2033,3 +2033,164 @@ class TestServiceCollection:
                 isinstance(service, ServiceWithNoDependencies)
                 for service in resolved_service.service_sequence
             )
+
+    @pytest.mark.parametrize(
+        argnames=("service_lifetime", "is_async_generator_implementation_factory"),
+        argvalues=[
+            (ServiceLifetime.SINGLETON, True),
+            (ServiceLifetime.SINGLETON, False),
+            (ServiceLifetime.SCOPED, True),
+            (ServiceLifetime.SCOPED, False),
+            (ServiceLifetime.TRANSIENT, True),
+            (ServiceLifetime.TRANSIENT, False),
+        ],
+    )
+    async def test_dispose_service_from_generator_implementation_factory(
+        self,
+        service_lifetime: ServiceLifetime,
+        is_async_generator_implementation_factory: bool,
+    ) -> None:
+        is_disposed = False
+
+        async def async_generator_implementation_factory(
+            _: BaseServiceProvider,
+        ) -> AsyncGenerator[ServiceWithAsyncContextManagerAndNoDependencies]:
+            nonlocal is_disposed
+
+            async with ServiceWithAsyncContextManagerAndNoDependencies() as service:
+                yield service
+
+            is_disposed = True
+
+        def generator_implementation_factory(
+            _: BaseServiceProvider,
+        ) -> Generator[ServiceWithSyncContextManagerAndNoDependencies]:
+            nonlocal is_disposed
+
+            with ServiceWithSyncContextManagerAndNoDependencies() as service:
+                yield service
+
+            is_disposed = True
+
+        services = ServiceCollection()
+        service_type = (
+            ServiceWithAsyncContextManagerAndNoDependencies
+            if is_async_generator_implementation_factory
+            else ServiceWithSyncContextManagerAndNoDependencies
+        )
+        implementation_factory = (
+            async_generator_implementation_factory
+            if is_async_generator_implementation_factory
+            else generator_implementation_factory
+        )
+
+        match service_lifetime:
+            case ServiceLifetime.SINGLETON:
+                services.add_singleton(service_type, implementation_factory)
+            case ServiceLifetime.SCOPED:
+                services.add_scoped(service_type, implementation_factory)
+            case ServiceLifetime.TRANSIENT:
+                services.add_transient(service_type, implementation_factory)
+
+        async with services.build_service_provider() as service_provider:
+            async with service_provider.create_scope() as service_scope:
+                resolved_service = await service_scope.get_required_service(
+                    service_type
+                )
+
+                assert isinstance(resolved_service, service_type)
+                assert not is_disposed
+
+            if service_lifetime in (ServiceLifetime.SCOPED, ServiceLifetime.TRANSIENT):
+                assert is_disposed
+
+            if service_lifetime is ServiceLifetime.SINGLETON:
+                assert not is_disposed
+
+        assert is_disposed
+
+    @pytest.mark.parametrize(
+        argnames=("service_lifetime", "is_async_generator_implementation_factory"),
+        argvalues=[
+            (ServiceLifetime.SINGLETON, True),
+            (ServiceLifetime.SINGLETON, False),
+            (ServiceLifetime.SCOPED, True),
+            (ServiceLifetime.SCOPED, False),
+            (ServiceLifetime.TRANSIENT, True),
+            (ServiceLifetime.TRANSIENT, False),
+        ],
+    )
+    async def test_dispose_keyed_service_from_generator_implementation_factory(
+        self,
+        service_lifetime: ServiceLifetime,
+        is_async_generator_implementation_factory: bool,
+    ) -> None:
+        expected_service_key = "key"
+        is_disposed = False
+
+        async def async_generator_implementation_factory(
+            the_key: str | None,
+            _: BaseServiceProvider,
+        ) -> AsyncGenerator[ServiceWithAsyncContextManagerAndNoDependencies]:
+            nonlocal is_disposed
+            assert the_key == expected_service_key
+
+            async with ServiceWithAsyncContextManagerAndNoDependencies() as service:
+                yield service
+
+            is_disposed = True
+
+        def generator_implementation_factory(
+            the_key: str | None,
+            _: BaseServiceProvider,
+        ) -> Generator[ServiceWithSyncContextManagerAndNoDependencies]:
+            nonlocal is_disposed
+            assert the_key == expected_service_key
+
+            with ServiceWithSyncContextManagerAndNoDependencies() as service:
+                yield service
+
+            is_disposed = True
+
+        services = ServiceCollection()
+        service_type = (
+            ServiceWithAsyncContextManagerAndNoDependencies
+            if is_async_generator_implementation_factory
+            else ServiceWithSyncContextManagerAndNoDependencies
+        )
+        implementation_factory = (
+            async_generator_implementation_factory
+            if is_async_generator_implementation_factory
+            else generator_implementation_factory
+        )
+
+        match service_lifetime:
+            case ServiceLifetime.SINGLETON:
+                services.add_keyed_singleton(
+                    expected_service_key, service_type, implementation_factory
+                )
+            case ServiceLifetime.SCOPED:
+                services.add_keyed_scoped(
+                    expected_service_key, service_type, implementation_factory
+                )
+            case ServiceLifetime.TRANSIENT:
+                services.add_keyed_transient(
+                    expected_service_key, service_type, implementation_factory
+                )
+
+        async with services.build_service_provider() as service_provider:
+            async with service_provider.create_scope() as service_scope:
+                resolved_service = await service_scope.get_required_keyed_service(
+                    expected_service_key, service_type
+                )
+
+                assert isinstance(resolved_service, service_type)
+                assert not is_disposed
+
+            if service_lifetime in (ServiceLifetime.SCOPED, ServiceLifetime.TRANSIENT):
+                assert is_disposed
+
+            if service_lifetime is ServiceLifetime.SINGLETON:
+                assert not is_disposed
+
+        assert is_disposed

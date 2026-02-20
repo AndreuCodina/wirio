@@ -9,6 +9,9 @@ from wirio._service_lookup._async_concurrent_dictionary import (
 from wirio._service_lookup._async_factory_call_site import (
     AsyncFactoryCallSite,
 )
+from wirio._service_lookup._async_generator_factory_call_site import (
+    AsyncGeneratorFactoryCallSite,
+)
 from wirio._service_lookup._asyncio_reentrant_lock import AsyncioReentrantLock
 from wirio._service_lookup._call_site_chain import CallSiteChain
 from wirio._service_lookup._constant_call_site import (
@@ -19,6 +22,9 @@ from wirio._service_lookup._constructor_call_site import (
 )
 from wirio._service_lookup._constructor_information import (
     ConstructorInformation,
+)
+from wirio._service_lookup._sync_generator_factory_call_site import (
+    GeneratorFactoryCallSite,
 )
 from wirio._service_lookup._parameter_information import (
     ParameterInformation,
@@ -558,7 +564,7 @@ class CallSiteFactory(ServiceProviderIsKeyedService, ServiceProviderIsService):
     ) -> bool:
         return descriptor_type == service_type
 
-    async def _create_exact(
+    async def _create_exact(  # noqa: C901
         self,
         service_descriptor: ServiceDescriptor,
         service_identifier: ServiceIdentifier,
@@ -617,6 +623,45 @@ class CallSiteFactory(ServiceProviderIsKeyedService, ServiceProviderIsService):
                 cache=cache,
                 service_type=service_descriptor.service_type,
                 implementation_factory=service_descriptor.keyed_async_implementation_factory,
+                service_key=service_identifier.service_key,
+            )
+        elif (
+            not service_descriptor.is_keyed_service
+            and service_descriptor.generator_implementation_factory is not None
+        ):
+            service_call_site = GeneratorFactoryCallSite.from_implementation_factory(
+                cache=cache,
+                service_type=service_descriptor.service_type,
+                implementation_factory=service_descriptor.generator_implementation_factory,
+            )
+        elif (
+            service_descriptor.is_keyed_service
+            and service_descriptor.keyed_generator_implementation_factory is not None
+        ):
+            service_call_site = GeneratorFactoryCallSite.from_keyed_implementation_factory(
+                cache=cache,
+                service_type=service_descriptor.service_type,
+                implementation_factory=service_descriptor.keyed_generator_implementation_factory,
+                service_key=service_identifier.service_key,
+            )
+        elif (
+            not service_descriptor.is_keyed_service
+            and service_descriptor.async_generator_implementation_factory is not None
+        ):
+            service_call_site = AsyncGeneratorFactoryCallSite.from_implementation_factory(
+                cache=cache,
+                service_type=service_descriptor.service_type,
+                implementation_factory=service_descriptor.async_generator_implementation_factory,
+            )
+        elif (
+            service_descriptor.is_keyed_service
+            and service_descriptor.keyed_async_generator_implementation_factory
+            is not None
+        ):
+            service_call_site = AsyncGeneratorFactoryCallSite.from_keyed_implementation_factory(
+                cache=cache,
+                service_type=service_descriptor.service_type,
+                implementation_factory=service_descriptor.keyed_async_generator_implementation_factory,
                 service_key=service_identifier.service_key,
             )
         elif service_descriptor.has_implementation_type():

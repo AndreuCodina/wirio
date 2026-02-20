@@ -4,6 +4,8 @@ from enum import Enum, auto
 class CallSiteKind(Enum):
     SYNC_FACTORY = auto()
     ASYNC_FACTORY = auto()
+    SYNC_GENERATOR_FACTORY = auto()
+    ASYNC_GENERATOR_FACTORY = auto()
     CONSTRUCTOR = auto()
     CONSTANT = auto()
     SEQUENCE = auto()
