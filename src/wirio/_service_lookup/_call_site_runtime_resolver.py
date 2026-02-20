@@ -52,6 +52,7 @@ from wirio._service_lookup._typed_type import TypedType
 from wirio.annotations import FromKeyedServicesInjectable
 from wirio.exceptions import (
     CannotResolveParameterServiceFromImplementationFactoryError,
+    GeneratorFactoryYieldedSeveralTimesError,
 )
 from wirio.service_provider_engine_scope import (
     ServiceProviderEngineScope,
@@ -104,8 +105,7 @@ class _GeneratorFactoryDisposable(
         except StopIteration:
             return None
 
-        error_message = "Generator factory must yield exactly one service instance"
-        raise RuntimeError(error_message)
+        raise GeneratorFactoryYieldedSeveralTimesError
 
 
 @final
@@ -140,10 +140,7 @@ class _AsyncGeneratorFactoryDisposable(
         except StopAsyncIteration:
             return None
 
-        error_message = (
-            "Async generator factory must yield exactly one service instance"
-        )
-        raise RuntimeError(error_message)
+        raise GeneratorFactoryYieldedSeveralTimesError
 
 
 @final

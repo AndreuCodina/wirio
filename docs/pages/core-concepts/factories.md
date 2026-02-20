@@ -50,9 +50,11 @@ As we have seen, we don't need the boilerplate of creating generator factories, 
 
 ```python
 async def inject_database_client(application_settings: ApplicationSettings) -> AsyncGenerator[DatabaseClient]:
+    database_client = DatabaseClient(application_settings.database_connection_string)
+
     try:
-        database_client = DatabaseClient(application_settings.database_connection_string)
         await database_client.connect()
+        yield database_client
     finally:
         await database_client.aclose()
 

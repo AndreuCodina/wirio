@@ -1,3 +1,4 @@
+from collections.abc import AsyncGenerator
 from typing import TYPE_CHECKING, final
 
 from sqlalchemy import Engine
@@ -24,8 +25,13 @@ class SqlmodelIntegration:
         expire_on_commit: bool = False,
         autoflush: bool = True,
     ) -> None:
-        def inject_sql_engine() -> AsyncEngine:
-            return create_async_engine(url=connection_string)
+        async def inject_sql_engine() -> AsyncGenerator[AsyncEngine]:
+            sql_engine = create_async_engine(url=connection_string)
+
+            try:
+                yield sql_engine
+            finally:
+                await sql_engine.dispose()
 
         services.add_singleton(inject_sql_engine)
 

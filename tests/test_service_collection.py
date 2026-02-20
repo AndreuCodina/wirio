@@ -34,6 +34,7 @@ from wirio.exceptions import (
     CannotResolveParameterServiceFromImplementationFactoryError,
     CannotResolveServiceError,
     CircularDependencyError,
+    GeneratorFactoryYieldedSeveralTimesError,
     InvalidServiceKeyTypeError,
     KeyedServiceAnyKeyUsedToResolveServiceError,
     NoKeyedServiceRegisteredError,
@@ -2194,3 +2195,38 @@ class TestServiceCollection:
                 assert not is_disposed
 
         assert is_disposed
+
+    @pytest.mark.parametrize(
+        argnames=("is_async_generator_implementation_factory"),
+        argvalues=[True, False],
+    )
+    async def test_fail_when_generator_implementation_factory_yields_more_than_once(
+        self, is_async_generator_implementation_factory: bool
+    ) -> None:
+        async def async_generator_implementation_factory(
+            _: BaseServiceProvider,
+        ) -> AsyncGenerator[ServiceWithNoDependencies]:
+            yield ServiceWithNoDependencies()
+            yield ServiceWithNoDependencies()
+
+        def sync_generator_implementation_factory(
+            _: BaseServiceProvider,
+        ) -> Generator[ServiceWithNoDependencies]:
+            yield ServiceWithNoDependencies()
+            yield ServiceWithNoDependencies()
+
+        services = ServiceCollection()
+
+        if is_async_generator_implementation_factory:
+            services.add_transient(
+                ServiceWithNoDependencies, async_generator_implementation_factory
+            )
+        else:
+            services.add_transient(
+                ServiceWithNoDependencies, sync_generator_implementation_factory
+            )
+
+        async with services.build_service_provider() as service_provider:
+            with pytest.raises(GeneratorFactoryYieldedSeveralTimesError):
+                async with service_provider.create_scope() as service_scope:
+                    await service_scope.get_required_service(ServiceWithNoDependencies)
