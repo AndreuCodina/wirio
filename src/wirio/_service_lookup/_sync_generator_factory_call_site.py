@@ -10,7 +10,7 @@ from wirio.wirio_undefined import WirioUndefined
 
 
 @final
-class GeneratorFactoryCallSite(ServiceCallSite):
+class SyncGeneratorFactoryCallSite(ServiceCallSite):
     _service_type: Final[TypedType]
     _implementation_factory: Callable[..., Generator[object]]
 
@@ -31,7 +31,7 @@ class GeneratorFactoryCallSite(ServiceCallSite):
         cache: ResultCache,
         service_type: TypedType,
         implementation_factory: Callable[..., Generator[object]],
-    ) -> "GeneratorFactoryCallSite":
+    ) -> "SyncGeneratorFactoryCallSite":
         self = cls(cache=cache, service_type=service_type)
         self._implementation_factory = implementation_factory
         return self
@@ -43,7 +43,7 @@ class GeneratorFactoryCallSite(ServiceCallSite):
         service_type: TypedType,
         implementation_factory: Callable[..., Generator[object]],
         service_key: object | None,
-    ) -> "GeneratorFactoryCallSite":
+    ) -> "SyncGeneratorFactoryCallSite":
         self = cls(cache=cache, service_type=service_type, service_key=service_key)
         self._implementation_factory = partial(implementation_factory, service_key)
         return self

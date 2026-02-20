@@ -25,7 +25,7 @@ from wirio._service_lookup._sync_factory_call_site import (
     SyncFactoryCallSite,
 )
 from wirio._service_lookup._sync_generator_factory_call_site import (
-    GeneratorFactoryCallSite,
+    SyncGeneratorFactoryCallSite,
 )
 from wirio._service_lookup.call_site_result_cache_location import (
     CallSiteResultCacheLocation,
@@ -83,7 +83,7 @@ class CallSiteVisitor[TArgument, TResult](ABC):
             case CallSiteKind.SYNC_GENERATOR_FACTORY:
                 return await self._visit_sync_generator_factory(
                     sync_generator_factory_call_site=cast(
-                        "GeneratorFactoryCallSite", call_site
+                        "SyncGeneratorFactoryCallSite", call_site
                     ),
                     argument=argument,
                 )
@@ -140,7 +140,7 @@ class CallSiteVisitor[TArgument, TResult](ABC):
     @abstractmethod
     async def _visit_sync_generator_factory(
         self,
-        sync_generator_factory_call_site: GeneratorFactoryCallSite,
+        sync_generator_factory_call_site: SyncGeneratorFactoryCallSite,
         argument: TArgument,
     ) -> TResult: ...
 

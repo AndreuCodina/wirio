@@ -46,7 +46,7 @@ from wirio._service_lookup._sync_factory_call_site import (
     SyncFactoryCallSite,
 )
 from wirio._service_lookup._sync_generator_factory_call_site import (
-    GeneratorFactoryCallSite,
+    SyncGeneratorFactoryCallSite,
 )
 from wirio._service_lookup._typed_type import TypedType
 from wirio.annotations import FromKeyedServicesInjectable
@@ -370,7 +370,7 @@ class CallSiteRuntimeResolver(CallSiteVisitor[RuntimeResolverContext, object | N
     @override
     async def _visit_sync_generator_factory(
         self,
-        sync_generator_factory_call_site: GeneratorFactoryCallSite,
+        sync_generator_factory_call_site: SyncGeneratorFactoryCallSite,
         argument: RuntimeResolverContext,
     ) -> object | None:
         parameter_services = await self.get_parameter_services(

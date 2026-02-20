@@ -14,7 +14,7 @@ from wirio._service_lookup._service_call_site import ServiceCallSite
 from wirio._service_lookup._service_provider_call_site import ServiceProviderCallSite
 from wirio._service_lookup._sync_factory_call_site import SyncFactoryCallSite
 from wirio._service_lookup._sync_generator_factory_call_site import (
-    GeneratorFactoryCallSite,
+    SyncGeneratorFactoryCallSite,
 )
 from wirio._service_lookup._typed_type import TypedType
 from wirio._service_lookup.service_cache_key import ServiceCacheKey
@@ -135,7 +135,7 @@ class CallSiteValidator(CallSiteVisitor[_CallSiteValidatorState, TypedType | Non
     @override
     async def _visit_sync_generator_factory(
         self,
-        sync_generator_factory_call_site: GeneratorFactoryCallSite,
+        sync_generator_factory_call_site: SyncGeneratorFactoryCallSite,
         argument: _CallSiteValidatorState,
     ) -> TypedType | None:
         return None
