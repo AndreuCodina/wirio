@@ -16,7 +16,10 @@ from wirio._service_lookup.call_site_result_cache_location import (
     CallSiteResultCacheLocation,
 )
 from wirio.abstractions.keyed_service import KeyedService
-from wirio.exceptions import ServiceDescriptorDoesNotExistError
+from wirio.exceptions import (
+    InvalidServiceDescriptorError,
+    ServiceDescriptorDoesNotExistError,
+)
 from wirio.service_descriptor import ServiceDescriptor
 from wirio.service_lifetime import ServiceLifetime
 
@@ -283,3 +286,94 @@ class TestCallSiteFactory:
         cache_item = ServiceDescriptorCacheItem()
 
         assert len(cache_item) == 0
+
+    def test_return_latest_descriptor_when_cache_item_has_multiple_items(self) -> None:
+        first_descriptor = ServiceDescriptor.from_implementation_type(
+            service_type=ServiceWithNoDependencies,
+            implementation_type=ServiceWithNoDependencies,
+            service_key=None,
+            lifetime=ServiceLifetime.SINGLETON,
+            auto_activate=False,
+        )
+        second_descriptor = ServiceDescriptor.from_implementation_type(
+            service_type=ServiceWithNoDependencies,
+            implementation_type=ServiceWithNoDependencies,
+            service_key=None,
+            lifetime=ServiceLifetime.SCOPED,
+            auto_activate=False,
+        )
+
+        cache_item = ServiceDescriptorCacheItem().add(first_descriptor)
+
+        assert cache_item.last is first_descriptor
+
+        cache_item = (
+            ServiceDescriptorCacheItem().add(first_descriptor).add(second_descriptor)
+        )
+
+        assert cache_item.last is second_descriptor
+
+    def test_keep_previous_cache_item_immutable_when_adding_new_descriptor(
+        self,
+    ) -> None:
+        first_descriptor = ServiceDescriptor.from_implementation_type(
+            service_type=ServiceWithNoDependencies,
+            implementation_type=ServiceWithNoDependencies,
+            service_key=None,
+            lifetime=ServiceLifetime.SINGLETON,
+            auto_activate=False,
+        )
+        second_descriptor = ServiceDescriptor.from_implementation_type(
+            service_type=ServiceWithNoDependencies,
+            implementation_type=ServiceWithNoDependencies,
+            service_key=None,
+            lifetime=ServiceLifetime.SCOPED,
+            auto_activate=False,
+        )
+        third_descriptor = ServiceDescriptor.from_implementation_type(
+            service_type=ServiceWithNoDependencies,
+            implementation_type=ServiceWithNoDependencies,
+            service_key=None,
+            lifetime=ServiceLifetime.TRANSIENT,
+            auto_activate=False,
+        )
+        previous_cache_item = (
+            ServiceDescriptorCacheItem()
+            .add(first_descriptor)
+            .add(second_descriptor)
+            .add(third_descriptor)
+        )
+
+        assert previous_cache_item.last is third_descriptor
+        assert list(previous_cache_item) == [
+            first_descriptor,
+            second_descriptor,
+            third_descriptor,
+        ]
+
+    async def test_fail_when_resolving_service_descriptor_without_registration_strategy(
+        self,
+    ) -> None:
+        service_type = ServiceWithNoDependencies
+        descriptor = ServiceDescriptor(
+            service_type=service_type,
+            service_key=None,
+            lifetime=ServiceLifetime.SINGLETON,
+            auto_activate=False,
+        )
+        call_site_factory = CallSiteFactory([descriptor])
+
+        with pytest.raises(InvalidServiceDescriptorError):
+            await call_site_factory.get_call_site_from_service_identifier(
+                ServiceIdentifier.from_service_type(
+                    service_type=TypedType.from_type(service_type)
+                ),
+                CallSiteChain(),
+            )
+
+    def test_return_empty_iterator_when_descriptor_cache_item_has_no_items(
+        self,
+    ) -> None:
+        cache_item = ServiceDescriptorCacheItem()
+
+        assert list(cache_item) == []

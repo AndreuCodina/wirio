@@ -314,7 +314,6 @@ class CallSiteRuntimeResolver(CallSiteVisitor[RuntimeResolverContext, object | N
 
         service = constructor_call_site.constructor_information.invoke(parameter_values)
 
-        # Use await argument.scope.capture_disposable(disposable) directly ???
         if isinstance(service, SupportsAsyncContextManager):
             await service.__aenter__()
         elif isinstance(service, SupportsContextManager):

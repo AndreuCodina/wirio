@@ -96,7 +96,7 @@ class ServiceDescriptorCacheItem:
             new_cache_item._item = descriptor
         else:
             new_cache_item._item = self._item
-            new_cache_item._items = self._items if self._items is not None else []
+            new_cache_item._items = list(self._items) if self._items is not None else []
             new_cache_item._items.append(descriptor)
 
         return new_cache_item

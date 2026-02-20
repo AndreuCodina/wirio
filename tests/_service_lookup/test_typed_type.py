@@ -181,6 +181,14 @@ class TestTypedType:
             assert typed_type_1 != typed_type_2
             assert hash(typed_type_1) != hash(typed_type_2)
 
+    def test_inequality_with_non_typed_type(
+        self,
+    ) -> None:
+        typed_type = TypedType.from_type(ServiceWithNoDependencies)
+        non_typed_type = "another_type"
+
+        assert typed_type != non_typed_type
+
     def test_extract_type_hints_from_instance(self) -> None:
         expected_typed_type = TypedType.from_type(CustomClassWithGenerics2[int, str])
 

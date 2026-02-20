@@ -1,5 +1,6 @@
 import pytest
 
+from tests.utils.services import ServiceWithNoDependencies
 from wirio._service_lookup._constant_call_site import (
     ConstantCallSite,
 )
@@ -32,3 +33,11 @@ class TestConstantCallSite:
             ConstantCallSite(service_type=service_type, default_value=NotChild())
 
         assert str(exception_info.value) == expected_error_message
+
+    def test_return_service_type(self) -> None:
+        service_type = TypedType.from_type(ServiceWithNoDependencies)
+        constant_call_site = ConstantCallSite(
+            service_type=service_type, default_value=None
+        )
+
+        assert constant_call_site.service_type is service_type

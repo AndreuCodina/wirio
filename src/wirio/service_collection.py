@@ -944,8 +944,8 @@ class ServiceCollection:
         implementation_factory_or_implementation_type_or_implementation_instance_or_none: Callable[
             [TKey | None, *TFactoryParameter], AsyncGenerator[TService]
         ]
-        | Callable[[TKey | None, *TFactoryParameter], Awaitable[TService]]
         | Callable[[TKey | None, *TFactoryParameter], Generator[TService]]
+        | Callable[[TKey | None, *TFactoryParameter], Awaitable[TService]]
         | Callable[[TKey | None, *TFactoryParameter], TService]
         | type
         | object
@@ -1040,8 +1040,8 @@ class ServiceCollection:
             ..., AsyncGenerator[TService]
         ]
         | Callable[..., Generator[TService]]
-        | Callable[..., TService]
         | Callable[..., Awaitable[TService]]
+        | Callable[..., TService]
         | type
         | object
         | None = None,
@@ -1265,14 +1265,6 @@ class ServiceCollection:
 
         if return_type_origin in (Generator, AsyncGenerator):
             return_type_arguments = typing.get_args(return_type)
-
-            if len(return_type_arguments) == 0:
-                error_message = (
-                    "Missing service type in generator return type hints from "
-                    "'implementation_factory'"
-                )
-                raise ValueError(error_message)
-
             return return_type_arguments[0]
 
         return return_type
