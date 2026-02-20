@@ -39,7 +39,7 @@ class ServiceCollection:
     def build_service_provider(
         self, validate_scopes: bool = False, validate_on_build: bool = True
     ) -> ServiceProvider:
-        """Create a :class:`ServiceProvider` containing services from the provided :class:`ServiceCollection`."""
+        """Create a :class:`ServiceProvider` containing services from the this :class:`ServiceCollection`."""
         return ServiceProvider(
             descriptors=self._descriptors,
             validate_scopes=validate_scopes,

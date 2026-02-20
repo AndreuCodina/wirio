@@ -2,7 +2,7 @@
 
 ## Overview
 
-Wirio validates our service graph at startup and during resolution, so that dependency issues fail fast instead of surfacing as runtime bugs. Validation is opt-in through the `ServiceCollection.build_service_provider(validate_scopes: bool =False, validate_on_build: bool =True)` switches. Use them to:
+Wirio validates our service graph at startup and during resolution, so that dependency issues fail fast instead of surfacing as runtime bugs. Validation is opt-in through `services.build_service_provider(validate_scopes=True, validate_on_build=True)` switches. Use them to:
 
 - Catch missing registrations (`CannotResolveServiceError`) before the first request.
 - Detect scoped services flowing into singletons (`ScopedInSingletonError`).
