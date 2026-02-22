@@ -60,7 +60,7 @@ services.add_transient(inject_database_client)
 
 ## Generator factories
 
-Wirio is smart and doesn't need the boilerplate of creating generator factories, but in order to support the edge case we want to use a library with custom methods instead of context manager support, we also can do it with Wirio.
+Wirio is smart and doesn't need the boilerplate of creating generator factories, but in order to support the edge case where we want to use a library that provides custom methods instead of context manager support, Wirio can handle that as well.
 
 ```python
 async def inject_database_client(application_settings: ApplicationSettings) -> AsyncGenerator[DatabaseClient]:
