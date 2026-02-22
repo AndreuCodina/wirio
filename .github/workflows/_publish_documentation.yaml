@@ -2,6 +2,7 @@ name: Publish documentation
 
 on:
   workflow_call:
+  workflow_dispatch:
 
 env:
   UV_NO_SYNC: 1

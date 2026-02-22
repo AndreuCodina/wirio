@@ -78,4 +78,4 @@ Attempting to resolve a scoped service (or something that depends on it) directl
 ## Putting it together
 
 - We can disable validations selectively when we prefer lazy validation or no validation for faster startup times.
-- Keeping both validation flags enabled in production—together with auto-activated services—provides the fastest feedback loop and guarantees that our container is consistent before accepting traffic.
+- Keeping both validation flags enabled in production—together with auto-activated services—provides the fastest feedback loop and guarantees that our service provider is consistent before accepting traffic.

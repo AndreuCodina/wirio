@@ -2,7 +2,7 @@
 
 ## Define dependencies
 
-To showcase the basics of Wirio, we will create a container able to resolve the following:
+To showcase the basics of Wirio, we will create a service collection able to resolve the following:
 
 - `EmailService`: A simple service with no dependencies.
 - `UserService`: A service depending on `EmailService`.

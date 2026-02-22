@@ -2,7 +2,7 @@
 
 ## Benefits
 
-You had to dive into the docs every time to set up SQLModel: multiple ways to initialize it, context managers everywhere, different settings for sync and async.
+We had to dive into the docs every time to set up SQLModel: multiple ways to initialize it, context managers everywhere, different settings for sync and async.
 
 Setting up SQLModel should take seconds, and be configured with the best practices by just adding a single line of code.
 

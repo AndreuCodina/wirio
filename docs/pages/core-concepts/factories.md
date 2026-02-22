@@ -1,37 +1,53 @@
 # Factories
 
-## Overview
+## Quickstart
 
-Sometimes, we need to use a factory function to create a service. For example, we have settings (a connection string, database name, etc.) stored using the package `pydantic-settings` and we want to provide them to a service `DatabaseClient` to access a database.
+Sometimes, a service cannot be created automatically. For example, consider `DatabaseClient`, which requires a connection string:
 
 ```python
-class ApplicationSettings(BaseSettings):
-    database_connection_string: str
-
-
 class DatabaseClient:
     def __init__(self, connection_string: str) -> None:
         pass
 ```
 
-In a real `DatabaseClient` implementation, we must use a sync or async context manager, i.e., we instance it with:
+`str` is too generic to register as a service. We could have other strings registered (e.g., API URL, logging level, service bus queue), and it wouldn't be clear which string is the connection string.
+
+The connection string could come from anywhere: an environment variable, a config file, a secrets manager, etc.
+
+Let's say we want to get the connection string from an environment variable. We can create a factory function that reads the environment variable and returns `DatabaseClient`, the service we want to register, and then we can register that factory as a service:
 
 ```python
-async with DatabaseClient(database_connection_string) as client:
-    ...
+def inject_database_client() -> DatabaseClient:
+    return DatabaseClient(
+        connection_string=os.environ["DATABASE_CONNECTION_STRING"]
+    )
+
+services.add_transient(inject_database_client)
 ```
 
-And, if we want to reuse it, we create a factory function with yield:
+Wirio will automatically resolve the dependencies of the factory (in this case, none, because the factory has no parameters) and use the returned type (`DatabaseClient`) as the service type to register.
+
+!!! note "Note"
+
+    The factory can be async if we need to perform asynchronous operations during service creation, such as fetching secrets or performing I/O operations.
+
+## Dependencies
+
+We've seen that we can register services by providing a factory, but what if our factory needs dependencies itself? No problem! Just add them as parameters to the factory, and Wirio will resolve them for us.
+
+For example, the typical approach to manage settings is to centralize them in an `ApplicationSettings` class, which we register as a singleton service:
 
 ```python
-async def create_database_client(application_settings: ApplicationSettings) -> AsyncGenerator[DatabaseClient]:
-    async with DatabaseClient(application_settings.database_connection_string) as database_client:
-        yield database_client
+from pydantic_settings import BaseSettings
+
+
+class ApplicationSettings(BaseSettings):
+    database_connection_string: str
+
+services.add_singleton(ApplicationSettings, ApplicationSettings())
 ```
 
-With that factory, we have to provide manually a singleton of `ApplicationSettings`, and to know if `DatabaseClient` implements a sync or async context manager, or neither. Apart from that, if we need a singleton or scoped instance of `DatabaseClient`, it's very complex to manage the disposal of the instance.
-
-Then, why don't just return it? With this package, we just have this:
+Then, we can inject `ApplicationSettings` into our factory to create the `DatabaseClient`:
 
 ```python
 def inject_database_client(application_settings: ApplicationSettings) -> DatabaseClient:
@@ -42,11 +58,9 @@ def inject_database_client(application_settings: ApplicationSettings) -> Databas
 services.add_transient(inject_database_client)
 ```
 
-The factories can take as parameters other services registered. In this case, `inject_database_client` takes `ApplicationSettings` as a parameter, and the dependency injection mechanism will resolve it automatically.
-
 ## Generator factories
 
-As we have seen, we don't need the boilerplate of creating generator factories, but in order to support the edge case you want to use a library with custom methods instead of context manager support, you also can do it with Wirio.
+Wirio is smart and doesn't need the boilerplate of creating generator factories, but in order to support the edge case we want to use a library with custom methods instead of context manager support, we also can do it with Wirio.
 
 ```python
 async def inject_database_client(application_settings: ApplicationSettings) -> AsyncGenerator[DatabaseClient]:

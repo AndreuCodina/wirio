@@ -18,6 +18,9 @@ validation:
     unrecognized_links: warn
 theme:
   name: material
+  icon:
+    admonition:
+      note: octicons/tag-16
   features:
     - navigation.expand
     - navigation.path
@@ -37,6 +40,8 @@ markdown_extensions:
         kwds:
           case: lower
       alternate_style: true
+  - pymdownx.details
+  - admonition
 plugins:
   - search
   - mkdocstrings:
