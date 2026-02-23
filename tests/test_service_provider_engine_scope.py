@@ -96,7 +96,7 @@ class TestServiceProviderEngineScope:
             False,
         ],
     )
-    async def test_dispose_service_when_capturing_service_after_scope_disposal(
+    async def test_dispose_service_when_capturing_service_after_engine_scope_disposal(
         self, is_async_service: bool
     ) -> None:
         services = ServiceCollection()
