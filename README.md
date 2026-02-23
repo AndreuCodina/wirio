@@ -49,9 +49,9 @@ async def create_user(
     ...
 
 services = ServiceCollection()
+services.configure_fastapi(app)
 services.add_transient(EmailService)
 services.add_transient(UserService)
-services.configure_fastapi(app)
 ```
 
 ## ✨ Quickstart without FastAPI

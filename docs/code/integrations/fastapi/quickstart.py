@@ -29,6 +29,6 @@ async def create_user(
 
 
 services = ServiceCollection()
+services.configure_fastapi(app)  # (2)!
 services.add_transient(EmailService)
 services.add_transient(UserService)
-services.configure_fastapi(app)  # (2)!

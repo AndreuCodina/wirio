@@ -13,7 +13,7 @@ To showcase the basics of Wirio, we will create a service collection able to res
 
 ## Register services
 
-The next step is to create a container and register the dependencies we just defined.
+The next step is to create the service collection and register the dependencies we just defined.
 
 ```python title="main.py" hl_lines="4-5"
 from wirio.service_collection import ServiceCollection

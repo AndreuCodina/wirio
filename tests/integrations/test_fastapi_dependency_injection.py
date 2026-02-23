@@ -56,8 +56,8 @@ class TestFastapiDependencyInjection:
 
         app.include_router(router)
         services = ServiceCollection()
-        services.add_transient(ServiceWithNoDependencies)
         services.configure_fastapi(app)
+        services.add_transient(ServiceWithNoDependencies)
         return app
 
     @pytest.fixture
@@ -160,8 +160,8 @@ class TestFastapiDependencyInjection:
             assert isinstance(service_with_no_dependencies, ServiceWithNoDependencies)
 
         services = ServiceCollection()
-        services.add_transient(ServiceWithNoDependencies)
         services.configure_fastapi(app)
+        services.add_transient(ServiceWithNoDependencies)
 
         with TestClient(app) as test_client:
             response = test_client.get("/optional-dependency")
@@ -229,8 +229,8 @@ class TestFastapiDependencyInjection:
 
         app.include_router(router)
         services = ServiceCollection()
-        services.add_singleton(str, expected_wirio_injection)
         services.configure_fastapi(app)
+        services.add_singleton(str, expected_wirio_injection)
 
         with TestClient(app) as test_client:
             response = test_client.get(
@@ -254,8 +254,8 @@ class TestFastapiDependencyInjection:
 
         app.include_router(router)
         services = ServiceCollection()
-        services.add_keyed_transient(service_key, ServiceWithNoDependencies)
         services.configure_fastapi(app)
+        services.add_keyed_transient(service_key, ServiceWithNoDependencies)
 
         with TestClient(app) as test_client:
             response = test_client.get("/endpoint")
@@ -296,8 +296,8 @@ class TestFastapiDependencyInjection:
     ) -> None:
         app = FastAPI()
         services = ServiceCollection()
-        services.add_transient(ServiceWithNoDependencies)
         services.configure_fastapi(app)
+        services.add_transient(ServiceWithNoDependencies)
         service_with_no_dependencies_mock = mocker.create_autospec(
             ServiceWithNoDependencies, instance=True
         )
@@ -318,3 +318,25 @@ class TestFastapiDependencyInjection:
             )
             assert resolved_service is not service_with_no_dependencies_mock
             assert isinstance(resolved_service, ServiceWithNoDependencies)
+
+    def test_resolve_service_when_service_is_registered_after_fastapi_integration_setup(
+        self,
+    ) -> None:
+        app = FastAPI()
+        router = APIRouter()
+
+        @router.get("/endpoint")
+        async def endpoint(  # pyright: ignore[reportUnusedFunction]
+            service: Annotated[ServiceWithNoDependencies, FromServices()],
+        ) -> None:
+            assert isinstance(service, ServiceWithNoDependencies)
+
+        app.include_router(router)
+        services = ServiceCollection()
+        services.configure_fastapi(app)
+        services.add_transient(ServiceWithNoDependencies)
+
+        with TestClient(app) as test_client:
+            response = test_client.get("/endpoint")
+
+            assert response.status_code == HTTPStatus.OK

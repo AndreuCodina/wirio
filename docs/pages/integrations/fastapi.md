@@ -17,7 +17,7 @@ uv add wirio[fastapi]
 
 ## Quickstart
 
-```python hl_lines="26 34"
+```python hl_lines="26 32"
 --8<-- "docs/code/integrations/fastapi/quickstart.py"
 ```
 
