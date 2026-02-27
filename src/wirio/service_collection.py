@@ -36,6 +36,7 @@ class ServiceCollection:
 
     def __init__(self) -> None:
         self._descriptors = []
+        self._configuration = None
         self._validate_on_build = True
 
     @property

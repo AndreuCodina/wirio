@@ -43,7 +43,7 @@ In this example, `port` defaults to `None` when not present.
 
 ## Source precedence
 
-`ConfigurationManager` supports multiple sources, and the last added source has priority. This is because some sources should have priority over other. For example, we may want to load configuration from a file first and then override specific values with environment variables.
+`ConfigurationManager` supports multiple sources, and the last added source has priority. This is because some sources should have priority over others. For example, we may want to load configuration from a file first and then override specific values with environment variables.
 
 This also allows us to load base configuration first and override specific values later (for example, in tests or per environment).
 
@@ -61,16 +61,16 @@ class ApplicationSettings(BaseModel):
 
 
 class DatabaseClient:
-	def __init__(self, connection_string: str) -> None:
-		self.connection_string = connection_string
+    def __init__(self, connection_string: str) -> None:
+        self.connection_string = connection_string
 
 
 services = ServiceCollection()
 
 
 def inject_database_client() -> DatabaseClient:
-	settings = services.configuration[ApplicationSettings]
-	return DatabaseClient(settings.database_connection_string)
+    settings = services.configuration[ApplicationSettings]
+    return DatabaseClient(settings.database_connection_string)
 
 
 services.add_singleton(inject_database_client)
