@@ -45,6 +45,7 @@ from wirio.exceptions import (
     NoServiceRegisteredError,
     NoSingletonServiceRegisteredError,
 )
+from wirio.hosting._environment_variable import EnvironmentVariable
 from wirio.service_collection import ServiceCollection
 from wirio.service_lifetime import ServiceLifetime
 
@@ -2390,3 +2391,15 @@ class TestServiceCollection:
         configuration = services.configuration[ApplicationSettings]
 
         assert configuration.test_wirio_field == expected_test_field
+
+    def test_get_current_environment(self, mocker: MockerFixture) -> None:
+        expected_environment_name = "current_environment"
+        mocker.patch.dict(
+            os.environ,
+            {EnvironmentVariable.WIRIO_ENVIRONMENT.value: expected_environment_name},
+        )
+
+        services = ServiceCollection()
+        environment = services.environment
+
+        assert environment.environment_name == expected_environment_name
