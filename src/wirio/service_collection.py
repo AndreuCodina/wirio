@@ -10,6 +10,7 @@ from wirio.exceptions import (
     NoKeyedSingletonServiceRegisteredError,
     NoSingletonServiceRegisteredError,
 )
+from wirio.hosting.host_environment import HostEnvironment
 from wirio.service_descriptor import ServiceDescriptor
 from wirio.service_lifetime import ServiceLifetime
 from wirio.service_provider import ServiceProvider
@@ -33,18 +34,26 @@ class ServiceCollection:
 
     _descriptors: Final[list[ServiceDescriptor]]
     _configuration: ConfigurationManager | None
+    _host_environment: Final[HostEnvironment]
 
     def __init__(self) -> None:
         self._descriptors = []
         self._configuration = None
+        self._host_environment = HostEnvironment()
         self._validate_on_build = True
 
     @property
     def configuration(self) -> ConfigurationManager:
+        """Collection of configuration providers for the application to compose."""
         if self._configuration is None:
             self._configuration = self._create_configuration()
 
         return self._configuration
+
+    @property
+    def environment(self) -> HostEnvironment:
+        """Provide information about the hosting environment an application is running."""
+        return self._host_environment
 
     def build_service_provider(
         self, validate_scopes: bool = False, validate_on_build: bool = True

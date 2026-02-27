@@ -70,6 +70,7 @@ nav:
       - Service lifetimes: core-concepts/lifetimes.md
       - Factories: core-concepts/factories.md
       - Configuration: core-concepts/configuration.md
+      - Environments: core-concepts/environments.md
       - Async-first design: core-concepts/async-first-design.md
       - Pluggable architecture: core-concepts/pluggable-architecture.md
   - Testing: testing.md
@@ -87,10 +88,13 @@ nav:
       - ServiceScope: api-reference/service-scope.md
       - KeyedService: api-reference/keyed-service.md
       - BaseServiceProvider: api-reference/base-service-provider.md
+      - ServiceProvider: api-reference/service-provider.md
       - ServiceScopeFactory: api-reference/service-scope-factory.md
       - ServiceProviderIsService: api-reference/service-provider-is-service.md
       - ServiceProviderIsKeyedService: api-reference/service-provider-is-keyed-service.md
       - ServiceContainer: api-reference/service-container.md
+      - ConfigurationManager: api-reference/configuration_manager.md
+      - HostEnvironment: api-reference/host-environment.md
       - Exceptions: api-reference/exceptions.md
   - Other:
       - Changelogs: other/changelogs.md
