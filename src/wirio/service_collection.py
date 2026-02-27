@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Final, cast, overload
 
 from wirio._service_lookup._typed_type import TypedType
 from wirio._utils._extra_dependencies import ExtraDependencies
+from wirio.configuration.configuration_manager import ConfigurationManager
 from wirio.exceptions import (
     NoKeyedSingletonServiceRegisteredError,
     NoSingletonServiceRegisteredError,
@@ -31,10 +32,19 @@ class ServiceCollection:
     """Collection of service descriptors provided during configuration."""
 
     _descriptors: Final[list[ServiceDescriptor]]
+    _configuration: ConfigurationManager | None
 
     def __init__(self) -> None:
         self._descriptors = []
+        self._configuration = None
         self._validate_on_build = True
+
+    @property
+    def configuration(self) -> ConfigurationManager:
+        if self._configuration is None:
+            self._configuration = self._create_configuration()
+
+        return self._configuration
 
     def build_service_provider(
         self, validate_scopes: bool = False, validate_on_build: bool = True
@@ -1174,7 +1184,7 @@ class ServiceCollection:
         elif inspect.isgeneratorfunction(implementation_factory):
             if is_service_key_provided:
                 service_descriptor = (
-                    ServiceDescriptor.from_keyed_generator_implementation_factory(
+                    ServiceDescriptor.from_keyed_sync_generator_implementation_factory(
                         service_type=provided_service_type,
                         implementation_factory=implementation_factory,
                         service_key=service_key_to_add,
@@ -1275,6 +1285,11 @@ class ServiceCollection:
         from wirio.integrations._sqlmodel_integration import (  # noqa: PLC0415
             SqlmodelIntegration,
         )
+
+    def _create_configuration(self) -> ConfigurationManager:
+        configuration = ConfigurationManager()
+        configuration.add_environment_variables()
+        return configuration
 
     def __iter__(self) -> Iterator[ServiceDescriptor]:
         return iter(self._descriptors)

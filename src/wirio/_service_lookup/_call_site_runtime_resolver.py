@@ -39,8 +39,8 @@ from wirio._service_lookup._service_provider_call_site import (
 from wirio._service_lookup._supports_async_context_manager import (
     SupportsAsyncContextManager,
 )
-from wirio._service_lookup._supports_context_manager import (
-    SupportsContextManager,
+from wirio._service_lookup._supports_sync_context_manager import (
+    SupportsSyncContextManager,
 )
 from wirio._service_lookup._sync_factory_call_site import (
     SyncFactoryCallSite,
@@ -316,7 +316,7 @@ class CallSiteRuntimeResolver(CallSiteVisitor[RuntimeResolverContext, object | N
 
         if isinstance(service, SupportsAsyncContextManager):
             await service.__aenter__()
-        elif isinstance(service, SupportsContextManager):
+        elif isinstance(service, SupportsSyncContextManager):
             service.__enter__()
 
         return service
@@ -342,7 +342,7 @@ class CallSiteRuntimeResolver(CallSiteVisitor[RuntimeResolverContext, object | N
 
         if isinstance(service, SupportsAsyncContextManager):
             await service.__aenter__()
-        elif isinstance(service, SupportsContextManager):
+        elif isinstance(service, SupportsSyncContextManager):
             service.__enter__()
 
         return service
@@ -362,7 +362,7 @@ class CallSiteRuntimeResolver(CallSiteVisitor[RuntimeResolverContext, object | N
 
         if isinstance(service, SupportsAsyncContextManager):
             await service.__aenter__()
-        elif isinstance(service, SupportsContextManager):
+        elif isinstance(service, SupportsSyncContextManager):
             service.__enter__()
 
         return service

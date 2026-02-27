@@ -1,0 +1,160 @@
+from typing import final, override
+
+import pytest
+from pydantic import BaseModel
+
+from wirio.configuration.configuration_builder import ConfigurationBuilder
+from wirio.configuration.configuration_manager import ConfigurationManager
+from wirio.configuration.configuration_provider import ConfigurationProvider
+from wirio.configuration.configuration_source import ConfigurationSource
+
+
+@final
+class _DictionaryConfigurationProvider(ConfigurationProvider):
+    _values: dict[str, str | None]
+
+    def __init__(self, values: dict[str, str | None]) -> None:
+        super().__init__()
+        self._values = values
+
+    @override
+    async def load(self) -> None:
+        self._data = self._values
+        await super().load()
+
+
+@final
+class _StaticConfigurationSource(ConfigurationSource):
+    _values: dict[str, str | None]
+
+    def __init__(self, values: dict[str, str | None]) -> None:
+        self._values = values
+
+    @override
+    def build(self, builder: ConfigurationBuilder) -> ConfigurationProvider:
+        return _DictionaryConfigurationProvider(self._values)
+
+
+class _Settings(BaseModel):
+    app_name: str
+    port: str
+
+
+class TestConfigurationManager:
+    def test_create_model_from_configuration_values(self) -> None:
+        expected_app_name = "wirio"
+        expected_port = "8080"
+        configuration_manager = ConfigurationManager()
+        configuration_manager.add(
+            _StaticConfigurationSource(
+                {"app_name": expected_app_name, "port": expected_port}
+            )
+        )
+
+        settings = configuration_manager[_Settings]
+
+        assert isinstance(settings, _Settings)
+        assert settings.app_name == expected_app_name
+        assert settings.port == expected_port
+
+    async def test_add_source_when_event_loop_is_running(self) -> None:
+        expected_app_name = "wirio"
+        expected_port = "8080"
+        configuration_manager = ConfigurationManager()
+        configuration_manager.add(
+            _StaticConfigurationSource(
+                {"app_name": expected_app_name, "port": expected_port}
+            )
+        )
+
+        settings = configuration_manager[_Settings]
+
+        assert settings.app_name == expected_app_name
+        assert settings.port == expected_port
+
+    def test_add_source_when_event_loop_is_not_running(self) -> None:
+        expected_app_name = "wirio"
+        expected_port = "8080"
+        configuration_manager = ConfigurationManager()
+        configuration_manager.add(
+            _StaticConfigurationSource(
+                {"app_name": expected_app_name, "port": expected_port}
+            )
+        )
+
+        settings = configuration_manager[_Settings]
+
+        assert settings.app_name == expected_app_name
+        assert settings.port == expected_port
+
+    def test_override_values_with_last_source(self) -> None:
+        expected_app_name = "wirio"
+        expected_port = "9090"
+
+        configuration_manager = ConfigurationManager()
+        configuration_manager.add(
+            _StaticConfigurationSource({"app_name": "wirio", "port": "8080"})
+        )
+        configuration_manager.add(_StaticConfigurationSource({"port": expected_port}))
+
+        settings = configuration_manager[_Settings]
+
+        assert settings.app_name == expected_app_name
+        assert settings.port == expected_port
+
+    def test_return_none_for_missing_optional_value(self) -> None:
+        class Settings(BaseModel):
+            app_name: str
+            port: int | None = None
+
+        expected_app_name = "wirio"
+        configuration_manager = ConfigurationManager()
+        configuration_manager.add(
+            _StaticConfigurationSource({"app_name": expected_app_name})
+        )
+
+        settings = configuration_manager[Settings]
+
+        assert settings.app_name == expected_app_name
+        assert settings.port is None
+
+    def test_fail_when_required_value_is_missing(self) -> None:
+        configuration_manager = ConfigurationManager()
+        configuration_manager.add(_StaticConfigurationSource({"app_name": "wirio"}))
+
+        with pytest.raises(KeyError) as exception_info:
+            configuration_manager[_Settings]
+
+        assert (
+            exception_info.value.args[0] == "Missing configuration value for key 'port'"
+        )
+
+    def test_convert_source_names_to_snake_case(self) -> None:
+        expected_app_name = "wirio"
+        expected_port = "8080"
+        configuration_manager = ConfigurationManager()
+        configuration_manager.add(
+            _StaticConfigurationSource(
+                {"APP_NAME": expected_app_name, "PORT": expected_port}
+            )
+        )
+
+        settings = configuration_manager[_Settings]
+
+        assert settings.app_name == expected_app_name
+        assert settings.port == expected_port
+
+    def test_return_added_sources(self) -> None:
+        expected_sources = 2
+
+        configuration_manager = ConfigurationManager()
+        source1 = _StaticConfigurationSource({"app_name": "wirio"})
+        source2 = _StaticConfigurationSource({"port": "8080"})
+        configuration_manager.add(source1)
+        configuration_manager.add(source2)
+
+        sources = configuration_manager.sources
+
+        assert len(sources) == expected_sources
+        assert sources[0] is source1
+        assert sources[1] is source2

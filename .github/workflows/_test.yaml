@@ -86,3 +86,4 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           file: ${{ github.workspace }}/coverage.xml
+          fail-on-error: false

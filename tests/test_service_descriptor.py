@@ -78,8 +78,8 @@ class TestServiceDescriptor:
                 auto_activate=False,
             )
         )
-        keyed_generator_implementation_factory = (
-            ServiceDescriptor.from_keyed_generator_implementation_factory(
+        keyed_sync_generator_implementation_factory = (
+            ServiceDescriptor.from_keyed_sync_generator_implementation_factory(
                 service_type=Service,
                 implementation_factory=keyed_sync_generator_factory,
                 service_key="key",
@@ -126,7 +126,7 @@ class TestServiceDescriptor:
                 auto_activate=False,
             )
         )
-        non_keyed_generator_implementation_factory = (
+        non_keyed_sync_generator_implementation_factory = (
             ServiceDescriptor.from_sync_generator_implementation_factory(
                 service_type=Service,
                 implementation_factory=sync_generator_factory,
@@ -166,8 +166,8 @@ class TestServiceDescriptor:
             == f"service_type: {keyed_sync_implementation_factory.service_type}, lifetime: {keyed_sync_implementation_factory.lifetime}, service_key: {keyed_sync_implementation_factory.service_key}, keyed_sync_implementation_factory: {keyed_sync_implementation_factory.keyed_sync_implementation_factory}"
         )
         assert (
-            str(keyed_generator_implementation_factory)
-            == f"service_type: {keyed_generator_implementation_factory.service_type}, lifetime: {keyed_generator_implementation_factory.lifetime}, service_key: {keyed_generator_implementation_factory.service_key}, keyed_generator_implementation_factory: {keyed_generator_implementation_factory.keyed_generator_implementation_factory}"
+            str(keyed_sync_generator_implementation_factory)
+            == f"service_type: {keyed_sync_generator_implementation_factory.service_type}, lifetime: {keyed_sync_generator_implementation_factory.lifetime}, service_key: {keyed_sync_generator_implementation_factory.service_key}, keyed_sync_generator_implementation_factory: {keyed_sync_generator_implementation_factory.keyed_sync_generator_implementation_factory}"
         )
         assert (
             str(keyed_async_generator_implementation_factory)
@@ -190,8 +190,8 @@ class TestServiceDescriptor:
             == f"service_type: {non_keyed_sync_implementation_factory.service_type}, lifetime: {non_keyed_sync_implementation_factory.lifetime}, sync_implementation_factory: {non_keyed_sync_implementation_factory.sync_implementation_factory}"
         )
         assert (
-            str(non_keyed_generator_implementation_factory)
-            == f"service_type: {non_keyed_generator_implementation_factory.service_type}, lifetime: {non_keyed_generator_implementation_factory.lifetime}, generator_implementation_factory: {non_keyed_generator_implementation_factory.generator_implementation_factory}"
+            str(non_keyed_sync_generator_implementation_factory)
+            == f"service_type: {non_keyed_sync_generator_implementation_factory.service_type}, lifetime: {non_keyed_sync_generator_implementation_factory.lifetime}, generator_implementation_factory: {non_keyed_sync_generator_implementation_factory.generator_implementation_factory}"
         )
         assert (
             str(non_keyed_async_generator_implementation_factory)
@@ -335,7 +335,7 @@ class TestServiceDescriptor:
                 _ = service_descriptor.keyed_async_generator_implementation_factory
             else:
                 assert service_descriptor.generator_implementation_factory is not None
-                _ = service_descriptor.keyed_generator_implementation_factory
+                _ = service_descriptor.keyed_sync_generator_implementation_factory
 
     async def test_fail_when_getting_keyed_implementation_type_when_is_not_keyed_service(
         self,
