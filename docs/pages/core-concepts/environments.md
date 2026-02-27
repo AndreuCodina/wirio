@@ -1,6 +1,6 @@
 # Environments
 
-# Overview
+## Overview
 
 Wirio exposes the current application environment through `services.environment`.
 
@@ -41,16 +41,16 @@ from wirio.service_collection import ServiceCollection
 services = ServiceCollection()
 
 if services.environment.is_local():
-	print("Running in local")
+    print("Running in local")
 
 if services.environment.is_development():
-	print("Running in development")
+    print("Running in development")
 
 if services.environment.is_staging():
-	print("Running in staging")
+    print("Running in staging")
 
 if services.environment.is_production():
-	print("Running in production")
+    print("Running in production")
 ```
 
 For custom values, use `is_environment(...)`:
@@ -62,5 +62,5 @@ from wirio.service_collection import ServiceCollection
 services = ServiceCollection()
 
 if services.environment.is_environment("uat"):
-	print("UAT behavior")
+    print("UAT behavior")
 ```

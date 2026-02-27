@@ -12,7 +12,7 @@ class HostEnvironment:
     _environment_name: Final[str]
 
     def __init__(self) -> None:
-        self._environment_name = self._get_current_environnent_name()
+        self._environment_name = self._get_current_environment_name()
 
     @property
     def environment_name(self) -> str:
@@ -39,7 +39,7 @@ class HostEnvironment:
         """Check if the current host environment name is `production`."""
         return self.is_environment(Environment.PRODUCTION.value)
 
-    def _get_current_environnent_name(self) -> str:
+    def _get_current_environment_name(self) -> str:
         return os.getenv(
             EnvironmentVariable.WIRIO_ENVIRONMENT.value, Environment.LOCAL.value
         )
