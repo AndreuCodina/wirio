@@ -16,7 +16,7 @@ class ServiceDescriptor:
     _implementation_instance: object | None
     _sync_implementation_factory: Callable[..., object] | None
     _async_implementation_factory: Callable[..., Awaitable[object]] | None
-    _generator_implementation_factory: Callable[..., Generator[object]] | None
+    _sync_generator_implementation_factory: Callable[..., Generator[object]] | None
     _async_generator_implementation_factory: (
         Callable[..., AsyncGenerator[object]] | None
     )
@@ -38,7 +38,7 @@ class ServiceDescriptor:
         self._implementation_instance = None
         self._sync_implementation_factory = None
         self._async_implementation_factory = None
-        self._generator_implementation_factory = None
+        self._sync_generator_implementation_factory = None
         self._async_generator_implementation_factory = None
 
     @classmethod
@@ -173,11 +173,11 @@ class ServiceDescriptor:
             lifetime=lifetime,
             auto_activate=auto_activate,
         )
-        self._generator_implementation_factory = implementation_factory
+        self._sync_generator_implementation_factory = implementation_factory
         return self
 
     @classmethod
-    def from_keyed_generator_implementation_factory(
+    def from_keyed_sync_generator_implementation_factory(
         cls,
         service_type: type,
         implementation_factory: Callable[..., Generator[object]],
@@ -194,9 +194,11 @@ class ServiceDescriptor:
 
         if service_key is None:
             none_keyed_implementation_factory = partial(implementation_factory, None)
-            self._generator_implementation_factory = none_keyed_implementation_factory
+            self._sync_generator_implementation_factory = (
+                none_keyed_implementation_factory
+            )
         else:
-            self._generator_implementation_factory = implementation_factory
+            self._sync_generator_implementation_factory = implementation_factory
 
         return self
 
@@ -296,7 +298,7 @@ class ServiceDescriptor:
         if self.is_keyed_service:
             return None
 
-        return self._generator_implementation_factory
+        return self._sync_generator_implementation_factory
 
     @property
     def async_generator_implementation_factory(
@@ -328,14 +330,14 @@ class ServiceDescriptor:
         return self._async_implementation_factory
 
     @property
-    def keyed_generator_implementation_factory(
+    def keyed_sync_generator_implementation_factory(
         self,
     ) -> Callable[..., Generator[object]] | None:
         """Get the factory used for creating keyed generator service instances, or raise :class:`NonKeyedDescriptorMisuseError` if :attr:`is_keyed_service` is `False`."""
         if not self.is_keyed_service:
             raise NonKeyedDescriptorMisuseError
 
-        return self._generator_implementation_factory
+        return self._sync_generator_implementation_factory
 
     @property
     def keyed_async_generator_implementation_factory(
@@ -410,10 +412,10 @@ class ServiceDescriptor:
                     + f"keyed_sync_implementation_factory: {self.keyed_sync_implementation_factory}"
                 )
 
-            if self.keyed_generator_implementation_factory is not None:
+            if self.keyed_sync_generator_implementation_factory is not None:
                 return (
                     lifetime
-                    + f"keyed_generator_implementation_factory: {self.keyed_generator_implementation_factory}"
+                    + f"keyed_sync_generator_implementation_factory: {self.keyed_sync_generator_implementation_factory}"
                 )
 
             if self.keyed_async_generator_implementation_factory is not None:

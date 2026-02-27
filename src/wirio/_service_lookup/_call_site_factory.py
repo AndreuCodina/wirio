@@ -636,12 +636,13 @@ class CallSiteFactory(ServiceProviderIsKeyedService, ServiceProviderIsService):
             )
         elif (
             service_descriptor.is_keyed_service
-            and service_descriptor.keyed_generator_implementation_factory is not None
+            and service_descriptor.keyed_sync_generator_implementation_factory
+            is not None
         ):
             service_call_site = SyncGeneratorFactoryCallSite.from_keyed_implementation_factory(
                 cache=cache,
                 service_type=service_descriptor.service_type,
-                implementation_factory=service_descriptor.keyed_generator_implementation_factory,
+                implementation_factory=service_descriptor.keyed_sync_generator_implementation_factory,
                 service_key=service_identifier.service_key,
             )
         elif (

@@ -1,4 +1,5 @@
 import asyncio
+import os
 from abc import ABC
 from collections.abc import AsyncGenerator, Generator, Sequence
 from contextlib import AbstractAsyncContextManager, AbstractContextManager
@@ -7,6 +8,7 @@ from types import TracebackType
 from typing import Annotated, Self, final, override
 
 import pytest
+from pydantic import BaseModel
 
 from tests.utils.services import (
     DisposeViewer,
@@ -2374,3 +2376,15 @@ class TestServiceCollection:
                     await service_scope.get_required_service(ServiceWithNoDependencies)
 
             assert str(exception_info.value) == expected_error_message
+
+    async def test_access_typed_configuration(self) -> None:
+        class ApplicationSettings(BaseModel):
+            test_wirio_field: str
+
+        expected_test_field = "field value"
+        os.environ["TEST_WIRIO_FIELD"] = expected_test_field
+        services = ServiceCollection()
+
+        configuration = services.configuration[ApplicationSettings]
+
+        assert configuration.test_wirio_field == expected_test_field

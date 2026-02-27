@@ -3,7 +3,7 @@ from typing import Protocol, Self, runtime_checkable
 
 
 @runtime_checkable
-class SupportsContextManager(Protocol):
+class SupportsSyncContextManager(Protocol):
     def __enter__(self) -> Self: ...
 
     def __exit__(
