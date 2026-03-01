@@ -10,14 +10,21 @@ class HostEnvironment:
     """Provide information about the hosting environment an application is running in."""
 
     _environment_name: Final[str]
+    _content_root_path: Final[str]
 
-    def __init__(self) -> None:
+    def __init__(self, content_root_path: str) -> None:
         self._environment_name = self._get_current_environment_name()
+        self._content_root_path = content_root_path
 
     @property
     def environment_name(self) -> str:
         """Environment name."""
         return self._environment_name
+
+    @property
+    def content_root_path(self) -> str:
+        """Absolute path to the directory that contains the application content files."""
+        return self._content_root_path
 
     def is_environment(self, environment_name: str) -> bool:
         """Compare the current host environment name against the specified value."""

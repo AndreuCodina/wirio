@@ -1,6 +1,8 @@
 import inspect
+import sys
 import typing
 from collections.abc import AsyncGenerator, Awaitable, Callable, Generator, Iterator
+from pathlib import Path
 from typing import TYPE_CHECKING, Final, cast, overload
 
 from wirio._service_lookup._typed_type import TypedType
@@ -39,7 +41,8 @@ class ServiceCollection:
     def __init__(self) -> None:
         self._descriptors = []
         self._configuration = None
-        self._host_environment = HostEnvironment()
+        current_path = self._get_content_root_path()
+        self._host_environment = HostEnvironment(content_root_path=current_path)
         self._validate_on_build = True
 
     @property
@@ -1299,6 +1302,72 @@ class ServiceCollection:
         configuration = ConfigurationManager()
         configuration.add_environment_variables()
         return configuration
+
+    def _get_content_root_path(self) -> str:
+        current_frame = inspect.currentframe()
+
+        if current_frame is None:
+            return str(Path.cwd().resolve())
+
+        try:
+            current_working_directory = Path.cwd().resolve()
+            package_root = Path(__file__).resolve().parent
+            frame_filename = ""
+
+            found_only_runtime_external_frames = False
+            stack_frame = current_frame.f_back
+
+            while stack_frame is not None:
+                notebook_path = stack_frame.f_globals.get("__vsc_ipynb_file__")
+
+                if isinstance(notebook_path, str):
+                    resolved_notebook_path = Path(notebook_path).expanduser().resolve()
+
+                    if resolved_notebook_path.exists():
+                        return str(resolved_notebook_path.parent)
+
+                current_frame_filename = stack_frame.f_code.co_filename
+                current_frame_path = Path(current_frame_filename)
+
+                if not current_frame_path.exists():
+                    stack_frame = stack_frame.f_back
+                    continue
+
+                resolved_current_frame_path = current_frame_path.resolve()
+
+                if package_root not in resolved_current_frame_path.parents:
+                    if self._is_python_runtime_path(resolved_current_frame_path):
+                        found_only_runtime_external_frames = True
+                        stack_frame = stack_frame.f_back
+                        continue
+
+                    return str(resolved_current_frame_path.parent)
+
+                frame_filename = current_frame_filename
+                stack_frame = stack_frame.f_back
+
+            if frame_filename == "":
+                return str(current_working_directory)
+
+            if found_only_runtime_external_frames:
+                return str(current_working_directory)
+
+            return str(Path(frame_filename).parent.resolve())
+        finally:
+            del current_frame
+
+    def _is_python_runtime_path(self, resolved_path: Path) -> bool:
+        runtime_prefixes = {
+            Path(sys.prefix).resolve(),
+            Path(sys.exec_prefix).resolve(),
+            Path(sys.base_prefix).resolve(),
+            Path(sys.base_exec_prefix).resolve(),
+        }
+
+        return any(
+            runtime_prefix == resolved_path or runtime_prefix in resolved_path.parents
+            for runtime_prefix in runtime_prefixes
+        )
 
     def __iter__(self) -> Iterator[ServiceDescriptor]:
         return iter(self._descriptors)

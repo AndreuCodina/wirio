@@ -14,7 +14,7 @@ class TestHostEnvironment:
         expected_default_environment_name = Environment.LOCAL.value
         mocker.patch.dict(os.environ, {}, clear=True)
 
-        environment = HostEnvironment()
+        environment = HostEnvironment(content_root_path="")
 
         assert environment.environment_name == expected_default_environment_name
 
@@ -27,7 +27,7 @@ class TestHostEnvironment:
             {EnvironmentVariable.WIRIO_ENVIRONMENT.value: expected_environment_name},
         )
 
-        environment = HostEnvironment()
+        environment = HostEnvironment(content_root_path="")
 
         assert environment.environment_name == expected_environment_name
 
@@ -39,7 +39,7 @@ class TestHostEnvironment:
             {EnvironmentVariable.WIRIO_ENVIRONMENT.value: expected_environment_name},
         )
 
-        environment = HostEnvironment()
+        environment = HostEnvironment(content_root_path="")
 
         assert environment.is_environment(expected_environment_name)
         assert not environment.is_environment(not_expected_environment_name)
@@ -51,7 +51,7 @@ class TestHostEnvironment:
             os.environ,
             {EnvironmentVariable.WIRIO_ENVIRONMENT.value: Environment.LOCAL.value},
         )
-        environment = HostEnvironment()
+        environment = HostEnvironment(content_root_path="")
         assert environment.is_local()
 
         mocker.patch.dict(
@@ -60,19 +60,19 @@ class TestHostEnvironment:
                 EnvironmentVariable.WIRIO_ENVIRONMENT.value: Environment.DEVELOPMENT.value
             },
         )
-        environment = HostEnvironment()
+        environment = HostEnvironment(content_root_path="")
         assert environment.is_development()
 
         mocker.patch.dict(
             os.environ,
             {EnvironmentVariable.WIRIO_ENVIRONMENT.value: Environment.STAGING.value},
         )
-        environment = HostEnvironment()
+        environment = HostEnvironment(content_root_path="")
         assert environment.is_staging()
 
         mocker.patch.dict(
             os.environ,
             {EnvironmentVariable.WIRIO_ENVIRONMENT.value: Environment.PRODUCTION.value},
         )
-        environment = HostEnvironment()
+        environment = HostEnvironment(content_root_path="")
         assert environment.is_production()

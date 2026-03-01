@@ -2,6 +2,8 @@ from contextlib import AbstractAsyncContextManager, AbstractContextManager
 from types import TracebackType
 from typing import Self, override
 
+from wirio.service_collection import ServiceCollection
+
 
 class ServiceWithNoDependencies(
     AbstractAsyncContextManager["ServiceWithNoDependencies"]
@@ -135,3 +137,7 @@ class ServiceWithOptionalDependencyWithDefault:
         optional_dependency: ServiceWithNoDependencies | None = DEFAULT_DEPENDENCY,
     ) -> None:
         self.optional_dependency = optional_dependency
+
+
+def create_test_services() -> ServiceCollection:
+    return ServiceCollection()
