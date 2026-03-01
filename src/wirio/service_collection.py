@@ -44,6 +44,7 @@ class ServiceCollection:
         current_path = self._get_content_root_path()
         self._host_environment = HostEnvironment(content_root_path=current_path)
         self._validate_on_build = True
+        self._populate()
 
     @property
     def configuration(self) -> ConfigurationManager:
@@ -1368,6 +1369,9 @@ class ServiceCollection:
             runtime_prefix == resolved_path or runtime_prefix in resolved_path.parents
             for runtime_prefix in runtime_prefixes
         )
+
+    def _populate(self) -> None:
+        self.add_singleton(HostEnvironment, self._host_environment)
 
     def __iter__(self) -> Iterator[ServiceDescriptor]:
         return iter(self._descriptors)

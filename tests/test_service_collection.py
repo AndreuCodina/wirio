@@ -49,6 +49,7 @@ from wirio.exceptions import (
     NoSingletonServiceRegisteredError,
 )
 from wirio.hosting._environment_variable import EnvironmentVariable
+from wirio.hosting.host_environment import HostEnvironment
 from wirio.service_collection import ServiceCollection
 from wirio.service_lifetime import ServiceLifetime
 
@@ -2588,3 +2589,13 @@ class TestServiceCollection:
         services = ServiceCollection()
 
         assert services.environment.content_root_path == expected_content_root_path
+
+    async def test_auto_register_host_environment(self) -> None:
+        services = ServiceCollection()
+
+        async with services.build_service_provider() as service_provider:
+            host_environment = await service_provider.get_required_service(
+                HostEnvironment
+            )
+
+            assert isinstance(host_environment, HostEnvironment)

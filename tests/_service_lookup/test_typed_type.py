@@ -1,4 +1,5 @@
 import sys
+from typing import cast
 
 import pytest
 
@@ -40,6 +41,12 @@ class CustomClassWithOptionalGeneric2[T = None]:
 
 class CustomClassWithGenericAndOptionalGeneric1[T1, T2 = None]:
     pass
+
+
+class CustomClassWithGenericAndConstructorParameters[T]:
+    def __init__(self, parameter_1: T, parameter_2: T) -> None:
+        self.parameter_1 = parameter_1
+        self.parameter_2 = parameter_2
 
 
 class TestTypedType:
@@ -260,3 +267,22 @@ class TestTypedType:
         typed_type = TypedType.from_type(CustomClassWithGenerics1)
 
         assert typed_type.generic_type_arguments() == []
+
+    def test_create_generic_type_instance_with_parameters(self) -> None:
+        expected_parameter_1 = "value_1"
+        expected_parameter_2 = "value_2"
+
+        typed_type = TypedType.from_type(
+            CustomClassWithGenericAndConstructorParameters[str]
+        )
+
+        instance = cast(
+            "CustomClassWithGenericAndConstructorParameters[str]",
+            typed_type.invoke(
+                parameter_values=[expected_parameter_1, expected_parameter_2]
+            ),
+        )
+
+        assert isinstance(instance, CustomClassWithGenericAndConstructorParameters)
+        assert instance.parameter_1 == expected_parameter_1
+        assert instance.parameter_2 == expected_parameter_2
