@@ -1,15 +1,17 @@
 from collections.abc import AsyncGenerator, Generator
 from contextlib import asynccontextmanager
 from http import HTTPStatus
+from pathlib import Path
 from typing import TYPE_CHECKING, Annotated
 
 import pytest
 from pytest_mock import MockerFixture
 
-from tests.utils.services import ServiceWithNoDependencies
+from tests.utils.services import ServiceWithNoDependencies, create_test_services
 from wirio._utils._extra_dependencies import ExtraDependencies
 from wirio.annotations import FromKeyedServices, FromServices
 from wirio.exceptions import CannotResolveServiceFromEndpointError
+from wirio.hosting.host_environment import HostEnvironment
 from wirio.service_collection import ServiceCollection
 from wirio.service_container import ServiceContainer
 from wirio.service_provider import ServiceProvider
@@ -340,3 +342,47 @@ class TestFastapiDependencyInjection:
             response = test_client.get("/endpoint")
 
             assert response.status_code == HTTPStatus.OK
+
+    def test_return_content_root_path_from_host_environment_with_services_defined_in_current_file(
+        self,
+    ) -> None:
+        expected_content_root_path = str(Path(__file__).parent.resolve())
+        app = FastAPI()
+
+        @app.get("/endpoint")
+        async def endpoint(  # pyright: ignore[reportUnusedFunction]
+            host_environment: Annotated[HostEnvironment, FromServices()],
+        ) -> str:
+            return host_environment.content_root_path
+
+        services = ServiceCollection()
+        services.configure_fastapi(app)
+
+        with TestClient(app) as test_client:
+            response = test_client.get("/endpoint")
+
+            assert response.status_code == HTTPStatus.OK
+            content_root_path = response.json()
+            assert content_root_path == expected_content_root_path
+
+    def test_return_content_root_path_from_host_environment_with_services_defined_in_another_file(
+        self,
+    ) -> None:
+        expected_content_root_path = str((Path.cwd() / "tests/utils").resolve())
+        app = FastAPI()
+
+        @app.get("/endpoint")
+        async def endpoint(  # pyright: ignore[reportUnusedFunction]
+            host_environment: Annotated[HostEnvironment, FromServices()],
+        ) -> str:
+            return host_environment.content_root_path
+
+        services = create_test_services()
+        services.configure_fastapi(app)
+
+        with TestClient(app) as test_client:
+            response = test_client.get("/endpoint")
+
+            assert response.status_code == HTTPStatus.OK
+            content_root_path = response.json()
+            assert content_root_path == expected_content_root_path
