@@ -225,7 +225,7 @@ class TestServiceDescriptor:
         else:
             services.add_keyed_transient("key", sync_inject_service)
 
-        service_descriptor = next(iter(services))
+        service_descriptor = list(services)[-1]
 
         if is_async_implementation_factory:
             assert service_descriptor.async_implementation_factory is None
@@ -259,7 +259,7 @@ class TestServiceDescriptor:
         else:
             services.add_keyed_transient("key", generator_inject_service)
 
-        service_descriptor = next(iter(services))
+        service_descriptor = list(services)[-1]
 
         if is_async_generator_implementation_factory:
             assert service_descriptor.async_generator_implementation_factory is None
@@ -289,7 +289,7 @@ class TestServiceDescriptor:
         else:
             services.add_transient(sync_inject_service)
 
-        service_descriptor = next(iter(services))
+        service_descriptor = list(services)[-1]
 
         with pytest.raises(NonKeyedDescriptorMisuseError):  # noqa: PT012
             if is_async_implementation_factory:
@@ -324,7 +324,7 @@ class TestServiceDescriptor:
         else:
             services.add_transient(generator_inject_service)
 
-        service_descriptor = next(iter(services))
+        service_descriptor = list(services)[-1]
 
         with pytest.raises(NonKeyedDescriptorMisuseError):  # noqa: PT012
             if is_async_generator_implementation_factory:
@@ -342,7 +342,7 @@ class TestServiceDescriptor:
     ) -> None:
         services = ServiceCollection()
         services.add_transient(ServiceWithNoDependencies)
-        service_descriptor = next(iter(services))
+        service_descriptor = list(services)[-1]
 
         assert service_descriptor.implementation_type is not None
 
@@ -354,7 +354,7 @@ class TestServiceDescriptor:
     ) -> None:
         services = ServiceCollection()
         services.add_singleton(ServiceWithNoDependencies, ServiceWithNoDependencies())
-        service_descriptor = next(iter(services))
+        service_descriptor = list(services)[-1]
 
         assert service_descriptor.implementation_instance is not None
 

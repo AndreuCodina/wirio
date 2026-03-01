@@ -147,7 +147,7 @@ class TestServiceContainer:
             def __init__(self) -> None:
                 constructed_instances.append(self)
 
-        expected_descriptors = 2
+        expected_descriptors = 3
         service_key = "key"
         services = ServiceContainer()
 
@@ -165,7 +165,7 @@ class TestServiceContainer:
 
         assert isinstance(resolved_service, ServiceWithNoDependencies)
         assert services.service_provider is not None
-        assert len(list(services)) == 1
+        assert len(list(services)) == 2  # noqa: PLR2004
 
         if is_keyed_service:
             services.add_keyed_transient(service_key, AdditionalService)
@@ -213,7 +213,7 @@ class TestServiceContainer:
             def __init__(self) -> None:
                 constructed_instances.append(self)
 
-        expected_descriptors = 2
+        expected_descriptors = 3
         service_key = "key"
         services = ServiceContainer()
 
@@ -232,7 +232,7 @@ class TestServiceContainer:
 
             assert isinstance(resolved_service, ServiceWithNoDependencies)
             assert services.service_provider is not None
-            assert len(list(services)) == 1
+            assert len(list(services)) == 2  # noqa: PLR2004
 
             if is_keyed_service:
                 services.add_keyed_transient(service_key, AdditionalService)
@@ -331,12 +331,12 @@ class TestServiceContainer:
     async def test_not_accumulate_pending_descriptors_before_initialization(
         self,
     ) -> None:
-        expected_descriptors = 2
+        expected_descriptors = 3
         services = ServiceContainer()
         services.add_transient(ServiceWithNoDependencies)
 
         assert services.service_provider is None
-        assert len(list(services)) == 1
+        assert len(list(services)) == 2  # noqa: PLR2004
 
         services.add_transient(ServiceWithDependencies)
         assert services.service_provider is None
@@ -353,17 +353,17 @@ class TestServiceContainer:
         services = ServiceContainer()
         services.add_transient(ServiceWithNoDependencies)
         assert services.service_provider is None
-        assert len(list(services)) == 1
+        assert len(list(services)) == 2  # noqa: PLR2004
 
         await services.get(ServiceWithNoDependencies)
         assert services.service_provider is not None
         assert len(services.service_provider.pending_descriptors) == 0
-        assert len(list(services)) == 1
+        assert len(list(services)) == 2  # noqa: PLR2004
 
         services.add_transient(ServiceWithDependencies)
         assert services.service_provider is not None
         assert len(services.service_provider.pending_descriptors) == 1
-        assert len(list(services)) == 2  # noqa: PLR2004
+        assert len(list(services)) == 3  # noqa: PLR2004
 
     async def test_return_service_provider_if_it_is_already_built(self) -> None:
         services = ServiceContainer()

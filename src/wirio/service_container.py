@@ -25,8 +25,8 @@ class ServiceContainer(
     _service_provider: ServiceProvider | None
 
     def __init__(self) -> None:
-        super().__init__()
         self._service_provider = None
+        super().__init__()
 
     @typing.override
     def build_service_provider(
