@@ -1,5 +1,6 @@
 import asyncio
 from collections.abc import Coroutine
+from pathlib import Path
 from threading import Thread
 from typing import Any, final
 
@@ -11,6 +12,7 @@ from wirio.configuration.configuration_source import ConfigurationSource
 from wirio.configuration.environment_variables.environment_variables_configuration_source import (
     EnvironmentVariablesConfigurationSource,
 )
+from wirio.configuration.json.json_configuration_source import JsonConfigurationSource
 from wirio.wirio_undefined import WirioUndefined
 
 
@@ -19,7 +21,8 @@ class ConfigurationManager(ConfigurationBuilder):
     _sources: list[ConfigurationSource]
     _providers: list[ConfigurationProvider]
 
-    def __init__(self) -> None:
+    def __init__(self, content_root_path: str) -> None:
+        self._content_root_path = content_root_path
         self._sources = []
         self._providers = []
 
@@ -32,6 +35,10 @@ class ConfigurationManager(ConfigurationBuilder):
 
     def add_environment_variables(self) -> None:
         self.add(EnvironmentVariablesConfigurationSource())
+
+    def add_json_file(self, path: str, optional: bool) -> None:
+        final_path = (Path(self._content_root_path) / path).resolve()
+        self.add(JsonConfigurationSource(path=final_path, optional=optional))
 
     def _add_source(self, source: ConfigurationSource) -> None:
         self._sources.append(source)

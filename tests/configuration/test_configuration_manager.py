@@ -44,7 +44,7 @@ class TestConfigurationManager:
     def test_create_model_from_configuration_values(self) -> None:
         expected_app_name = "wirio"
         expected_port = "8080"
-        configuration_manager = ConfigurationManager()
+        configuration_manager = ConfigurationManager(content_root_path="")
         configuration_manager.add(
             _StaticConfigurationSource(
                 {"app_name": expected_app_name, "port": expected_port}
@@ -60,7 +60,7 @@ class TestConfigurationManager:
     async def test_add_source_when_event_loop_is_running(self) -> None:
         expected_app_name = "wirio"
         expected_port = "8080"
-        configuration_manager = ConfigurationManager()
+        configuration_manager = ConfigurationManager(content_root_path="")
         configuration_manager.add(
             _StaticConfigurationSource(
                 {"app_name": expected_app_name, "port": expected_port}
@@ -75,7 +75,7 @@ class TestConfigurationManager:
     def test_add_source_when_event_loop_is_not_running(self) -> None:
         expected_app_name = "wirio"
         expected_port = "8080"
-        configuration_manager = ConfigurationManager()
+        configuration_manager = ConfigurationManager(content_root_path="")
         configuration_manager.add(
             _StaticConfigurationSource(
                 {"app_name": expected_app_name, "port": expected_port}
@@ -91,7 +91,7 @@ class TestConfigurationManager:
         expected_app_name = "wirio"
         expected_port = "9090"
 
-        configuration_manager = ConfigurationManager()
+        configuration_manager = ConfigurationManager(content_root_path="")
         configuration_manager.add(
             _StaticConfigurationSource({"app_name": "wirio", "port": "8080"})
         )
@@ -108,7 +108,7 @@ class TestConfigurationManager:
             port: int | None = None
 
         expected_app_name = "wirio"
-        configuration_manager = ConfigurationManager()
+        configuration_manager = ConfigurationManager(content_root_path="")
         configuration_manager.add(
             _StaticConfigurationSource({"app_name": expected_app_name})
         )
@@ -119,7 +119,7 @@ class TestConfigurationManager:
         assert settings.port is None
 
     def test_fail_when_required_value_is_missing(self) -> None:
-        configuration_manager = ConfigurationManager()
+        configuration_manager = ConfigurationManager(content_root_path="")
         configuration_manager.add(_StaticConfigurationSource({"app_name": "wirio"}))
 
         with pytest.raises(KeyError) as exception_info:
@@ -132,7 +132,7 @@ class TestConfigurationManager:
     def test_convert_source_names_to_snake_case(self) -> None:
         expected_app_name = "wirio"
         expected_port = "8080"
-        configuration_manager = ConfigurationManager()
+        configuration_manager = ConfigurationManager(content_root_path="")
         configuration_manager.add(
             _StaticConfigurationSource(
                 {"APP_NAME": expected_app_name, "PORT": expected_port}
@@ -147,7 +147,7 @@ class TestConfigurationManager:
     def test_return_added_sources(self) -> None:
         expected_sources = 2
 
-        configuration_manager = ConfigurationManager()
+        configuration_manager = ConfigurationManager(content_root_path="")
         source1 = _StaticConfigurationSource({"app_name": "wirio"})
         source2 = _StaticConfigurationSource({"port": "8080"})
         configuration_manager.add(source1)

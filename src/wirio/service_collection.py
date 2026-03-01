@@ -41,8 +41,8 @@ class ServiceCollection:
     def __init__(self) -> None:
         self._descriptors = []
         self._configuration = None
-        current_path = self._get_content_root_path()
-        self._host_environment = HostEnvironment(content_root_path=current_path)
+        content_root_path = self._get_content_root_path()
+        self._host_environment = HostEnvironment(content_root_path=content_root_path)
         self._validate_on_build = True
         self._populate()
 
@@ -1300,7 +1300,13 @@ class ServiceCollection:
         )
 
     def _create_configuration(self) -> ConfigurationManager:
-        configuration = ConfigurationManager()
+        configuration = ConfigurationManager(
+            content_root_path=self._host_environment.content_root_path
+        )
+        configuration.add_json_file("appsettings.json", optional=True)
+        configuration.add_json_file(
+            f"appsettings.{self._host_environment.environment_name}.json", optional=True
+        )
         configuration.add_environment_variables()
         return configuration
 

@@ -1,8 +1,7 @@
 # Configuration
 
-Wirio includes a built-in configuration system.
-
-It loads environment variables as a configuration source.
+Wirio provides a built-in configuration system for loading settings.
+We can read values from multiple sources (such as JSON files and environment variables) and compose them using a clear precedence order where newer sources override older ones.
 
 ## Quickstart
 
@@ -41,11 +40,19 @@ class ApplicationSettings(BaseModel):
 
 In this example, `port` defaults to `None` when not present.
 
-## Source precedence
+## Order of precedence
 
-`ConfigurationManager` supports multiple sources, and the last added source has priority. This is because some sources should have priority over others. For example, we may want to load configuration from a file first and then override specific values with environment variables.
+`ConfigurationManager` supports multiple sources, and the latest added source wins.
 
-This also allows us to load base configuration first and override specific values later (for example, in tests or per environment).
+When the same key exists in more than one source, Wirio resolves the value from the last source that contains that key.
+
+Default priority (highest to lowest):
+
+1. Environment variables
+2. `appsettings.{environment}.json`
+3. `appsettings.json`
+
+This lets us define base values in `appsettings.json`, override per environment in `appsettings.{environment}.json`, and finally override specific keys via environment variables.
 
 ## Accessing configuration in factories
 
