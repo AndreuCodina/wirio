@@ -1,6 +1,6 @@
 [project]
 name = "wirio"
-version = "0.15.0"
+version = "0.16.0"
 description = "Powerful Dependency Injection with Python"
 authors = [{ name = "Andreu Codina" }]
 readme = "README.md"
@@ -52,7 +52,7 @@ dev = [
     "pytest-mock>=3.15.1",
     "ruff>=0.15.4",
     "testcontainers[postgres]>=4.14.1",
-    "ty>=0.0.19",
+    "ty>=0.0.20",
 ]
 
 [build-system]
