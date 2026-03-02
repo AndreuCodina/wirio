@@ -2,10 +2,11 @@ import asyncio
 from collections.abc import Coroutine
 from pathlib import Path
 from threading import Thread
-from typing import Any, final
+from typing import TYPE_CHECKING, Any, final
 
 from pydantic import BaseModel
 
+from wirio._utils._extra_dependencies import ExtraDependencies
 from wirio.configuration.configuration_builder import ConfigurationBuilder
 from wirio.configuration.configuration_provider import ConfigurationProvider
 from wirio.configuration.configuration_source import ConfigurationSource
@@ -14,6 +15,16 @@ from wirio.configuration.environment_variables.environment_variables_configurati
 )
 from wirio.configuration.json.json_configuration_source import JsonConfigurationSource
 from wirio.wirio_undefined import WirioUndefined
+
+if TYPE_CHECKING:
+    from azure.core.credentials_async import AsyncTokenCredential
+
+    from wirio.configuration.azure_key_vault.azure_key_vault_configuration_source import (
+        AzureKeyVaultConfigurationSource,
+    )
+else:
+    AsyncTokenCredential = Any
+    AzureKeyVaultConfigurationSource = Any
 
 
 @final
@@ -34,11 +45,27 @@ class ConfigurationManager(ConfigurationBuilder):
         self._add_source(source)
 
     def add_environment_variables(self) -> None:
+        """Add a configuration provider that reads configuration values from environment variables."""
         self.add(EnvironmentVariablesConfigurationSource())
 
     def add_json_file(self, path: str, optional: bool) -> None:
+        """Add a configuration provider that reads configuration values from a JSON file."""
         final_path = (Path(self._content_root_path) / path).resolve()
         self.add(JsonConfigurationSource(path=final_path, optional=optional))
+
+    def add_azure_key_vault(
+        self,
+        url: str,
+        credential: AsyncTokenCredential | None = None,
+    ) -> None:
+        """Add a configuration provider that reads configuration values from Azure Key Vault."""
+        ExtraDependencies.ensure_azure_key_vault_is_installed()
+        global AzureKeyVaultConfigurationSource  # noqa: PLW0603
+        from wirio.configuration.azure_key_vault.azure_key_vault_configuration_source import (  # noqa: PLC0415
+            AzureKeyVaultConfigurationSource,
+        )
+
+        self.add(AzureKeyVaultConfigurationSource(url=url, credential=credential))
 
     def _add_source(self, source: ConfigurationSource) -> None:
         self._sources.append(source)

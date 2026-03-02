@@ -1,5 +1,5 @@
 import os
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import pytest
 from testcontainers.postgres import (  # pyright: ignore[reportMissingTypeStubs]
@@ -16,14 +16,14 @@ if TYPE_CHECKING:
     from sqlmodel import Session, select, text
     from sqlmodel.ext.asyncio.session import AsyncSession
 else:
-    Engine = None
-    AsyncEngine = None
-    async_sessionmaker = None
-    sessionmaker = None
-    Session = None
-    select = None
-    text = None
-    AsyncSession = None
+    Engine = Any
+    AsyncEngine = Any
+    async_sessionmaker = Any
+    sessionmaker = Any
+    Session = Any
+    select = Any
+    text = Any
+    AsyncSession = Any
 
 try:
     from sqlalchemy import Engine

@@ -1000,13 +1000,13 @@ class TestServiceCollection:
         class ServiceWithDefaultValues:
             def __init__(
                 self,
-                value1: str | None = None,
-                value2: str = "default2",
-                value3: str = "default3",
+                value_1: str | None = None,
+                value_2: str = "default2",
+                value_3: str = "default3",
             ) -> None:
-                self.value1 = value1
-                self.value2 = value2
-                self.value3 = value3
+                self.value_1 = value_1
+                self.value_2 = value_2
+                self.value_3 = value_3
 
         services = ServiceCollection()
 
@@ -1027,9 +1027,9 @@ class TestServiceCollection:
             )
 
             assert isinstance(resolved_service, ServiceWithDefaultValues)
-            assert resolved_service.value1 is None
-            assert resolved_service.value2 == "default2"
-            assert resolved_service.value3 == "default3"
+            assert resolved_service.value_1 is None
+            assert resolved_service.value_2 == "default2"
+            assert resolved_service.value_3 == "default3"
 
     @pytest.mark.parametrize(
         argnames="is_async_implementation_factory",

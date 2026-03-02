@@ -2,7 +2,7 @@ from collections.abc import AsyncGenerator, Generator
 from contextlib import asynccontextmanager
 from http import HTTPStatus
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated
+from typing import TYPE_CHECKING, Annotated, Any
 
 import pytest
 from pytest_mock import MockerFixture
@@ -22,12 +22,12 @@ if TYPE_CHECKING:
 
     from wirio.integrations.fastapi import get_service_container, get_service_provider
 else:
-    APIRouter = None
-    Depends = None
-    FastAPI = None
-    TestClient = None
-    get_service_container = None
-    get_service_provider = None
+    APIRouter = Any
+    Depends = Any
+    FastAPI = Any
+    TestClient = Any
+    get_service_container = Any
+    get_service_provider = Any
 
 try:
     from fastapi import APIRouter, Depends, FastAPI

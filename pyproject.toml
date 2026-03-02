@@ -31,6 +31,11 @@ Changelog = "https://github.com/AndreuCodina/wirio/releases"
 [project.optional-dependencies]
 fastapi = ["fastapi[standard-no-fastapi-cloud-cli]>=0.118.0"]
 sqlmodel = ["greenlet>=3.3.1", "sqlmodel>=0.0.33"]
+azure-key-vault = [
+    "aiohttp>=3.13.3",
+    "azure-identity>=1.25.2",
+    "azure-keyvault-secrets>=4.10.0",
+]
 
 [dependency-groups]
 dev = [

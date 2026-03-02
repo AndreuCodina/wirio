@@ -2,7 +2,7 @@ import typing
 from collections.abc import Awaitable, Callable, Generator, Sequence
 from contextlib import AbstractAsyncContextManager, contextmanager
 from types import TracebackType
-from typing import TYPE_CHECKING, Self, final
+from typing import TYPE_CHECKING, Any, Self, final
 
 from wirio.abstractions.service_scope import ServiceScope
 from wirio.exceptions import ServiceContainerNotBuiltError
@@ -13,7 +13,7 @@ from wirio.service_provider import ServiceProvider
 if TYPE_CHECKING:
     from fastapi import FastAPI
 else:
-    FastAPI = None
+    FastAPI = Any
 
 
 @final

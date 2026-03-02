@@ -3,7 +3,7 @@ import sys
 import typing
 from collections.abc import AsyncGenerator, Awaitable, Callable, Generator, Iterator
 from pathlib import Path
-from typing import TYPE_CHECKING, Final, cast, overload
+from typing import TYPE_CHECKING, Any, Final, cast, overload
 
 from wirio._service_lookup._typed_type import TypedType
 from wirio._utils._extra_dependencies import ExtraDependencies
@@ -26,9 +26,9 @@ if TYPE_CHECKING:
     )
     from wirio.integrations._sqlmodel_integration import SqlmodelIntegration
 else:
-    FastAPI = None
-    FastapiDependencyInjection = None
-    SqlmodelIntegration = None
+    FastAPI = Any
+    FastapiDependencyInjection = Any
+    SqlmodelIntegration = Any
 
 
 class ServiceCollection:

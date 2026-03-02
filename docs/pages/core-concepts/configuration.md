@@ -21,7 +21,7 @@ services = ServiceCollection()
 settings = services.configuration[ApplicationSettings]
 ```
 
-Wirio maps model field names to configuration keys using snake case conventions.
+**Important:** Wirio maps model field names to configuration keys using snake case conventions.
 
 For example, the `APP_NAME` environment variable is read as `app_name`.
 
@@ -82,3 +82,30 @@ def inject_database_client() -> DatabaseClient:
 
 services.add_singleton(inject_database_client)
 ```
+
+## Azure Key Vault
+
+Wirio can read configuration values from Azure Key Vault.
+
+First, install the optional dependency:
+
+```bash
+uv add "wirio[azure-key-vault]"
+```
+
+Then add Key Vault as a configuration source:
+
+```python
+from wirio.service_collection import ServiceCollection
+
+
+services = ServiceCollection()
+services.configuration.add_azure_key_vault(
+    url="https://<your-vault-name>.vault.azure.net",
+)
+```
+
+If no credential is provided, Wirio uses `DefaultAzureCredential`.
+We can also pass a custom async Azure credential through the `credential` parameter.
+
+Since the last registered source takes precedence, call `add_azure_key_vault(...)` after other sources to ensure Key Vault values override them.
