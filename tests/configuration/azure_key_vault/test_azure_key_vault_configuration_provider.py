@@ -127,21 +127,15 @@ class TestAzureKeyVaultConfigurationProvider:
         )
         default_azure_credential_mock.__aexit__.return_value = None
 
-        async def iterate_secret_properties() -> AsyncIterator[Any]:
+        async def list_properties_of_secrets() -> AsyncIterator[Any]:
             if False:
-                secret_properties_mock = mocker.create_autospec(
-                    SecretProperties,
-                    instance=True,
-                )
-                secret_properties_mock.name = None
-                secret_properties_mock.enabled = False
-                yield secret_properties_mock
+                yield
 
         secret_client_mock = mocker.create_autospec(SecretClient, instance=True)
         secret_client_mock.__aenter__.return_value = secret_client_mock
         secret_client_mock.__aexit__.return_value = None
         secret_client_mock.list_properties_of_secrets.return_value = (
-            iterate_secret_properties()
+            list_properties_of_secrets()
         )
 
         default_credential_patch = mocker.patch(

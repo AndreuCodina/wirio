@@ -502,7 +502,7 @@ class TestServiceProvider:
             with pytest.raises(DirectScopedResolvedFromRootError):
                 await service_provider.get_required_service(ServiceWithNoDependencies)
 
-    async def test_fail_resolving_service_with_scoped_dependency_from_root_scope(
+    async def test_fail_when_resolving_service_with_scoped_dependency_from_root_scope(
         self,
     ) -> None:
         services = ServiceCollection()
