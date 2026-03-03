@@ -18,7 +18,7 @@ class ApplicationSettings(BaseModel):
 
 
 services = ServiceCollection()
-settings = services.configuration[ApplicationSettings]
+settings = services.configuration.get_model(ApplicationSettings)
 ```
 
 **Important:** Wirio maps model field names to configuration keys using snake case conventions.
@@ -76,7 +76,7 @@ services = ServiceCollection()
 
 
 def inject_database_client() -> DatabaseClient:
-    settings = services.configuration[ApplicationSettings]
+    settings = services.configuration.get_model(ApplicationSettings)
     return DatabaseClient(settings.database_connection_string)
 
 
@@ -101,7 +101,7 @@ from wirio import ServiceCollection
 
 services = ServiceCollection()
 services.configuration.add_azure_key_vault(
-    url="https://<your-vault-name>.vault.azure.net",
+    "https://example.vault.azure.net",
 )
 ```
 

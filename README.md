@@ -16,8 +16,9 @@
 - **Lifetimes**: `Singleton` (same instance per application), `Scoped` (same instance per HTTP request scope) and `Transient` (different instance per resolution).
 - **FastAPI integration** out of the box, and pluggable to any web framework.
 - **Automatic resolution and disposal**: Automatically resolve constructor parameters and manage async and non-async context managers. It's no longer our concern to know how to create or dispose services.
-- **Clear design** inspired by one of the most used and battle-tested DI libraries, adding async-native support, important features and good defaults.
-- **Centralized configuration**: Register all services in one place using a clean syntax, and without decorators.
+- **Environment detection**: Detect the current environment and adjust configuration and behavior accordingly.
+- **Configuration providers**: Built-in configuration support, including integrations such as environment variables, configuration files and Azure Key Vault.
+- **Centralized setup**: Register all services in one place using a clean syntax, and without decorators.
 - **ty** and **Pyright** strict compliant.
 
 ## 📦 Installation

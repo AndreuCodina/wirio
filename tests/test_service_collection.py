@@ -2392,7 +2392,7 @@ class TestServiceCollection:
         mocker.patch.dict(os.environ, {"TEST_WIRIO_FIELD": expected_test_field})
         services = ServiceCollection()
 
-        configuration = services.configuration[ApplicationSettings]
+        configuration = services.configuration.get_model(ApplicationSettings)
 
         assert configuration.test_wirio_field == expected_test_field
 

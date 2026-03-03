@@ -4,7 +4,7 @@ from pathlib import Path
 from threading import Thread
 from typing import TYPE_CHECKING, Any, final, overload
 
-from pydantic import BaseModel
+from pydantic import BaseModel, TypeAdapter
 
 from wirio._utils._extra_dependencies import ExtraDependencies
 from wirio.configuration.configuration_builder import ConfigurationBuilder
@@ -95,21 +95,64 @@ class ConfigurationManager(ConfigurationBuilder):
         return WirioUndefined.INSTANCE
 
     @overload
-    def __getitem__[T: BaseModel](self, key: str) -> str | None: ...
+    def get_required_value(self, key: str) -> str: ...
 
     @overload
-    def __getitem__[T: BaseModel](self, key: type[T]) -> T: ...
+    def get_required_value[TField](
+        self, key: str, value_type: type[TField]
+    ) -> TField: ...
 
-    def __getitem__[T: BaseModel](self, key: str | type[T]) -> str | None | T:
-        if isinstance(key, str):
-            value = self._try_get_configuration(key)
+    def get_required_value[TField](
+        self,
+        key: str,
+        value_type: type[TField] | WirioUndefined = WirioUndefined.INSTANCE,
+    ) -> str | TField:
+        """Get a configuration value by its key or raise an error if the key is not found or the value is `None`. Optionally, validate the configuration value against the specified type."""
+        value = self._try_get_configuration(key)
 
-            if isinstance(value, WirioUndefined):
-                error_message = f"Missing configuration value for key '{key}'"
-                raise KeyError(error_message)
+        if isinstance(value, WirioUndefined):
+            error_message = f"Missing configuration value for key '{key}'"
+            raise KeyError(error_message)
 
+        if value is None:
+            error_message = f"Configuration value for key '{key}' is None"
+            raise ValueError(error_message)
+
+        if isinstance(value_type, WirioUndefined):
             return value
 
+        return TypeAdapter(value_type).validate_python(value)
+
+    @overload
+    def get_value(self, key: str) -> str | None: ...
+
+    @overload
+    def get_value[TField](
+        self, key: str, value_type: type[TField], default: TField | None = None
+    ) -> TField: ...
+
+    def get_value[TField](
+        self,
+        key: str,
+        value_type: type[TField] | WirioUndefined = WirioUndefined.INSTANCE,
+        default: TField | None = None,
+    ) -> str | None | TField:
+        """Get a configuration value by its key. Optionally, validate the configuration value against the specified type."""
+        value = self._try_get_configuration(key)
+
+        if isinstance(value, WirioUndefined):
+            if default is not None:
+                return default
+
+            error_message = f"Missing configuration value for key '{key}'"
+            raise KeyError(error_message)
+
+        if isinstance(value_type, WirioUndefined):
+            return value
+
+        return TypeAdapter(value_type).validate_python(value)
+
+    def get_model[TModel: BaseModel](self, key: type[TModel]) -> TModel:
         values: dict[str, str | None] = {}
 
         for field_name, field_info in key.model_fields.items():
