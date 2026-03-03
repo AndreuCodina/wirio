@@ -133,7 +133,7 @@ class TestConfigurationManager:
             _DictionaryConfigurationSource({"app_name": expected_configuration_value})
         )
 
-        configuration_value = configuration_manager.get_value("app_name", default="a")
+        configuration_value = configuration_manager.get_value("app_name")
 
         assert isinstance(configuration_value, str)
         assert configuration_value == expected_configuration_value
@@ -146,6 +146,20 @@ class TestConfigurationManager:
         )
 
         configuration_value = configuration_manager.get_value("app_name")
+
+        assert configuration_value is None
+        assert configuration_value == expected_configuration_value
+
+    def test_get_none_value_when_getting_value_with_none_value_and_value_type_is_specified(
+        self,
+    ) -> None:
+        expected_configuration_value = None
+        configuration_manager = ConfigurationManager(content_root_path="")
+        configuration_manager.add(
+            _DictionaryConfigurationSource({"app_name": expected_configuration_value})
+        )
+
+        configuration_value = configuration_manager.get_value("app_name", int)
 
         assert configuration_value is None
         assert configuration_value == expected_configuration_value
@@ -184,18 +198,6 @@ class TestConfigurationManager:
             configuration_manager.get_value("number", int)
 
         assert "validation error" in str(exception_info.value)
-
-    def test_get_default_value_when_getting_missing_value(self) -> None:
-        expected_default_value = 1
-        configuration_manager = ConfigurationManager(content_root_path="")
-        configuration_manager.add(_DictionaryConfigurationSource({}))
-
-        configuration_value = configuration_manager.get_value(
-            "number", int, default=expected_default_value
-        )
-
-        assert isinstance(configuration_value, int)
-        assert configuration_value == expected_default_value
 
     def test_get_model(self) -> None:
         expected_app_name = "wirio"
