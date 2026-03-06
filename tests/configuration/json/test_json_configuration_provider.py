@@ -1,3 +1,5 @@
+import json
+import re
 from pathlib import Path
 
 import pytest
@@ -39,10 +41,32 @@ class TestJsonConfigurationProvider:
         assert provider.data == {}
 
     async def test_fail_when_required_file_is_missing(self, tmp_path: Path) -> None:
-        provider = JsonConfigurationProvider(
-            path=tmp_path / "missing.json",
-            optional=False,
-        )
+        file_path = tmp_path / "missing.json"
+        provider = JsonConfigurationProvider(path=file_path, optional=False)
 
-        with pytest.raises(FileNotFoundError):
+        with pytest.raises(
+            FileNotFoundError,
+            match=re.escape(f"Configuration file '{file_path}' was not found"),
+        ):
+            await provider.load()
+
+    async def test_fail_when_json_file_has_invalid_syntax(self, tmp_path: Path) -> None:
+        file_path = tmp_path / "appsettings.json"
+        file_path.write_text('{"appName": "wirio"', encoding="utf-8")
+        provider = JsonConfigurationProvider(path=file_path, optional=False)
+
+        with pytest.raises(json.JSONDecodeError):
+            await provider.load()
+
+    async def test_fail_when_json_root_value_is_not_object(
+        self, tmp_path: Path
+    ) -> None:
+        file_path = tmp_path / "appsettings.json"
+        file_path.write_text('["wirio", "config"]', encoding="utf-8")
+        provider = JsonConfigurationProvider(path=file_path, optional=False)
+
+        with pytest.raises(
+            RuntimeError,
+            match=re.escape("Could not parse the JSON file"),
+        ):
             await provider.load()
